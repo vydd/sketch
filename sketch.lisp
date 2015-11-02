@@ -448,7 +448,7 @@
 
 ;;;;;;;;;;;;;
 
-(defun sketch-example-draw-3 ()
+(defun sketch-example-3 ()
   (let ((title "Sketch EXAMPLE 3 (Processing.org example / sinewave)")
 	(width 640) (height 640)
 	(pen (make-pen :fill (gray 1.0)))

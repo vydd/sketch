@@ -54,6 +54,5 @@
 	   ; Examples
 	   :sketch-example-1
 	   :sketch-example-2
-	   :sketch-example-3
-	   ))
+	   :sketch-example-3))
 
