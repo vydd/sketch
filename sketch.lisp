@@ -29,11 +29,11 @@
   (ticks 0)
   (framerate 60)
   ;; Window
-  (width 200 :type integer)
-  (height 200 :type integer)
-  (title "Sketch" :type string)
+  (width 200)
+  (height 200)
+  (title "Sketch")
   ;; Rendering
-  (smooth t :type boolean)
+  (smooth t)
   ;; Color
   (stroke nil)
   (fill nil))
@@ -198,13 +198,13 @@
 ;;; General
 
 (defstruct color
-  (red 0.0 :type unit-real :read-only t)
-  (green 0.0 :type unit-real :read-only t)
-  (blue 0.0 :type unit-real :read-only t)
-  (hue 0.0 :type unit-real :read-only t)
-  (saturation 0.0 :type unit-real :read-only t)
-  (brightness 0.0 :type unit-real :read-only t)
-  (alpha 1.0 :type unit-real :read-only t))
+  (red 0.0)
+  (green 0.0)
+  (blue 0.0)
+  (hue 0.0)
+  (saturation 0.0)
+  (brightness 0.0)
+  (alpha 1.0))
 
 (defun rgb-to-hsb (r g b)
   (let* ((c-max (max r g b))
