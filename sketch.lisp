@@ -44,8 +44,8 @@
   (setf (env-width *env*) width
 	(env-height *env*) height))
 
-(defun title (string)
-  (setf (env-title *env*) string))
+(defun title (str)
+  (setf (env-title *env*) str))
 
 (defun smooth ()
   (setf (env-smooth *env*) t))
@@ -59,7 +59,7 @@
 ;;;  ___) | |___  | | | |_| |  __/
 ;;; |____/|_____| |_|  \___/|_|
 
-(defun sketch-setup-opengl ()
+(defun sketch-setup-opengl (win)
   (if (env-smooth *env*)
       (gl:enable :line-smooth)
       (gl:enable :polygon-smooth))
@@ -68,7 +68,11 @@
   (gl:ortho 0 (env-width *env*) (env-height *env*) 0 -1 1)
   (gl:matrix-mode :modelview)
   (gl:load-identity)
-  (gl:clear-color 0.0 0.0 0.0 1.0))
+  (dotimes (i 2)
+    (gl:clear-color 0.0 0.0 0.0 1.0)
+    (gl:clear :color-buffer-bit)
+    (gl:clear :depth-buffer-bit)
+    (sdl2:gl-swap-window win)))
 
 (defun nsketch-next-frame-p ()
   (let ((new-ticks (sdl2:get-ticks))
@@ -81,8 +85,12 @@
       t)))
 
 (defun sketch (&key
+		 ;; Window
+		 (width 200)
+		 (height 200)
+		 (title "Sketch")
 		 ;; Drawing
-		 (setup (lambda () (size 200 200)))
+		 (setup (lambda () t))
 		 (draw (lambda () t))
 		 ;; Mouse
 		 (mouse-clicked (lambda () t))
@@ -97,7 +105,14 @@
 		 (key-typed (lambda () t))
 		 ;; Timing
 		 (framerate 60))
+
+  (setf (env-title *env*) title)
+  (setf (env-width *env*) width)
+  (setf (env-height *env*) height)
+  (setf (env-framerate *env*) framerate)
+  
   (funcall setup)
+  
   (sdl2:with-init (:everything)
     (sdl2:with-window (win :title (env-title *env*)
 			   :w (env-width *env*)
@@ -105,17 +120,19 @@
 			   :flags '(:shown :opengl))
       (sdl2:with-gl-context (gl-context win)
 	(sdl2:gl-make-current win gl-context)
-	(sketch-setup-opengl)
+	(sketch-setup-opengl win)
+	
 	(setf (env-ticks *env*) (sdl2:get-ticks))
 	(setf (env-framerate *env*) framerate)
 	(sdl2:with-event-loop (:method :poll)
 	  (:idle ()
 		 (when (nsketch-next-frame-p)
-		   (gl:clear :color-buffer)
+		   (gl:read-buffer :front)
+		   (gl:draw-buffer :back)
+		   (gl:copy-pixels 0 0 (env-width *env*) (env-height *env*) :color)
 		   (funcall draw)
 		   (gl:flush)
-		   (sdl2:gl-swap-window win)
-		   ))
+		   (sdl2:gl-swap-window win)))
 	  (:quit () t))))))
 
 ;;;  _   _ _____ ___ _     ____
@@ -245,7 +262,8 @@
 		     ((3 4) 4)
 		     ((6 8) 8)
 		     (t (error "~a is invalid hex color." string))))
-	     (groups (group-bits (parse-integer string :radix 16 :junk-allowed t) :bits bits)))
+	     (groups (group-bits (parse-integer string :radix 16 :junk-allowed t)
+				 :bits bits)))
 	(pad-list (mapcar (lambda (x) (/ x (if (= bits 4) 15 255))) groups)
 		  0
 		  (if (= 4 bits)
@@ -285,15 +303,16 @@
   stroke)
 
 (defmacro with-pen (pen &body body)
-  `(alexandria:with-gensyms (fill stroke)
-     `(progn
-	(setf ,fill (env-fill ,,*env*)
-	      ,stroke (env-stroke ,,*env*)
-	      (env-fill ,,*env*) (pen-fill ,,pen)
-	      (env-stroke ,,*env*) (pen-stroke ,,pen))
-	,,@body
-	(setf (env-fill ,,*env*) ,fill
-	      (env-stroke ,,*env*) ,stroke))))
+  (alexandria:once-only (pen)
+    `(alexandria:with-gensyms (fill stroke)
+       (progn
+	 (setf fill (env-fill *env*)
+	       stroke (env-stroke *env*)
+	       (env-fill *env*) (pen-fill ,pen)
+	       (env-stroke *env*) (pen-stroke ,pen))
+	 ,@body
+	 (setf (env-fill *env*) fill
+	       (env-stroke *env*) stroke)))))
 
 (defun fill-color (color)
   (setf (env-fill *env*) color))
@@ -308,8 +327,8 @@
   (setf (env-stroke *env*) nil))
 
 (defun background (color)
-  (with-pen (make-pen :fill color :stroke nil)
-    (rect 0 0 (env-width *env*) (env-height *env*) :mode :corners)))
+  (apply #'gl:clear-color (color-rgba color))
+  (gl:clear :color-buffer-bit))
 
 ;;;  ____  _   _    _    ____  _____ ____
 ;;; / ___|| | | |  / \  |  _ \| ____/ ___|
@@ -337,7 +356,7 @@
 (defun line (x1 y1 x2 y2)
   (when (env-stroke *env*)
     (apply #'gl:color (color-rgba (env-stroke *env*)))
-    (gl:with-primitive :line
+    (gl:with-primitive :lines
       (gl:vertex x1 y1)
       (gl:vertex x2 y2))))
 
@@ -358,10 +377,10 @@
     (:center (quad (- a (/ c 2)) (- b (/ d 2)) (+ a (/ c 2)) (- b (/ d 2))
 		   (- a (/ c 2)) (+ b (/ d 2)) (+ a (/ c 2)) (+ b (/ d 2))))
     (:radius (quad (- a c) (- b d) (+ a c) (- b d)
-		   (- a c) (+ b d) (+ a c) (+ b d)))))
+		   (+ a c) (+ b d) (- a c) (+ b d)))))
   
-(defun ngon (n a b c d &key (mode :corner) (style :pointy))
-  (let ((angle (if (eq style :pointy) -90 0)))
+(defun ngon (n a b c d &key (mode :corner) (pointy t))
+  (let ((angle (if pointy -90 0)))
     (with-fill-and-stroke :triangle-fan
       (case mode
 	(:corner       
@@ -375,29 +394,79 @@
     (gl:vertex x2 y2)
     (gl:vertex x3 y3)))
 
+;;;  _______  __    _    __  __ ____  _     _____ ____
+;;; | ____\ \/ /   / \  |  \/  |  _ \| |   | ____/ ___|
+;;; |  _|  \  /   / _ \ | |\/| | |_) | |   |  _| \___ \
+;;; | |___ /  \  / ___ \| |  | |  __/| |___| |___ ___) |
+;;; |_____/_/\_\/_/   \_\_|  |_|_|   |_____|_____|____/
 
-;;;  _______  __    _    __  __ ____  _     _____
-;;; | ____\ \/ /   / \  |  \/  |  _ \| |   | ____|
-;;; |  _|  \  /   / _ \ | |\/| | |_) | |   |  _|
-;;; | |___ /  \  / ___ \| |  | |  __/| |___| |___
-;;; |_____/_/\_\/_/   \_\_|  |_|_|   |_____|_____|
+
+(defparameter *width* 400)
+(defparameter *height* 400)
 
 (defparameter *sides* 1)
-(defparameter *pen* (make-pen :fill (rgb 1.0 0.0 1.0) :stroke (gray 1.0)))
+(defparameter *pen* (make-pen :fill (rgb 1.0 0.0 1.0)
+			      :stroke (gray 1.0)))
 
-(defun sketch-example-setup ()
-  (title "Sketch EXAMPLE")
-  (size 400 400)
-  (smooth))
+;;;;;;;;;;;;;
 
-(defun sketch-example-draw ()
+(defun sketch-example-setup-1 ()
+  (title "Sketch EXAMPLE 1")
+  (size *width* *height*))
+
+(defun sketch-example-draw-1 ()
   (setf *sides* (1+ (mod *sides* 20)))
   (background (gray 0.5))
   (with-pen *pen*
-    (ngon *sides* (/ (env-width *env*) 2) (/ (env-height *env*) 2)
-	  (/ (env-width *env*) 3) (/ (env-height *env*) 3))))
+    (ngon *sides*
+	  (/ *width* 2) (/ *height* 2)
+	  (/ *width* 4) (/ *height* (/ *sides* 2)))))
 
-(defun sketch-example ()
+(defun sketch-example-1 ()
   (sketch :setup #'sketch-example-setup
 	  :draw #'sketch-example-draw
+	  :framerate 20))
+
+;;;;;;;;;;;;;
+
+(defun sketch-example-setup-2 ()
+  (title "Sketch EXAMPLE 2")
+  (size *width* *height*))
+
+(defun sketch-example-draw-2 ()
+  (with-pen (make-pen :stroke (rgb (random 1.0) (random 1.0) (random 1.0))
+		      :fill (rgb (random 1.0) (random 1.0) (random 1.0)))
+    (case (random 3)
+      (0 (ellipse (random *width*) (random *height*) (random 50) (random 50)))
+      (1 (line (random *width*) (random *height*) (random *width*) (random *height*)))
+      (2 (rect (random *width*) (random *height*) (random 50) (random 50) :mode :radius)))))
+
+(defun sketch-example-2 ()
+  (sketch :setup #'sketch-example-setup-2
+	  :draw #'sketch-example-draw-2
 	  :framerate 2))
+
+;;;;;;;;;;;;;
+
+(defun sketch-example-draw-3 ()
+  (let ((title "Sketch EXAMPLE 3 (Processing.org example / sinewave)")
+	(width 640) (height 640)
+	(pen (make-pen :fill (gray 1.0)))
+	(xs 40)
+	(steps 0))
+    
+    (sketch :title title :width width :height height :framerate 60
+	    
+	    :draw
+	    (lambda ()
+	      (incf steps)
+	      (background (gray 0))
+	      (with-pen pen
+		(mapcar (lambda (x)
+			  (ellipse (* x (/ width xs))
+				   (+ (/ height 2)
+				      (* (/ height 4)
+					 (sin (* TWO_PI (/ (+ (/ steps 4) x) xs)))))
+				   (/ width xs 3)
+				   (/ width xs 3)))
+			(alexandria:iota xs)))))))
