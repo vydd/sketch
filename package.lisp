@@ -3,10 +3,8 @@
 (defpackage #:sketch
   (:use #:cl)
   (:export :sketch
-	   :size
-	   :title
-	   :smooth
-	   :no-smooth	   
+	   :setup
+	   :draw
 	   
 	   ; Math
 	   :clamp-1
@@ -53,6 +51,5 @@
 
 	   ; Examples
 	   :sketch-example-1
-	   :sketch-example-2
-	   :sketch-example-3))
+	   :sketch-example-2))
 
