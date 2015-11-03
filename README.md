@@ -16,7 +16,7 @@ Color is implemented as a struct, containing both RGB and HSB values, plus ALPHA
 
 There's also a `HEX-TO-COLOR` constructor, which builds colors from hex strings, like `"ff00ff"`, `"cdc"`, `"abcdef99"` or `"abcd"`.
 
-You can lerp two colors using "`LERP-COLOR`", and choose to do it either in RGB or HSB space.
+You can lerp two colors using `LERP-COLOR`, and choose to do it either in RGB or HSB space.
 
 ## How do I get colors on screen?
 
