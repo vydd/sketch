@@ -67,6 +67,7 @@ There are two generic methods you can implement, `SKETCH:SETUP` and `SKETCH:DRAW
 
 That's all. You can start this sketch with `(make-instance 'sketch-example-2)`.
 
+![Sketch example 2](http://idle.rs/~vydd/sketch/sketchexample2.png)
 This being lisp, you can change the code in `DRAW` while it executes and see results immediately.
 
 ## Outro
