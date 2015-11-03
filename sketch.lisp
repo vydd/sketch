@@ -17,123 +17,69 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;  _____ _   ___     _____ ____   ___  _   _ __  __ _____ _   _ _____
-;;; | ____| \ | \ \   / /_ _|  _ \ / _ \| \ | |  \/  | ____| \ | |_   _|
-;;; |  _| |  \| |\ \ / / | || |_) | | | |  \| | |\/| |  _| |  \| | | |
-;;; | |___| |\  | \ V /  | ||  _ <| |_| | |\  | |  | | |___| |\  | | |
-;;; |_____|_| \_|  \_/  |___|_| \_\\___/|_| \_|_|  |_|_____|_| \_| |_|
-
 (defstruct env
-  ;; Timing
-  (started nil)
-  (ticks 0)
-  (framerate 60)
-  ;; Window
-  (width 200)
-  (height 200)
-  (title "Sketch")
-  ;; Rendering
-  (smooth t)
-  ;; Color
-  (stroke nil)
-  (fill nil))
+  (fill nil)
+  (stroke nil))
+
+
+;;; Temporary, until done automatically by sdl2kit
+(kit.sdl2:start)
+;;;
+
 
 (defparameter *env* (make-env))
 
-(defun size (width height)
-  (setf (env-width *env*) width
-	(env-height *env*) height))
+(defclass sketch (kit.sdl2:gl-window)
+  ((start-time :initform (get-internal-real-time))
+   (one-frame-time :initform (get-internal-real-time))
+   (frames :initform 0)
+   (framerate :initform 60)
+   (title :initform "Sketch")
+   (width :initform 200)
+   (height :initform 200)
+   (stroke :initform nil)
+   (fill :initform nil)))
 
-(defun title (str)
-  (setf (env-title *env*) str))
+(defun framelimit (window &optional (fps 60))
+  (with-slots (one-frame-time) window
+    (let ((elapsed-time (- (get-internal-real-time) one-frame-time))
+          (time-per-frame (/ 1000.0 fps)))
+      (when (< elapsed-time time-per-frame)
+        (sdl2:delay (floor (- time-per-frame elapsed-time))))
+      (setf one-frame-time (get-internal-real-time)))))
 
-(defun smooth ()
-  (setf (env-smooth *env*) t))
+(defmethod kit.sdl2:render ((s sketch))  
+  (gl:clear :color-buffer)
+  (draw s)
+  (framelimit s (slot-value s 'framerate)))
 
-(defun no-smooth ()
-  (setf (env-smooth *env*) nil))
+(defun sketch-refresh-window (sketch)
+  (let ((sdl-win (kit.sdl2:sdl-window sketch)))
+    (with-slots (title width height framerate) sketch
+      (sdl2:set-window-title sdl-win title)
+      (sdl2:set-window-size sdl-win width height))))
 
-;;;  ____  _____ _____ _   _ ____
-;;; / ___|| ____|_   _| | | |  _ \
-;;; \___ \|  _|   | | | | | | |_) |
-;;;  ___) | |___  | | | |_| |  __/
-;;; |____/|_____| |_|  \___/|_|
+(defmethod initialize-instance :after ((w sketch) &key &allow-other-keys)
+  (sketch-refresh-window w)
+  (setf (kit.sdl2:idle-render w) t)
+  (with-slots (width height) w
+    (gl:viewport 0 0 width height)
+    (gl:matrix-mode :projection)
+    (gl:ortho 0 width height 0 -1 1)
+    (gl:matrix-mode :modelview)
+    (gl:load-identity))
+  (gl:clear-color 0.0 0.0 0.0 1.0)
+  (gl:clear :color-buffer-bit)
+  (gl:clear :depth-buffer-bit))
 
-(defun sketch-setup-opengl (win)
-  (if (env-smooth *env*)
-      (gl:enable :line-smooth)
-      (gl:enable :polygon-smooth))
-  (gl:viewport 0 0 (env-width *env*) (env-height *env*))
-  (gl:matrix-mode :projection)
-  (gl:ortho 0 (env-width *env*) (env-height *env*) 0 -1 1)
-  (gl:matrix-mode :modelview)
-  (gl:load-identity)
-  (dotimes (i 2)
-    (gl:clear-color 0.0 0.0 0.0 1.0)
-    (gl:clear :color-buffer-bit)
-    (gl:clear :depth-buffer-bit)
-    (sdl2:gl-swap-window win)))
+(defgeneric setup (sketch)
+  (:documentation "Called before creating the sketch window.")
+  (:method ((s sketch)) ()))
 
-(defun nsketch-next-frame-p ()
-  (let ((new-ticks (sdl2:get-ticks))
-	(old-ticks (env-ticks *env*)))    
-    (when (or (not (env-started *env*))
-	      (< new-ticks old-ticks)
-	      (>= new-ticks (+ old-ticks (/ 1000 (env-framerate *env*)))))
-      (setf (env-started *env*) t)
-      (setf (env-ticks *env*) new-ticks)
-      t)))
-
-(defun sketch (&key
-		 ;; Window
-		 (width 200)
-		 (height 200)
-		 (title "Sketch")
-		 ;; Drawing
-		 (setup (lambda () t))
-		 (draw (lambda () t))
-		 ;; Mouse
-		 (mouse-clicked (lambda () t))
-		 (mouse-dragged (lambda () t))
-		 (mouse-moved (lambda () t))
-		 (mouse-pressed (lambda () t))
-		 (mouse-released (lambda () t))
-		 (mouse-wheel (lambda () t))
-		 ;; Keyboard
-		 (key-pressed (lambda () t))
-		 (key-released (lambda () t))
-		 (key-typed (lambda () t))
-		 ;; Timing
-		 (framerate 60))
-
-  (setf (env-title *env*) title)
-  (setf (env-width *env*) width)
-  (setf (env-height *env*) height)
-  (setf (env-framerate *env*) framerate)
-  
-  (funcall setup)
-  
-  (sdl2:with-init (:everything)
-    (sdl2:with-window (win :title (env-title *env*)
-			   :w (env-width *env*)
-			   :h (env-height *env*)
-			   :flags '(:shown :opengl))
-      (sdl2:with-gl-context (gl-context win)
-	(sdl2:gl-make-current win gl-context)
-	(sketch-setup-opengl win)
-	
-	(setf (env-ticks *env*) (sdl2:get-ticks))
-	(setf (env-framerate *env*) framerate)
-	(sdl2:with-event-loop (:method :poll)
-	  (:idle ()
-		 (when (nsketch-next-frame-p)
-		   (gl:read-buffer :front)
-		   (gl:draw-buffer :back)
-		   (gl:copy-pixels 0 0 (env-width *env*) (env-height *env*) :color)
-		   (funcall draw)
-		   (gl:flush)
-		   (sdl2:gl-swap-window win)))
-	  (:quit () t))))))
+(defgeneric draw (sketch)
+  (:documentation "Called repeatedly after creating the sketch window,
+used for drawing.")
+  (:method ((s sketch)) ()))
 
 ;;;  _   _ _____ ___ _     ____
 ;;; | | | |_   _|_ _| |   / ___|
@@ -379,14 +325,13 @@
     (:radius (quad (- a c) (- b d) (+ a c) (- b d)
 		   (+ a c) (+ b d) (- a c) (+ b d)))))
   
-(defun ngon (n a b c d &key (mode :corner) (pointy t))
-  (let ((angle (if pointy -90 0)))
-    (with-fill-and-stroke :triangle-fan
-      (case mode
-	(:corner       
-	 (dotimes (phi n)
-	   (gl:vertex (+ a (* c (cos (radians (+ angle (* (/ 360 n) phi))))))
-		      (+ b (* d (sin (radians (+ angle (* (/ 360 n) phi)))))))))))))
+(defun ngon (n a b c d &key (mode :corner) (angle 0))
+  (with-fill-and-stroke :triangle-fan
+    (case mode
+      (:corner       
+       (dotimes (phi n)
+	 (gl:vertex (+ a (* c (cos (radians (+ angle (* (/ 360 n) phi))))))
+		    (+ b (* d (sin (radians (+ angle (* (/ 360 n) phi))))))))))))
 
 (defun triangle (x1 y1 x2 y2 x3 y3)
   (with-fill-and-stroke :triangles
@@ -400,73 +345,40 @@
 ;;; | |___ /  \  / ___ \| |  | |  __/| |___| |___ ___) |
 ;;; |_____/_/\_\/_/   \_\_|  |_|_|   |_____|_____|____/
 
+(defclass sketch-example-1 (sketch)
+  ((title :initform "Sketch example - 1")
+   (width :initform 200)
+   (height :initform 200)
+   (framerate :initform 60)))
 
-(defparameter *width* 400)
-(defparameter *height* 400)
+(defmethod draw ((s sketch-example-1))
+  (background (gray 1.0))
+  (with-pen (make-pen :fill (rgb 1.0 0.0 0.0) :stroke (rgb 0.0 0.0 1.0))
+    (line 0 0 200 200)
+    (ngon 6 100 100 50 50 :angle 0)))
 
-(defparameter *sides* 1)
-(defparameter *pen* (make-pen :fill (rgb 1.0 0.0 1.0)
-			      :stroke (gray 1.0)))
+;;;;;;
 
-;;;;;;;;;;;;;
+(defclass sketch-example-2 (sketch)
+  ((title :initform "Sketch example - 2")
+   (width :initform 400)
+   (height :initform 400)
+   (framerate :initform 60)
+   (steps :initform 0)
+   (xs :initform 40)
+   (pen :initform (make-pen :fill (gray 1.0)))))
 
-(defun sketch-example-setup-1 ()
-  (title "Sketch EXAMPLE 1")
-  (size *width* *height*))
+(defmethod draw ((s sketch-example-2))
+  (with-slots (steps xs pen width height) s
+    (incf steps)
+    (background (gray 0.2))
+    (with-pen pen
+      (mapcar (lambda (x)
+		(ellipse (* x (/ width xs))
+			 (+ (/ height 2)
+			    (* (/ height 4)
+			       (sin (* TWO_PI (/ (+ (/ steps 4) x) xs)))))
+			 (/ width xs 3)
+			 (/ width xs 3)))
+	      (alexandria:iota xs)))))
 
-(defun sketch-example-draw-1 ()
-  (setf *sides* (1+ (mod *sides* 20)))
-  (background (gray 0.5))
-  (with-pen *pen*
-    (ngon *sides*
-	  (/ *width* 2) (/ *height* 2)
-	  (/ *width* 4) (/ *height* (/ *sides* 2)))))
-
-(defun sketch-example-1 ()
-  (sketch :setup #'sketch-example-setup
-	  :draw #'sketch-example-draw
-	  :framerate 20))
-
-;;;;;;;;;;;;;
-
-(defun sketch-example-setup-2 ()
-  (title "Sketch EXAMPLE 2")
-  (size *width* *height*))
-
-(defun sketch-example-draw-2 ()
-  (with-pen (make-pen :stroke (rgb (random 1.0) (random 1.0) (random 1.0))
-		      :fill (rgb (random 1.0) (random 1.0) (random 1.0)))
-    (case (random 3)
-      (0 (ellipse (random *width*) (random *height*) (random 50) (random 50)))
-      (1 (line (random *width*) (random *height*) (random *width*) (random *height*)))
-      (2 (rect (random *width*) (random *height*) (random 50) (random 50) :mode :radius)))))
-
-(defun sketch-example-2 ()
-  (sketch :setup #'sketch-example-setup-2
-	  :draw #'sketch-example-draw-2
-	  :framerate 2))
-
-;;;;;;;;;;;;;
-
-(defun sketch-example-3 ()
-  (let ((title "Sketch EXAMPLE 3 (Processing.org example / sinewave)")
-	(width 640) (height 640)
-	(pen (make-pen :fill (gray 1.0)))
-	(xs 40)
-	(steps 0))
-    
-    (sketch :title title :width width :height height :framerate 60
-	    
-	    :draw
-	    (lambda ()
-	      (incf steps)
-	      (background (gray 0))
-	      (with-pen pen
-		(mapcar (lambda (x)
-			  (ellipse (* x (/ width xs))
-				   (+ (/ height 2)
-				      (* (/ height 4)
-					 (sin (* TWO_PI (/ (+ (/ steps 4) x) xs)))))
-				   (/ width xs 3)
-				   (/ width xs 3)))
-			(alexandria:iota xs)))))))

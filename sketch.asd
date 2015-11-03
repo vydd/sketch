@@ -5,7 +5,8 @@
   :author "Danilo Vidovic (vydd)"
   :license "MIT"
   :depends-on (#:alexandria
-	       #:sdl2)
+	       #:sdl2
+	       #:sdl2kit)
   :serial t
   :components ((:file "package")
                (:file "sketch")))
