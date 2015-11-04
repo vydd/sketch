@@ -21,37 +21,42 @@
   (fill nil)
   (stroke nil))
 
-
 ;;; Temporary, until done automatically by sdl2kit
 (kit.sdl2:start)
 ;;;
 
-
 (defparameter *env* (make-env))
 
 (defclass sketch (kit.sdl2:gl-window)
-  ((start-time :initform (get-internal-real-time))
-   (one-frame-time :initform (get-internal-real-time))
-   (frames :initform 0)
-   (framerate :initform 60)
+  (; Timekeeping
+   (start-time :initform (get-internal-real-time))
+   (last-frame-time :initform (get-internal-real-time))
+   (restart-sketch :initform t)
+   ; Window parameters
    (title :initform "Sketch")
+   (framerate :initform 60)
    (width :initform 200)
-   (height :initform 200)
-   (stroke :initform nil)
-   (fill :initform nil)))
+   (height :initform 200)))
 
 (defun framelimit (window &optional (fps 60))
-  (with-slots (one-frame-time) window
-    (let ((elapsed-time (- (get-internal-real-time) one-frame-time))
-          (time-per-frame (/ 1000.0 fps)))
+  (with-slots (last-frame-time) window
+    (let ((elapsed-time (- (get-internal-real-time) last-frame-time))
+	  (time-per-frame (/ internal-time-units-per-second fps)))
       (when (< elapsed-time time-per-frame)
-        (sdl2:delay (floor (- time-per-frame elapsed-time))))
-      (setf one-frame-time (get-internal-real-time)))))
+	(sdl2:delay (floor (* 1000 (/ (- time-per-frame elapsed-time)
+				      internal-time-units-per-second)))))
+      (setf last-frame-time (get-internal-real-time)))))
 
-(defmethod kit.sdl2:render ((s sketch))  
-  (gl:clear :color-buffer)
-  (draw s)
-  (framelimit s (slot-value s 'framerate)))
+(defmethod kit.sdl2:render ((s sketch))
+  (with-slots (width height framerate restart-sketch) s
+    (gl:read-buffer :front)
+    (gl:draw-buffer :back)
+    (gl:copy-pixels 0 0 width height :color)
+    (when restart-sketch
+      (setup s)
+      (setf restart-sketch nil))
+    (draw s)
+    (framelimit s framerate)))
 
 (defun sketch-refresh-window (sketch)
   (let ((sdl-win (kit.sdl2:sdl-window sketch)))
@@ -68,6 +73,8 @@
     (gl:ortho 0 width height 0 -1 1)
     (gl:matrix-mode :modelview)
     (gl:load-identity))
+  (gl:enable :line-smooth)
+  (gl:hint :line-smooth-hint :nicest)
   (gl:clear-color 0.0 0.0 0.0 1.0)
   (gl:clear :color-buffer-bit)
   (gl:clear :depth-buffer-bit))
@@ -80,6 +87,23 @@
   (:documentation "Called repeatedly after creating the sketch window,
 used for drawing.")
   (:method ((s sketch)) ()))
+
+
+
+#|
+(defmacro defsketch (name &optional (args ()) &body draw-body)
+  `(alexandria:with-gensyms (window env-stroke env-fill)
+     (progn
+       (defclass ,name (sketch)
+	 ,(append '((env-stroke nil) (env-fill nil))
+		  (loop for arg in args
+		     collecting (list (car arg) :initform (cadr arg)))))
+       (defmethod draw ((window ,name))
+	 (with-slots (title width height env-stroke env-fill) window
+	   ,@draw-body)))))
+|#
+
+
 
 ;;;  _   _ _____ ___ _     ____
 ;;; | | | |_   _|_ _| |   / ___|
@@ -115,8 +139,7 @@ used for drawing.")
   (let ((low (min low high))
 	(high (max low high))
 	(min-out-low (min out-low out-high))
-	(min-out-high (max out-low out-high))
-	)
+	(min-out-high (max out-low out-high)))
     (let ((norm (+ out-low
 		   (* (- out-high out-low)
 		      (/ (- x low) (- high low))))))
@@ -238,6 +261,9 @@ used for drawing.")
 	  (apply #'hsb (mapcar #'norm '(hue saturation brightness alpha)))
 	  (apply #'rgb (mapcar #'norm '(red green blue alpha)))))))
 
+(defun random-color ()
+  (rgb (random 1.0) (random 1.0) (random 1.0)))
+
 ;;;  ____  _____ _   _
 ;;; |  _ \| ____| \ | |
 ;;; | |_) |  _| |  \| |
@@ -306,9 +332,10 @@ used for drawing.")
       (gl:vertex x1 y1)
       (gl:vertex x2 y2))))
 
-(defun point (x y &optional (z 0))
+(defun point (x y)
+  (apply #'gl:color (color-rgba (env-stroke *env*)))
   (gl:with-primitive :points
-    (gl:vertex x y z)))
+    (gl:vertex x y 0.0)))
 
 (defun quad (x1 y1 x2 y2 x3 y3 x4 y4)
   (with-fill-and-stroke :quads
@@ -339,46 +366,27 @@ used for drawing.")
     (gl:vertex x2 y2)
     (gl:vertex x3 y3)))
 
-;;;  _______  __    _    __  __ ____  _     _____ ____
-;;; | ____\ \/ /   / \  |  \/  |  _ \| |   | ____/ ___|
-;;; |  _|  \  /   / _ \ | |\/| | |_) | |   |  _| \___ \
-;;; | |___ /  \  / ___ \| |  | |  __/| |___| |___ ___) |
-;;; |_____/_/\_\/_/   \_\_|  |_|_|   |_____|_____|____/
+;;; Curves
 
-(defclass sketch-example-1 (sketch)
-  ((title :initform "Sketch example - 1")
-   (width :initform 200)
-   (height :initform 200)
-   (framerate :initform 60)))
 
-(defmethod draw ((s sketch-example-1))
-  (background (gray 1.0))
-  (with-pen (make-pen :fill (rgb 1.0 0.0 0.0) :stroke (rgb 0.0 0.0 1.0))
-    (line 0 0 200 200)
-    (ngon 6 100 100 50 50 :angle 0)))
+;;;  _____ ____      _    _   _ ____  _____ ___  ____  __  __ ____
+;;; |_   _|  _ \    / \  | \ | / ___||  ___/ _ \|  _ \|  \/  / ___|
+;;;   | | | |_) |  / _ \ |  \| \___ \| |_ | | | | |_) | |\/| \___ \
+;;;   | | |  _ <  / ___ \| |\  |___) |  _|| |_| |  _ <| |  | |___) |
+;;;   |_| |_| \_\/_/   \_\_| \_|____/|_|   \___/|_| \_\_|  |_|____/
 
-;;;;;;
+(defun translate (x y)
+  (gl:translate x y 0.0))
 
-(defclass sketch-example-2 (sketch)
-  ((title :initform "Sketch example - 2")
-   (width :initform 400)
-   (height :initform 400)
-   (framerate :initform 60)
-   (steps :initform 0)
-   (xs :initform 40)
-   (pen :initform (make-pen :fill (gray 1.0)))))
+(defun rotate (angle)
+  (gl:rotate angle 0.0 0.0 1.0))
 
-(defmethod draw ((s sketch-example-2))
-  (with-slots (steps xs pen width height) s
-    (incf steps)
-    (background (gray 0.2))
-    (with-pen pen
-      (mapcar (lambda (x)
-		(ellipse (* x (/ width xs))
-			 (+ (/ height 2)
-			    (* (/ height 4)
-			       (sin (* TWO_PI (/ (+ (/ steps 4) x) xs)))))
-			 (/ width xs 3)
-			 (/ width xs 3)))
-	      (alexandria:iota xs)))))
+(defun scale (sx sy)
+  (gl:scale sx sy 1.0))
 
+(defmacro with-identity-matrix (&body body)
+  `(progn
+     (gl:push-matrix)
+     (gl:load-identity)
+     ,@body
+     (gl:pop-matrix)))

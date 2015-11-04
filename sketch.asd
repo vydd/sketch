@@ -7,7 +7,14 @@
   :depends-on (#:alexandria
 	       #:sdl2
 	       #:sdl2kit)
+  :pathname "src"
   :serial t
-  :components ((:file "package")
+  :components ((:file "package")	       
+	       (:file "color")
+	       (:file "pen")
+	       (:file "utils")
+	       (:file "math")
+	       (:file "shapes")
+	       (:file "transforms")	       
                (:file "sketch")))
 

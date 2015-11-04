@@ -2,13 +2,35 @@
 
 (defpackage #:sketch
   (:use #:cl)
+  (:import-from :kit.sdl2
+		:mousebutton-event
+		:mousemotion-event
+		:mousewheel-event
+		:textinput-event
+		:keyboard-event
+		:other-event
+		:close-window)
   (:export :sketch
 	   :setup
 	   :draw
+
+	   :defsketch
+	   ;:sketch-refresh-window
+
+	   ::width
+	   ::height
+	   ::framerate
+	   ::title
 	   
 	   ; Math
 	   :clamp-1
 	   :normalize
+	   
+	   :+two-pi+
+	   :+tau+
+	   :+half-pi+
+	   :+quarter-pi+
+	   
 	   :radians
 	   :degrees
 
@@ -34,13 +56,16 @@
 	   :color-rgba
 	   :color-hsba
 	   :lerp-color
+	   :random-color
 
 	   ; Pen
 	   :pen
+	   :make-pen
 	   :with-pen
 	   :background
 
-      	   ; Shapes
+	   ; Shapes
+	   :arc
 	   :ellipse
 	   :line
 	   :point
@@ -49,7 +74,9 @@
 	   :ngon
 	   :triangle
 
-	   ; Examples
-	   :sketch-example-1
-	   :sketch-example-2))
+	   ; Transforms
+	   :translate
+	   :rotate
+	   :scale
+	   :with-identity-matrix))
 
