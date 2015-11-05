@@ -5,6 +5,7 @@
   :author "Danilo Vidovic (vydd)"
   :license "MIT"
   :depends-on (#:alexandria
+	       #:closer-mop
 	       #:sdl2
 	       #:sdl2kit)
   :pathname "src"

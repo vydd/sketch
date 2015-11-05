@@ -69,6 +69,7 @@
 
 (defmethod initialize-instance :after ((w sketch) &key &allow-other-keys)
   (setf (kit.sdl2:idle-render w) t)
+  (sdl2:gl-set-swap-interval 1)
   (with-slots (width height) w
     (gl:viewport 0 0 width height)
     (gl:matrix-mode :projection)
@@ -91,17 +92,18 @@ used for drawing.")
   (:method ((s sketch)) ()))
 
 (defmacro defsketch (name window-options slot-initform &body draw-body)
-  `(alexandria:with-gensyms (window s-title s-width s-height s-framerate)
+  `(alexandria:with-gensyms (s-title s-width s-height s-framerate)
      (progn
        (setf s-title (getf ',window-options :title "Sketch")
 	     s-width (getf ',window-options :width 200)
 	     s-height (getf ',window-options :height 200)
 	     s-framerate (getf ',window-options :framerate 60))      
        (defclass ,name (sketch)
-	 ,(append '((title :initform s-title)
+	 ,(append `((title :initform s-title)
 		    (width :initform s-width)
 		    (height :initform s-height)
-		    (framerate :initform s-framerate))
+		    (framerate :initform s-framerate)
+		    (%%sketch-slots :initform (mapcar #'car ',slot-initform)))
 		  (loop for arg in slot-initform
 		     collecting (list (car arg) :initform (cadr arg)))))
        (defmethod draw ((window ,name))
@@ -112,3 +114,37 @@ used for drawing.")
 		  (let ((sdl-win (kit.sdl2:sdl-window window)))
 		    (sdl2:set-window-title sdl-win s-title)
 		    (sdl2:set-window-size sdl-win s-width s-height))))))
+
+(defmacro define-sketch-setup (name &body setup-body)
+  `(defmethod setup ((window ,name))
+     (with-slots ,(mapcar #'closer-mop:slot-definition-name
+			  (closer-mop:compute-slots
+			   (find-class name))) window
+       ,@setup-body)))
+
+#|
+
+Not sure what to do with these yet.
+
+(defmethod textinput-event :after ((window test-window) ts text)
+)
+
+(defmethod keyboard-event :after ((window test-window) state ts repeat-p keysym)
+)
+
+(defmethod mousewheel-event ((window simple-window) ts x y)
+)
+
+(defmethod textinput-event ((window simple-window) ts text)
+)
+
+(defmethod keyboard-event ((window simple-window) state ts repeat-p keysym)
+)
+
+(defmethod mousebutton-event ((window simple-window) state ts b x y)
+)
+
+(defmethod mousemotion-event ((window simple-window) ts mask x y xr yr)
+)
+
+|#

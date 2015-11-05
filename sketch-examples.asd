@@ -12,5 +12,4 @@
   :serial t
   :components ((:file "package")
 	       (:file "sinewave")
-	       (:file "brownian")
-	       (:file "turtle")))
+	       (:file "brownian")))
