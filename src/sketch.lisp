@@ -39,6 +39,10 @@
    (height :initform 200)))
 
 (defun framelimit (window &optional (fps 60))
+  "Limits the framerate by using sdl2:delay. Technically, it is not
+the correct way to do things, but it will have to do for now."
+  ;; Adapted from k-stz's code found in sdl2kit cube example. Used
+  ;; with permission.
   (with-slots (last-frame-time) window
     (let ((elapsed-time (- (get-internal-real-time) last-frame-time))
 	  (time-per-frame (/ internal-time-units-per-second fps)))
@@ -49,9 +53,15 @@
 
 (defmethod kit.sdl2:render ((s sketch))
   (with-slots (width height framerate restart-sketch) s
+    ;; By default, previous frame stays on the screen and all drawing
+    ;; is done incrementally, because it's easier to ask the user to
+    ;; (background (gray 0)) the screen for each pass, than to ask him
+    ;; to do buffer copying himself.
     (gl:read-buffer :front)
     (gl:draw-buffer :back)
     (gl:copy-pixels 0 0 width height :color)
+    ;; TODO: Both handler-cases should be enriched at some point.
+    ;; Right now, the only purpose is to prevent SDL from crashing.
     (when restart-sketch
       (handler-case
 	  (setup s)
@@ -105,15 +115,30 @@ used for drawing.")
 ;;; Macros
 
 (eval-when (:compile-toplevel :load-toplevel)
+  ;; We cannot do (defparameter *sketch-slot-hash-table* (make-hash-table))
+  ;; because the compiler must not evaluate the initial-value form nor
+  ;; assign the dynmic variable at compile time (as per clhs).
   (defvar *sketch-slot-hash-table*)
   (setf *sketch-slot-hash-table* (make-hash-table)))
 
 (defmacro defsketch (sketch-name window-options slot-bindings &body body)
+  "Defines a class, inheriting from SKETCH:SKETCH. It is used for convenience
+because it provides a compact syntax for declaring window options, let-like
+init-form for providing slots and inline draw body. It also takes care about
+communicating new title, sketch and height values to SDL backend. Additionaly,
+defining a class using defsketch enables selected Sketch methods, like DRAW and
+SETUP to automatically wrap their bodies inside WITH-SLOTS, using all slot names."
   (let* ((sketch-title (getf window-options :title "Sketch"))
 	 (sketch-width (getf window-options :width 200))
 	 (sketch-height (getf window-options :height 200))
 	 (sketch-framerate (getf window-options :framerate :auto))
-	 
+	 ;; We need to append SKETCH-TITLE, SKETCH-WIDTH, SKETCH-HEIGHT
+	 ;; and SKETCH-FRAMERATE from WINDOW-OPTIONS to SLOT-BINDINGS.
+	 ;; If SLOT-BINDINGS already contains any of these, we're going
+	 ;; to replace them - declaring title, width, height or framerate
+	 ;; along with other slots is technically illegal in Sketch, but
+	 ;; currently, we're just going to use the values provided inside
+	 ;; WINDOW-OPTIONS, or fallback to defaults silently.
 	 (slot-bindings
 	  (append (remove-if
 		   #'(lambda (x)
@@ -123,14 +148,15 @@ used for drawing.")
 		  `((title ,sketch-title)
 		    (width ,sketch-width)
 		    (height ,sketch-height)
-		    (framerate ,sketch-framerate))))
-	 
-	 (slots (mapcar #'car slot-bindings))
-	 
+		    (framerate ,sketch-framerate))))	 
+	 (slots (mapcar #'car slot-bindings))	 
 	 (initforms (mapcar #'(lambda (binding)
 			       `(,(car binding) :initform ,(cadr binding)))
 			    slot-bindings)))
-    
+    ;; We are going to need slot names available during macroexpansion, so that
+    ;; our enhanced methods can know what slots should be provided to WITH-SLOTS.
+    ;; This is accomplished by saving slot names provided via SLOT-BINDINGS and
+    ;; WINDOW-OPTIONS into *SKETCH-SLOT-HASH-TABLE*.
     (setf (gethash sketch-name *sketch-slot-hash-table*) slots)
 
     `(progn
@@ -147,6 +173,7 @@ used for drawing.")
 		    (sdl2:set-window-size sdl-win ,sketch-width ,sketch-height))))))
 
 (defmacro define-sketch-setup (sketch-name &body body)
+  "Defines a sketch SETUP method. Body is wrapped with WITH-SLOTS for all slots defined. "
   `(defmethod setup ((window ,sketch-name))
      (with-slots ,(gethash sketch-name *sketch-slot-hash-table*) window
        ,@body)))
