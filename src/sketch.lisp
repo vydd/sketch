@@ -114,12 +114,7 @@ used for drawing.")
 
 ;;; Macros
 
-(eval-when (:compile-toplevel :load-toplevel)
-  ;; We cannot do (defparameter *sketch-slot-hash-table* (make-hash-table))
-  ;; because the compiler must not evaluate the initial-value form nor
-  ;; assign the dynmic variable at compile time (as per clhs).
-  (defvar *sketch-slot-hash-table*)
-  (setf *sketch-slot-hash-table* (make-hash-table)))
+(defparameter *sketch-slot-hash-table* (make-hash-table))
 
 (defmacro defsketch (sketch-name window-options slot-bindings &body body)
   "Defines a class, inheriting from SKETCH:SKETCH. It is used for convenience
