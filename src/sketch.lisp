@@ -28,13 +28,13 @@
 (defparameter *env* (make-env))
 
 (defclass sketch (kit.sdl2:gl-window)
-  (; Timekeeping
+  (;; Timekeeping
    (start-time :initform (get-internal-real-time))
    (last-frame-time :initform (get-internal-real-time))
    (restart-sketch :initform t)
-   ; Window parameters
+   ;; Window parameters
    (title :initform "Sketch")
-   (framerate :initform 60)
+   (framerate :initform :auto)
    (width :initform 200)
    (height :initform 200)))
 
@@ -53,10 +53,21 @@
     (gl:draw-buffer :back)
     (gl:copy-pixels 0 0 width height :color)
     (when restart-sketch
-      (setup s)
+      (handler-case
+	  (setup s)
+	(error () (progn
+		    (gl:clear-color 1.0 1.0 0.0 1.0)
+		    (gl:clear :color-buffer-bit))))
       (setf restart-sketch nil))
-    (draw s)
-    (framelimit s framerate)))
+
+    (handler-case
+    	(draw s)
+      (error () (progn
+    		  (gl:clear-color 1.0 0.0 0.0 1.0)
+    		  (gl:clear :color-buffer-bit))))
+    
+    (when (not (equal framerate :auto))
+      (framelimit s framerate))))
 ;;
 ;; DEFSKETCH does this already. Will be added back when 
 ;; title/width/height/frame become reactive.
@@ -91,60 +102,80 @@
 used for drawing.")
   (:method ((s sketch)) ()))
 
-(defmacro defsketch (name window-options slot-initform &body draw-body)
-  `(alexandria:with-gensyms (s-title s-width s-height s-framerate)
-     (progn
-       (setf s-title (getf ',window-options :title "Sketch")
-	     s-width (getf ',window-options :width 200)
-	     s-height (getf ',window-options :height 200)
-	     s-framerate (getf ',window-options :framerate 60))      
-       (defclass ,name (sketch)
-	 ,(append `((title :initform s-title)
-		    (width :initform s-width)
-		    (height :initform s-height)
-		    (framerate :initform s-framerate)
-		    (%%sketch-slots :initform (mapcar #'car ',slot-initform)))
-		  (loop for arg in slot-initform
-		     collecting (list (car arg) :initform (cadr arg)))))
-       (defmethod draw ((window ,name))
-	 (with-slots ,(append '(width height title framerate)
-			      (mapcar #'car slot-initform)) window
-	   ,@draw-body))
-       (defmethod initialize-instance :after ((window ,name) &key &allow-other-keys)
+;;; Macros
+
+(eval-when (:compile-toplevel :load-toplevel)
+  (defvar *sketch-slot-hash-table*)
+  (setf *sketch-slot-hash-table* (make-hash-table)))
+
+(defmacro defsketch (sketch-name window-options slot-bindings &body body)
+  (let* ((sketch-title (getf window-options :title "Sketch"))
+	 (sketch-width (getf window-options :width 200))
+	 (sketch-height (getf window-options :height 200))
+	 (sketch-framerate (getf window-options :framerate :auto))
+	 
+	 (slot-bindings
+	  (append (remove-if
+		   #'(lambda (x)
+		       (member (car x)
+			       '(title width height framerate)))
+		   slot-bindings)
+		  `((title ,sketch-title)
+		    (width ,sketch-width)
+		    (height ,sketch-height)
+		    (framerate ,sketch-framerate))))
+	 
+	 (slots (mapcar #'car slot-bindings))
+	 
+	 (initforms (mapcar #'(lambda (binding)
+			       `(,(car binding) :initform ,(cadr binding)))
+			    slot-bindings)))
+    
+    (setf (gethash sketch-name *sketch-slot-hash-table*) slots)
+
+    `(progn
+       (defclass ,sketch-name (sketch)
+	 ,initforms)
+       
+       (defmethod draw ((window ,sketch-name))
+	  (with-slots ,(gethash sketch-name *sketch-slot-hash-table*) window
+	    ,@body))
+
+       (defmethod initialize-instance :after ((window ,sketch-name) &key &allow-other-keys)
 		  (let ((sdl-win (kit.sdl2:sdl-window window)))
-		    (sdl2:set-window-title sdl-win s-title)
-		    (sdl2:set-window-size sdl-win s-width s-height))))))
+		    (sdl2:set-window-title sdl-win ,sketch-title)
+		    (sdl2:set-window-size sdl-win ,sketch-width ,sketch-height))))))
 
-(defmacro define-sketch-setup (name &body setup-body)
-  `(defmethod setup ((window ,name))
-     (with-slots ,(mapcar #'closer-mop:slot-definition-name
-			  (closer-mop:compute-slots
-			   (find-class name))) window
-       ,@setup-body)))
+(defmacro define-sketch-setup (sketch-name &body body)
+  `(defmethod setup ((window ,sketch-name))
+     (with-slots ,(gethash sketch-name *sketch-slot-hash-table*) window
+       ,@body)))
 
-#|
 
-Not sure what to do with these yet.
 
-(defmethod textinput-event :after ((window test-window) ts text)
-)
+  #|
 
-(defmethod keyboard-event :after ((window test-window) state ts repeat-p keysym)
-)
+  Not sure what to do with these yet.
 
-(defmethod mousewheel-event ((window simple-window) ts x y)
-)
+  (defmethod textinput-event :after ((window test-window) ts text)
+  )
 
-(defmethod textinput-event ((window simple-window) ts text)
-)
+  (defmethod keyboard-event :after ((window test-window) state ts repeat-p keysym)
+  )
 
-(defmethod keyboard-event ((window simple-window) state ts repeat-p keysym)
-)
+  (defmethod mousewheel-event ((window simple-window) ts x y)
+  )
 
-(defmethod mousebutton-event ((window simple-window) state ts b x y)
-)
+  (defmethod textinput-event ((window simple-window) ts text)
+  )
 
-(defmethod mousemotion-event ((window simple-window) ts mask x y xr yr)
-)
+  (defmethod keyboard-event ((window simple-window) state ts repeat-p keysym)
+  )
 
-|#
+  (defmethod mousebutton-event ((window simple-window) state ts b x y)
+  )
+
+  (defmethod mousemotion-event ((window simple-window) ts mask x y xr yr)
+  )
+
+  |#

@@ -9,7 +9,7 @@
 ;;; |____/___|_| \_|_____|  \_/\_/_/   \_\_/  |_____|
 
 (defsketch sinewave
-    (:title "Sinewave" :width 400 :height 400 :framerate 60)  
+    (:title "Sinewave" :width 400 :height 400)  
     ((steps 0)
      (xs 40)
      (pen (make-pen :fill (gray 1.0))))  
@@ -21,3 +21,4 @@
 	(dotimes (x xs)
 	  (ellipse (* x (/ w xs)) (+ (/ h 2) (* (/ h 4) (sin-calc x)))
 		   (/ w xs 3) (/ w xs 3)))))))
+

@@ -16,7 +16,6 @@
 
 	   :defsketch
 	   :define-sketch-setup
-	   ;:sketch-refresh-window
 
 	   ::width
 	   ::height
