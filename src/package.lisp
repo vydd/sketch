@@ -22,7 +22,7 @@
 	   ::framerate
 	   ::title
 	   
-	   ; Math
+	   ;; Math
 	   :clamp-1
 	   :normalize
 	   
@@ -34,7 +34,7 @@
 	   :radians
 	   :degrees
 
-	   ; Colors
+	   ;; Colors
 	   :color
 	   :make-color
 	   :color-red
@@ -58,13 +58,13 @@
 	   :lerp-color
 	   :random-color
 
-	   ; Pen
+	   ;; Pen
 	   :pen
 	   :make-pen
 	   :with-pen
 	   :background
 
-	   ; Shapes
+	   ;; Shapes
 	   :arc
 	   :ellipse
 	   :line
@@ -74,9 +74,10 @@
 	   :ngon
 	   :triangle
 
-	   ; Transforms
+	   ;; Transforms
 	   :translate
 	   :rotate
 	   :scale
 	   :with-identity-matrix))
+
 

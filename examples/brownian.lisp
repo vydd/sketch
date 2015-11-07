@@ -9,7 +9,8 @@
 ;; |____/|_| \_\\___/  \_/\_/  |_| \_|___/_/   \_\_| \_|
 
 (defsketch brownian-turtle
-    (:title "Brownian turtle" :width 400 :height 400 :framerate 30)
+    (:title "Brownian turtle" :width 400 :height 400
+	    :framerate 30 :copy-pixels t)
     ((pos '(200 . 200)) (dir '(1 . 0))
      (pen (make-pen :stroke (gray 0)))
      (bg (gray 1))

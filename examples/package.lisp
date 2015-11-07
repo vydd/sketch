@@ -3,6 +3,6 @@
 (defpackage #:sketch-examples
   (:use #:cl #:sketch)
   (:export :brownian-turtle
-	   ;:life
+	   :life
 	   :sinewave))
 

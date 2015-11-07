@@ -8,40 +8,63 @@
 ;;; | |___ | ||  _| | |___
 ;;; |_____|___|_|   |_____|
 
-;;; DOES NOT RUN. WORK IN PROGRESS.
+;;; Press any key to toggle between editing and iterating.
+;;; When in edit mode, click on cells to toggle them.
+
+(defparameter *columns* 30)
+(defparameter *rows* 30)
+(defparameter *cell-size* 18)
 
 (defsketch life
-    (:title "Conway's Game of Life" :width 800 :height 600 :framerate :auto)
-    ((cols 60) (rows 80) (cell-size 10)
-     (cells (make-array '(80 60) :initial-element 0))
+    (:title "Conway's Game of Life"
+	    :width (* *columns* *cell-size*)
+	    :height (* *rows* *cell-size*)
+	    :framerate :auto)
+    ((cells (make-array `(,(+ 2 *rows*) ,(+ 2 *columns*) 2)
+			:initial-element 0
+			:element-type '(mod 2)))
+     (front 0)
      (color-bg (gray 0.2))
      (pen-dead (make-pen :fill (gray 0)))
-     (pen-alive (make-pen :fill (gray 1))))
+     (pen-alive (make-pen :fill (gray 0.5)))
+     (running nil))
   (labels ((neighbors (x y)
-	     (let ((mx 79) (my 59))
-	       (+ (if (> x 0) (aref cells (- x 1) y) 0)
-		  (if (and (> x 0) (> y 0)) (aref cells (- x 1) (- y 1)) 0)
-		  (if (and (> x 0) (< y my)) (aref cells (- x 1) (+ y 1)) 0)
-		  (if (< x mx) (aref cells (+ x 1) y) 0)
-		  (if (and (< x mx) (> y 0)) (aref cells (+ x 1) (- y 1)) 0)
-		  (if (and (< x mx) (< y my)) (aref cells (+ x 1) (+ y 1)) 0)
-		  (if (> y 0) (aref cells x (- y 1)) 0)
-		  (if (< y my) (aref cells x (+ y 1)) 0))))
+	     (let ((acc 0))
+	       (dotimes (i 3)
+		 (dotimes (j 3)
+		   (setf acc (+ acc (aref cells (+ i y) (+ j x) front)))))
+	       (- acc (aref cells (1+ y) (1+ x) front))))
 	   (alivep (x y)
-	     (= 1 (aref cells x y)))
+	     (= 1 (aref cells (1+ y) (1+ x) front)))
 	   (next-state (x y)
 	     (let ((alive (alivep x y)) (neighbors (neighbors x y)))
-	       (cond ((and alive (< neighbors 2)) 0)
-		     ((and alive (<= neighbors 2 3)) 1)
-		     ((and alive (> neighbors 3)) 0)
-		     (t 1)))))
+	       (if (or (and alive (<= 2 neighbors 3))
+		       (and (not alive) (= 3 neighbors)))
+		   1 0))))
     (background color-bg)
-    (let ((next-cells (make-array `(,rows ,cols))))
-      (dotimes (row rows)
-	(dotimes (col cols)
-	  (with-pen pen-alive
-	    (ellipse (+ (/ cell-size 2) (* row cell-size))
-		     (+ (/ cell-size 2) (* col cell-size))
-		     (/ cell-size 2) (/ cell-size 2)))
-	  (setf (aref next-cells row col) (next-state row col))))
-      (setf cells next-cells))))
+    (dotimes (y *rows*)
+      (dotimes (x *columns*)
+	(with-pen (if (zerop (aref cells (1+ y) (1+ x) front))
+		      pen-dead
+		      pen-alive)
+	  (ellipse (+ (/ *cell-size* 2) (* x *cell-size*))
+		   (+ (/ *cell-size* 2) (* y *cell-size*))
+		   (/ *cell-size* 3)
+		   (/ *cell-size* 3)))
+	(setf (aref cells (1+ y) (1+ x) (mod (1+ front) 2))
+	      (next-state x y))))
+    (when running
+      (setf front (mod (1+ front) 2)))))
+
+(defmethod kit.sdl2:textinput-event ((window life) ts text)
+  (with-slots (running) window
+    (setf running (not running))))
+
+(defmethod kit.sdl2:mousebutton-event ((window life) state ts b x y)
+  (when (eq state :mousebuttondown)
+    (with-slots (cells front running) window
+      (when (not running)
+	(let ((cy (1+ (truncate (/ y *cell-size*))))
+	      (cx (1+ (truncate (/ x *cell-size*)))))
+	  (setf (aref cells cy cx front)
+		(mod (1+ (aref cells cy cx front)) 2)))))))

@@ -36,7 +36,8 @@
    (title :initform "Sketch")
    (framerate :initform :auto)
    (width :initform 200)
-   (height :initform 200)))
+   (height :initform 200)
+   (copy-pixels :initform nil)))
 
 (defun framelimit (window &optional (fps 60))
   "Limits the framerate by using sdl2:delay. Technically, it is not
@@ -52,30 +53,25 @@ the correct way to do things, but it will have to do for now."
       (setf last-frame-time (get-internal-real-time)))))
 
 (defmethod kit.sdl2:render ((s sketch))
-  (with-slots (width height framerate restart-sketch) s
-    ;; By default, previous frame stays on the screen and all drawing
-    ;; is done incrementally, because it's easier to ask the user to
-    ;; (background (gray 0)) the screen for each pass, than to ask him
-    ;; to do buffer copying himself.
-    (gl:read-buffer :front)
-    (gl:draw-buffer :back)
-    (gl:copy-pixels 0 0 width height :color)
+  (with-slots (width height framerate restart-sketch copy-pixels) s
+    (when copy-pixels
+      (gl:read-buffer :front)
+      (gl:draw-buffer :back)
+      (gl:copy-pixels 0 0 width height :color))    
     ;; TODO: Both handler-cases should be enriched at some point.
     ;; Right now, the only purpose is to prevent SDL from crashing.
     (when restart-sketch
       (handler-case
-	  (setup s)
-	(error () (progn
-		    (gl:clear-color 1.0 1.0 0.0 1.0)
-		    (gl:clear :color-buffer-bit))))
+      	  (setup s)
+      	(error () (progn
+      		    (gl:clear-color 1.0 1.0 0.0 1.0)
+      		    (gl:clear :color-buffer-bit))))
       (setf restart-sketch nil))
-
     (handler-case
     	(draw s)
       (error () (progn
     		  (gl:clear-color 1.0 0.0 0.0 1.0)
-    		  (gl:clear :color-buffer-bit))))
-    
+    		  (gl:clear :color-buffer-bit))))    
     (when (not (equal framerate :auto))
       (framelimit s framerate))))
 ;;
@@ -127,6 +123,7 @@ SETUP to automatically wrap their bodies inside WITH-SLOTS, using all slot names
 	 (sketch-width (getf window-options :width 200))
 	 (sketch-height (getf window-options :height 200))
 	 (sketch-framerate (getf window-options :framerate :auto))
+	 (sketch-copy-pixels (getf window-options :copy-pixels nil))
 	 ;; We need to append SKETCH-TITLE, SKETCH-WIDTH, SKETCH-HEIGHT
 	 ;; and SKETCH-FRAMERATE from WINDOW-OPTIONS to SLOT-BINDINGS.
 	 ;; If SLOT-BINDINGS already contains any of these, we're going
@@ -138,12 +135,13 @@ SETUP to automatically wrap their bodies inside WITH-SLOTS, using all slot names
 	  (append (remove-if
 		   #'(lambda (x)
 		       (member (car x)
-			       '(title width height framerate)))
+			       '(title width height framerate copy-pixels)))
 		   slot-bindings)
 		  `((title ,sketch-title)
 		    (width ,sketch-width)
 		    (height ,sketch-height)
-		    (framerate ,sketch-framerate))))	 
+		    (framerate ,sketch-framerate)
+		    (copy-pixels ,sketch-copy-pixels))))	 
 	 (slots (mapcar #'car slot-bindings))	 
 	 (initforms (mapcar #'(lambda (binding)
 			       `(,(car binding) :initform ,(cadr binding)))
