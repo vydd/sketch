@@ -67,39 +67,85 @@ Defining sketches is done via `DEFSKETCH` macro, that wraps `DEFCLASS`. Using `D
 
 If all goes well, this should give you an unremarkable green window. Green indicates that everything is up and running, but that you haven't done any drawing yet.
 
+### Color
+
 What if you like yellow more? Assuming that you're using Emacs + SLIME, or similarly capable environment, you can just re-evaluate with the following code.
 
 ```lisp
 (defsketch hello-world () ()
-	(background (rgb 1 1 0)))
+  (background (rgb 1 1 0)))
 ```
 
 The screen becomes yellow. There are a couple of things to note. Drawing code doesn't need to go into a special function or method, or be binded to a sketch explicitly. `DEFSKETCH` is defined as `(defsketch sketch-name window-options slot-bindings &body body)`: that body is your drawing code. We will get to `WINDOW-OPTIONS` and `SLOT-BINDINGS` later. The other thing is that Sketch comes with its own color library. Currently, it supports RGBA and HSBA models, multiple convenient ways of defining colors and basic color mixing. Soon to come are palles, color harmonies and predefined colors.
+
+### Drawing
 
 Let's draw something.
 
 ```lisp
 (defsketch hello-world () ()
-	(background (rgb 1 1 0))
-	(with-pen (make-pen :stroke (gray 0) :fill (rgb-255 200 200 200))
-		(ngon 6 (/ width 2) (/ height 2) 30 50 :angle 90)))
+  (background (rgb 1 1 0))
+    (with-pen (make-pen :stroke (gray 0) :fill (rgb-255 200 200 200))
+      (ngon 6 (/ width 2) (/ height 2) 30 50 :angle 90)))
 ```
 
-You get a vertically elongated hexagon. _NOTE: Lines will probably look rough. That's expected right now. Soon, line drawing will get revamped and your lines will be much more beautiful._ Let's see what we said here. We used a `WITH-PEN` block to declare the `PEN` - a set of drawing parameters - applied to elements inside. At the time of writing this, only `:FILL` and `:STROKE` colors are supported, and we're making use of both. Notice a couple more ways of declaring colors. Then we draw a shape, an `NGON`, which is an n-sided convex polygon, differing from a regular one in that it's inscribed inside an ellipse instead of a circle.
+You get a vertically elongated hexagon. _NOTE: Lines will probably look rough. That's expected right now. Soon, line drawing will get revamped and your lines will be much more beautiful._ Let's see what we said here. We used a `WITH-PEN` block to declare the `PEN` - a set of drawing parameters - applied to elements inside. At the time of writing this, only `:FILL` and `:STROKE` colors are supported, and we're making use of both. Notice a couple more ways of declaring colors. Then we draw a shape, an `NGON`, which is an n-sided convex polygon, inscribed in an ellipse.
 
-Notice that you can use `WIDTH` and `HEIGHT`. TODO
+### Sketch's usage of CLOS
 
-It should be noted that you have all the power of CL when drawing, and that you're not restricted to using drawing primitives only.
+The sketch is using `WIDTH` and `HEIGHT` to calculate hexagon's center. These are actually the slots inherited from `SKETCH` class, made easy to use when drawing by being automatically wrapped inside `WITH-SLOTS` with all slots listed. Other inherited slots are `FRAMERATE`, used for setting hard frame rate limits, useful for debugging, but also as a replacement for more complicated timing code. It defaults to `:AUTO`. Next, there's `COPY-PIXELS`, that defults to `NIL`. It controls the way the drawing works. If it's enabled, drawing is incremental; it's "copying the pixels" from frame to frame. Finally, there's `TITLE`, defaulting to `"Sketch"`, and being displayed on the titlebar.
+
+All of these slots can be set using `DEFSKETCH` syntax, using `WINDOW-OPTIONS`:
 
 ```lisp
-(defsketch hello-world () ()
-	(background (rgb 1 1 0))
-	(with-pen (make-pen :stroke (gray 0) :fill (rgb-255 200 200 200))
-		(dotimes (i 11)
-			(ngon 6 (/ width 2) (/ height 2) (- 30 (* i 3)) (- 50 (* i 3))
-				  :angle (- 90 (* i 4))))))
+(defsketch using-win-opts (:title "Hello, World"
+                           :width 300
+                           :height 300
+						   :copy-pixels nil
+						   :framerate :auto)
+  ())
 ```
 
+The third argument, `SLOT-BINDINGS`, is reserved for defining slots. It's different from standard slot definition, looking more like a let init-form. Currently, initial values are mandatory and there are no special slot modifiers, but the latter will change soon.
+
+```lisp
+(defsketch full-utilization (:title "We have slots")
+    ((first-slot 0)
+     (foobar (if t "Foo?" "???")
+   (sym 'DEFAULT-SYMBOL)))
+   (background (hsb 0.5 1.0 1.0)))
+```
+
+These user-defined slots are also wrapped inside `WITH-SLOTS`.
+
+### It still is Common Lisp
+
+You have all the power of CL at disposal when drawing, and you're not restricted to using only drawing primitives.
+
+```lisp
+(defsketch hello-world (:title "Hello, World") ()
+  (background (rgb 1 1 0))
+    (with-pen (make-pen :stroke (gray 0) :fill (rgb-255 200 200 200))
+    (dotimes (i 11)
+      (ngon 6 (/ width 2) (/ height 2) (- 30 (* i 3)) (- 50 (* i 3))
+            :angle (- 90 (* i 4))))))
+```
+
+### Animation
+
+```lisp
+(defsketch hello-world (:title "Hello, World" :height 300 :width 300)
+    ((i 0)
+     (pen (make-pen :stroke (gray 0) :fill (rgb-255 200 200 200))))
+  (background (rgb 1 1 0))
+  (setf i (mod (1+ i) 360))
+  (with-pen pen
+    (ngon 6 (/ width 2)
+	  (/ height 2)
+	  (- 80 (* (sin (radians i)) 33))
+	  (- 80 (* (sin (radians i)) 33))
+	  :angle (- 90 (* (sin (radians i)) 44)))))
+```
 # WORK IN PROGRESS
 
 ## TODO
