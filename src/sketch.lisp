@@ -54,10 +54,11 @@ the correct way to do things, but it will have to do for now."
 
 (defmethod kit.sdl2:render ((s sketch))
   (with-slots (width height framerate restart-sketch copy-pixels) s
-    (when copy-pixels
-      (gl:read-buffer :front)
-      (gl:draw-buffer :back)
-      (gl:copy-pixels 0 0 width height :color))    
+    (cond (copy-pixels (gl:read-buffer :front)
+		       (gl:draw-buffer :back)
+		       (gl:copy-pixels 0 0 width height :color))
+	  (t (gl:clear-color 0.0 1.0 0.0 1.0)
+	     (gl:clear :color-buffer-bit)))    
     ;; TODO: Both handler-cases should be enriched at some point.
     ;; Right now, the only purpose is to prevent SDL from crashing.
     (when restart-sketch

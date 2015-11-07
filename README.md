@@ -1,87 +1,121 @@
 # Sketch
 
-## What is Sketch?
+Sketch is a Common Lisp interpretation of [Processing Language](https://processing.org). Saying it is an interpretation is important, because Sketch doesn't strive to implement Processing API in Common Lisp, but rather reimplement the very idea behind Processing: to build an easy to use environment for creation of electronic art, visual design, game prototyping, computer graphics; exploration of human-computer interaction and more.
 
-Sketch is a Common Lisp interpretation of [Processing Language](https://processing.org). It doesn't strive for 100% compatibility, but rather to being similar in spirit by providing an easy interface to computer graphics and human-computer interaction.
+In its current form, it is not intended to be used as a game engine, although simple games can be created in Sketch. This is because Sketch is in its infancy, and designing it to be intuitive and easy to use is much more important than optimizing it for speed - which is important for serious game development.
 
-## What can I do with it?
+## Installation
 
-Sketch is in its infancy, but colors and basic shapes are mostly done. Being based on [sdl2kit](https://github.com/lispgames/sdl2kit) means that you get windowing and event handling for free.
+Today (November 2015), [Quicklisp](https://www.quicklisp.org/beta/) is Common Lisp's de facto package manager. Sketch is not part of Quicklisp yet, but it is intended to be used with it, so you will have to clone it to your local-projects directory manually. If you're not sure how to do that, read the [Quicklisp FAQ](https://www.quicklisp.org/beta/faq.html).
 
-For start, there will be no 3D in Sketch, but the plan is to add basic support it later.
+SDL2 is Sketch's only backend. It is a C library which you will need to download manually from [libsdl webpage](https://www.libsdl.org/download-2.0.php). Select the relase compatible with your operating system, or compile from the source code.
 
-## Alright, how do I work with color?
+### Requirements
 
-Color is implemented as a struct, containing both RGB and HSB values, plus ALPHA. There're many constructors implemented for convenience - `RGB`, `HSB`, `GRAY` using normalized values and `RGB-255`, `HSB-360` `GRAY-255` using values in [0, 255] range for rgb and gray, and using degrees for hue, along with percentages for saturation and brightness.
+Sketch should be compatible with all major Common Lisp implementations and all major operating systems - more specifically, all CL implementations and operating systems that [cl-sdl2](https://github.com/lispgames/cl-sdl2) runs on. Incompatibily with any of those is considered a bug.
 
-There's also a `HEX-TO-COLOR` constructor, which builds colors from hex strings, like `"ff00ff"`, `"cdc"`, `"abcdef99"` or `"abcd"`.
+Sketch is known to work with:
 
-You can lerp two colors using `LERP-COLOR`, and choose to do it either in RGB or HSB space.
+* CCL 1.10 on Mac OS X
+* SBCL on Debian Unstable
 
-## How do I get colors on screen?
+Sketch is known to *not* work with:
 
-If you want to color the window, use `(background your-color)`.
+* SBCL 1.2.15 on Mac OS X
+  _Sketch can't handle input and the window's titlebar is black. These kind of issues are a known problem with Mac OS X, because it needs its GUI threads to be main, and CCL is the only lisp that accounts for that out of the box. There are ways to counter this, but until a solution finds its way into this repository, SBCL on Mac OS X will stay on this list. In the meantime, use CCL._
 
-If you want your shapes to be colorful, use a `PEN`. A `PEN` is a struct that has its fill and stroke (both colors). A pen is created using standard `MAKE-PEN` constructor. To use a pen with shapes, wrap them inside `WITH-PEN` macro.
+If you test it on other systems, please send a pull request to include your results.
 
-## What shapes?
+### Running provided examples
 
-`ELLIPSE`, `LINE`, `POINT`, `QUAD`, `RECT`, `NGON` (regular convex polygon) and `TRIANGLE`.
+To get a feel for what Sketch can do, you can look at the examples. The code below will run all three currently provided examples at once. Note that on older machines running three sketches at once might result in small degradation in performance, so you might want to run sketches separately.
 
-# Ok, show me.
-
-There's a couple of examples included, and we're going to dissect the second one (it being much more interesting.
-
-So, firstly, you'll need to create a class inheriting from `SKETCH:SKETCH`.
-
-```
-(defclass sketch-example-2 (sketch)
-  ((title :initform "Sketch example - 2")
-   (width :initform 400)
-   (height :initform 400)
-   (framerate :initform 60)
-   (steps :initform 0)
-   (xs :initform 40)
-   (pen :initform (make-pen :fill (gray 1.0)))))
+```lisp
+CL-USER> (ql:quickload :sketch-examples)
+CL-USER> (make-instance 'sketch-examples:sinewave)
+CL-USER> (make-instance 'sketch-examples:brownian-turtle)
+CL-USER> (make-instance 'sketch-examples:life) ; Click to toggle cells,
+	                                           ; any key to toggle iteration
 ```
 
-If you choose to, you can set title, width, height and framerate there. Of course, you're free to add anything else you need.
+### Running example code from this page
 
-There are two generic methods you can implement, `SKETCH:SETUP` and `SKETCH:DRAW`. `SETUP` will be called once before creating the window, and `DRAW` will get called to draw each frame - this is where your drawing code will live. For this example, we won't use setup.
+In this, and all other examples, we're going to assume that Sketch is loaded with `(ql:quickload :sketch)`, and that we're in package `:SKETCH`, either after explicitely doing that via REPL:
+
+```lisp
+CL-USER> (ql:quickload :sketch)
+...
+CL-USER> (in-package :sketch)
+...
+SKETCH> _
 
 ```
-(defmethod draw ((s sketch-example-2))
-  (with-slots (steps xs pen width height) s
-    (incf steps)
-    (background (gray 0.2))
-    (with-pen pen
-      (mapcar (lambda (x)
-		(ellipse (* x (/ width xs))
-			 (+ (/ height 2)
-			    (* (/ height 4)
-			       (sin (* TWO_PI (/ (+ (/ steps 4) x) xs)))))
-			 (/ width xs 3)
-			 (/ width xs 3)))
-			 (alexandria:iota xs)))))
+
+or by depending on `:SKETCH` and `:USE`ing it in system and package definition respectively, like it's done for `:SKETCH-EXAMPLES`.
+
+## Hello, World
+
+Defining sketches is done via `DEFSKETCH` macro, that wraps `DEFCLASS`. Using `DEFCLASS` is still possible, but `DEFSKETCH` makes everything so much easier, and in these examples, we're going to pretend that's the only way.
+
+```lisp
+;; Let's say it one more time: All examples on this page need to have
+;; :sketch loaded, and all of them execute inside :sketch package.
+
+(defsketch hello-world () ())
+(make-instance 'hello-world)
 ```
 
-That's all. You can start this sketch with `(make-instance 'sketch-example-2)`.
+If all goes well, this should give you an unremarkable green window. Green indicates that everything is up and running, but that you haven't done any drawing yet.
 
-![Sketch example 2](http://idle.rs/~vydd/sketch/sketchexample2.png)
+What if you like yellow more? Assuming that you're using Emacs + SLIME, or similarly capable environment, you can just re-evaluate with the following code.
 
-This being lisp, you can change the code in `DRAW` while it executes and see results immediately.
+```lisp
+(defsketch hello-world () ()
+	(background (rgb 1 1 0)))
+```
+
+The screen becomes yellow. There are a couple of things to note. Drawing code doesn't need to go into a special function or method, or be binded to a sketch explicitly. `DEFSKETCH` is defined as `(defsketch sketch-name window-options slot-bindings &body body)`: that body is your drawing code. We will get to `WINDOW-OPTIONS` and `SLOT-BINDINGS` later. The other thing is that Sketch comes with its own color library. Currently, it supports RGBA and HSBA models, multiple convenient ways of defining colors and basic color mixing. Soon to come are palles, color harmonies and predefined colors.
+
+Let's draw something.
+
+```lisp
+(defsketch hello-world () ()
+	(background (rgb 1 1 0))
+	(with-pen (make-pen :stroke (gray 0) :fill (rgb-255 200 200 200))
+		(ngon 6 (/ width 2) (/ height 2) 30 50 :angle 90)))
+```
+
+You get a vertically elongated hexagon. _NOTE: Lines will probably look rough. That's expected right now. Soon, line drawing will get revamped and your lines will be much more beautiful._ Let's see what we said here. We used a `WITH-PEN` block to declare the `PEN` - a set of drawing parameters - applied to elements inside. At the time of writing this, only `:FILL` and `:STROKE` colors are supported, and we're making use of both. Notice a couple more ways of declaring colors. Then we draw a shape, an `NGON`, which is an n-sided convex polygon, differing from a regular one in that it's inscribed inside an ellipse instead of a circle.
+
+Notice that you can use `WIDTH` and `HEIGHT`. TODO
+
+It should be noted that you have all the power of CL when drawing, and that you're not restricted to using drawing primitives only.
+
+```lisp
+(defsketch hello-world () ()
+	(background (rgb 1 1 0))
+	(with-pen (make-pen :stroke (gray 0) :fill (rgb-255 200 200 200))
+		(dotimes (i 11)
+			(ngon 6 (/ width 2) (/ height 2) (- 30 (* i 3)) (- 50 (* i 3))
+				  :angle (- 90 (* i 4))))))
+```
+
+# WORK IN PROGRESS
+
+## TODO
+
+- [ ] Additional shapes
+- [ ] More color utilities (palletes, color harmony...)
+- [ ] Stroke options and better line drawing
+- [ ] Image loading
+- [ ] Typography
+- [ ] Controllers
+- [ ] Simple audio
+- [ ] Basic physics
+- [ ] Basic 3D
 
 ## Outro
 
 For everything else, read the code or ask vydd at #lispgames. 
 
 Go make something pretty.
-
-# TODO
-
-* Complete shapes
-* Image loading
-* Typography
-* Simple audio
-* Basic physics
-* Basic 3D
