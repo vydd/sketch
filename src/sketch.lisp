@@ -96,6 +96,8 @@ the correct way to do things, but it will have to do for now."
     (gl:load-identity))
   (gl:enable :line-smooth)
   (gl:hint :line-smooth-hint :nicest)
+  (gl:enable :blend)
+  (gl:blend-func :src-alpha :one-minus-src-alpha)
   (gl:clear-color 0.0 0.0 0.0 1.0)
   (gl:clear :color-buffer-bit)
   (gl:clear :depth-buffer-bit))
