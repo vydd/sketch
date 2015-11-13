@@ -10,7 +10,7 @@
 
 (defsketch brownian-turtle
     (:title "Brownian turtle" :width 400 :height 400
-	    :framerate 30 :copy-pixels t)
+	    :framerate 30 :copy-pixels t :debug :scancode-f1)
     ((pos '(200 . 200)) (dir '(1 . 0))
      (pen (make-pen :stroke (gray 0)))
      (bg (gray 1))

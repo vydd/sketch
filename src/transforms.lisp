@@ -8,13 +8,13 @@
 ;;;   | | |  _ <  / ___ \| |\  |___) |  _|| |_| |  _ <| |  | |___) |
 ;;;   |_| |_| \_\/_/   \_\_| \_|____/|_|   \___/|_| \_\_|  |_|____/
 
-(defun translate (x y)
+(defun ntranslate (x y)
   (gl:translate x y 0.0))
 
-(defun rotate (angle)
+(defun nrotate (angle)
   (gl:rotate angle 0.0 0.0 1.0))
 
-(defun scale (sx sy)
+(defun nscale (sx sy)
   (gl:scale sx sy 1.0))
 
 (defmacro with-identity-matrix (&body body)

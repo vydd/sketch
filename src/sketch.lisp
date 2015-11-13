@@ -18,8 +18,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defstruct env
+  ;; Drawing
   (fill nil)
-  (stroke nil))
+  (stroke nil)
+  ;; Debugging
+  (debug-key-pressed nil)
+  (red-screen nil))
 
 ;;; Temporary, until done automatically by sdl2kit
 (kit.sdl2:start)
@@ -59,8 +63,6 @@ the correct way to do things, but it will have to do for now."
 		       (gl:copy-pixels 0 0 width height :color))
 	  (t (gl:clear-color 0.0 1.0 0.0 1.0)
 	     (gl:clear :color-buffer-bit)))    
-    ;; TODO: Both handler-cases should be enriched at some point.
-    ;; Right now, the only purpose is to prevent SDL from crashing.
     (when restart-sketch
       (handler-case
       	  (setup s)
@@ -68,22 +70,25 @@ the correct way to do things, but it will have to do for now."
       		    (gl:clear-color 1.0 1.0 0.0 1.0)
       		    (gl:clear :color-buffer-bit))))
       (setf restart-sketch nil))
-    (handler-case
-    	(draw s)
-      (error () (progn
-    		  (gl:clear-color 1.0 0.0 0.0 1.0)
-    		  (gl:clear :color-buffer-bit))))    
+    (if (and (env-red-screen *env*)
+	     (env-debug-key-pressed *env*))
+	(progn
+	  (setf (env-red-screen *env*) nil
+		(env-debug-key-pressed *env*) nil)
+	  (draw s))	
+	(handler-case
+	    (progn
+	      (when (env-red-screen *env*)
+		(setf restart-sketch t))
+	      (setf (env-red-screen *env*) nil
+		    (env-debug-key-pressed *env*) nil)
+	      (draw s))
+	  (error () (progn
+		      (gl:clear-color 1.0 0.0 0.0 1.0)
+		      (gl:clear :color-buffer-bit)
+		      (setf (env-red-screen *env*) t)))))    
     (when (not (equal framerate :auto))
       (framelimit s framerate))))
-;;
-;; DEFSKETCH does this already. Will be added back when 
-;; title/width/height/frame become reactive.
-;;
-;; (defun sketch-refresh-window (w)
-;;   (let ((sdl-win (kit.sdl2:sdl-window w)))
-;;     (with-slots (title width height framerate) w
-;;       (sdl2:set-window-title sdl-win title)
-;;       (sdl2:set-window-size sdl-win width height))))
 
 (defmethod initialize-instance :after ((w sketch) &key &allow-other-keys)
   (setf (kit.sdl2:idle-render w) t)
@@ -154,19 +159,25 @@ SETUP to automatically wrap their bodies inside WITH-SLOTS, using all slot names
     ;; This is accomplished by saving slot names provided via SLOT-BINDINGS and
     ;; WINDOW-OPTIONS into *SKETCH-SLOT-HASH-TABLE*.
     (setf (gethash sketch-name *sketch-slot-hash-table*) slots)
-
+    
     `(progn
        (defclass ,sketch-name (sketch)
 	 ,initforms)
        
        (defmethod draw ((window ,sketch-name))
-	  (with-slots ,(gethash sketch-name *sketch-slot-hash-table*) window
-	    ,@body))
-
+	 (with-slots ,(gethash sketch-name *sketch-slot-hash-table*) window
+	   ,@body))
+       
        (defmethod initialize-instance :after ((window ,sketch-name) &key &allow-other-keys)
-		  (let ((sdl-win (kit.sdl2:sdl-window window)))
-		    (sdl2:set-window-title sdl-win ,sketch-title)
-		    (sdl2:set-window-size sdl-win ,sketch-width ,sketch-height))))))
+	 (let ((sdl-win (kit.sdl2:sdl-window window)))
+	   (sdl2:set-window-title sdl-win ,sketch-title)
+	   (sdl2:set-window-size sdl-win ,sketch-width ,sketch-height)))
+       
+       ,(alexandria:when-let ((debug-scancode (getf window-options :debug nil)))
+	  `(defmethod kit.sdl2:keyboard-event :after ((window ,sketch-name) s ts rp keysym)
+	     (when (and (env-red-screen *env*)
+			(sdl2:scancode= (sdl2:scancode-value keysym) ,debug-scancode))
+	       (setf (env-debug-key-pressed *env*) t)))))))
 
 (defmacro define-sketch-setup (sketch-name &body body)
   "Defines a sketch SETUP method. Body is wrapped with WITH-SLOTS for all slots defined. "
