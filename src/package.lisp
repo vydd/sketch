@@ -61,6 +61,7 @@
 	   ;; Pen
 	   :pen
 	   :make-pen
+	   :set-pen
 	   :with-pen
 	   :background
 
@@ -68,6 +69,7 @@
 	   :arc
 	   :ellipse
 	   :line
+	   :line2
 	   :point
 	   :quad
 	   :rect
@@ -75,9 +77,9 @@
 	   :triangle
 
 	   ;; Transforms
-	   :ntranslate
-	   :nrotate
-	   :nscale
+	   :set-translation
+	   :set-rotation
+	   :set-scale
 	   :with-identity-matrix))
 
 

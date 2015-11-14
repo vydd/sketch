@@ -10,31 +10,22 @@
 
 (defstruct pen
   fill
-  stroke)
+  stroke
+  weight
+  join
+  cap)
 
 (defmacro with-pen (pen &body body)
   (alexandria:once-only (pen)
-    `(alexandria:with-gensyms (fill stroke)
+    `(alexandria:with-gensyms (previous-pen)
        (progn
-	 (setf fill (env-fill *env*)
-	       stroke (env-stroke *env*)
-	       (env-fill *env*) (pen-fill ,pen)
-	       (env-stroke *env*) (pen-stroke ,pen))
+	 (setf previous-pen (env-pen *env*)
+	       (env-pen *env*) ,pen)
 	 ,@body
-	 (setf (env-fill *env*) fill
-	       (env-stroke *env*) stroke)))))
+	 (setf (env-pen *env*) previous-pen)))))
 
-(defun fill-color (color)
-  (setf (env-fill *env*) color))
-
-(defun no-fill-color ()
-  (setf (env-fill *env*) nil))
-
-(defun stroke-color (color)
-  (setf (env-stroke *env*) color))
-
-(defun no-stroke-color ()
-  (setf (env-stroke *env*) nil))
+(defun set-pen (pen)
+  (setf (env-pen *env*) pen))
 
 (defun background (color)
   (apply #'gl:clear-color (color-rgba color))

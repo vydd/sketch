@@ -5,7 +5,7 @@
   :author "Danilo Vidovic (vydd)"
   :license "MIT"
   :depends-on (#:alexandria
-	       #:closer-mop
+	       #:glkit
 	       #:sdl2
 	       #:sdl2kit)
   :pathname "src"
@@ -16,6 +16,6 @@
 	       (:file "utils")
 	       (:file "math")
 	       (:file "shapes")
-	       (:file "transforms")	       
+	       (:file "transforms")
                (:file "sketch")))
 

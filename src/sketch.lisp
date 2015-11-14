@@ -19,17 +19,52 @@
 
 (defstruct env
   ;; Drawing
-  (fill nil)
-  (stroke nil)
+  (pen nil)
   ;; Debugging
   (debug-key-pressed nil)
   (red-screen nil))
 
 ;;; Temporary, until done automatically by sdl2kit
 (kit.sdl2:start)
+(sdl2:in-main-thread ()
+  (sdl2:gl-set-attr :context-major-version 4)
+  (sdl2:gl-set-attr :context-minor-version 1)
+  (sdl2:gl-set-attr :context-profile-mask 1))
 ;;;
 
 (defparameter *env* (make-env))
+
+(kit.gl.shader:defdict sketch-default-programs ()
+  (kit.gl.shader:program :vertex-color (:view-m)
+	   (:vertex-shader  "
+#version 410
+
+uniform mat4 view_m;
+
+layout (location = 0) in vec2 vertex;
+layout (location = 1) in vec4 color;
+
+smooth out vec4 f_color;
+smooth out vec2 pos;
+
+void main() {
+    gl_Position = view_m * vec4(vertex, 0.0, 1.0);
+    pos = gl_Position.xy;
+    f_color = color;
+}
+")
+           (:fragment-shader "
+#version 410
+
+smooth in vec4 f_color;
+smooth in vec2 pos;
+out vec4 f_out;
+
+void main() {
+    f_out = f_color;
+    f_out = vec4((pos.x+1)/2, pos.x, pos.x, 1.0);
+}
+")))
 
 (defclass sketch (kit.sdl2:gl-window)
   (;; Timekeeping
@@ -41,7 +76,10 @@
    (framerate :initform :auto)
    (width :initform 200)
    (height :initform 200)
-   (copy-pixels :initform nil)))
+   (copy-pixels :initform nil)
+   ;; GL
+   (view-matrix :initform (kit.glm:ortho-matrix 0 200 200 0 -1 1))
+   (programs :initform (kit.gl.shader:compile-shader-dictionary 'sketch-default-programs))))
 
 (defun framelimit (window &optional (fps 60))
   "Limits the framerate by using sdl2:delay. Technically, it is not
@@ -56,7 +94,42 @@ the correct way to do things, but it will have to do for now."
 				      internal-time-units-per-second)))))
       (setf last-frame-time (get-internal-real-time)))))
 
+(kit.gl.vao:defvao vertex-color-2d ()
+  (:separate ()
+	     (vertex :float 2)
+	     (color :float 4)))
+
+(defparameter *vao-verts*
+  (make-array 6
+   :element-type 'single-float
+   :initial-contents #(100.0 50.0
+                       50.0 150.0
+                       150.0 150.0)))
+
+;;; The colors:
+(defparameter *vao-colors*
+  (make-array 12
+   :element-type 'single-float
+   :initial-contents #(1.0 0.0 0.0 1.0
+                       0.0 1.0 0.0 1.0
+                       0.0 0.0 1.0 1.0)))
+
 (defmethod kit.sdl2:render ((s sketch))
+  (gl:clear-color 1.0 1.0 0.0 1.0)
+  (gl:clear :color-buffer-bit)
+
+  (let ((vao (make-instance 'kit.gl.vao:vao
+			    :type 'vertex-color-2d
+			    :primitive :triangles
+			    :vertex-count (/ (length *vao-verts*) 2))))
+    (kit.gl.vao:vao-buffer-vector vao 0 (* 4 (length *vao-verts*)) *vao-verts*)
+    (kit.gl.vao:vao-buffer-vector vao 1 (* 4 (length *vao-colors*)) *vao-colors*)
+    
+    (with-slots (programs view-matrix) s
+      (kit.gl.shader:use-program programs :vertex-color)
+      (kit.gl.shader:uniform-matrix programs :view-m 4 (vector view-matrix))
+      (kit.gl.vao:vao-draw vao)))
+  #|
   (with-slots (width height framerate restart-sketch copy-pixels) s
     (cond (copy-pixels (gl:read-buffer :front)
 		       (gl:draw-buffer :back)
@@ -66,9 +139,10 @@ the correct way to do things, but it will have to do for now."
     (when restart-sketch
       (handler-case
       	  (setup s)
-      	(error () (progn
-      		    (gl:clear-color 1.0 1.0 0.0 1.0)
-      		    (gl:clear :color-buffer-bit))))
+      	(error ()
+	  (progn
+	    (gl:clear-color 1.0 1.0 0.0 1.0)
+	    (gl:clear :color-buffer-bit))))
       (setf restart-sketch nil))
     (if (and (env-red-screen *env*)
 	     (env-debug-key-pressed *env*))
@@ -78,34 +152,36 @@ the correct way to do things, but it will have to do for now."
 	  (draw s))	
 	(handler-case
 	    (progn
-	      (when (env-red-screen *env*)
-		(setf restart-sketch t))
-	      (setf (env-red-screen *env*) nil
-		    (env-debug-key-pressed *env*) nil)
-	      (draw s))
-	  (error () (progn
-		      (gl:clear-color 1.0 0.0 0.0 1.0)
-		      (gl:clear :color-buffer-bit)
-		      (setf (env-red-screen *env*) t)))))    
+	      (let ((red-screen (env-red-screen *env*)))
+		(setf (env-red-screen *env*) nil
+		      (env-debug-key-pressed *env*) nil)
+		(draw s)
+		(when red-screen
+		  (setf restart-sketch t))))
+	  (error ()
+	    (progn
+	      (gl:clear-color 1.0 0.0 0.0 1.0)
+	      (gl:clear :color-buffer-bit)
+	      (setf (env-red-screen *env*) t)))))    
     (when (not (equal framerate :auto))
-      (framelimit s framerate))))
+      (framelimit s framerate)))
+  |#
+
+
+  )
 
 (defmethod initialize-instance :after ((w sketch) &key &allow-other-keys)
-  (setf (kit.sdl2:idle-render w) t)
-  (sdl2:gl-set-swap-interval 1)
-  (with-slots (width height) w
+  (with-slots (width height programs) w
+    (setf (kit.sdl2:idle-render w) t)
+    (sdl2:gl-set-swap-interval 1)
     (gl:viewport 0 0 width height)
-    (gl:matrix-mode :projection)
-    (gl:ortho 0 width height 0 -1 1)
-    (gl:matrix-mode :modelview)
-    (gl:load-identity))
-  (gl:enable :line-smooth)
-  (gl:hint :line-smooth-hint :nicest)
-  (gl:enable :blend)
-  (gl:blend-func :src-alpha :one-minus-src-alpha)
-  (gl:clear-color 0.0 0.0 0.0 1.0)
-  (gl:clear :color-buffer-bit)
-  (gl:clear :depth-buffer-bit))
+    ;; ++ left out projection ++    
+    (gl:enable :line-smooth)
+    (gl:hint :line-smooth-hint :nicest)
+    ;; ++ left out blending ++
+    (gl:clear-color 0.0 0.0 0.0 1.0)
+    (gl:clear :color-buffer-bit)
+    (gl:clear :depth-buffer-bit)))
 
 (defgeneric setup (sketch)
   (:documentation "Called before creating the sketch window.")
@@ -122,8 +198,8 @@ used for drawing.")
 
 (defmacro defsketch (sketch-name window-options slot-bindings &body body)
   "Defines a class, inheriting from SKETCH:SKETCH. It is used for convenience
-because it provides a compact syntax for declaring window options, let-like
-init-form for providing slots and inline draw body. It also takes care about
+instead of defclass because it provides a compact syntax for declaring window options,
+let-like init-form for providing slots and inline draw body. It also takes care of
 communicating new title, sketch and height values to SDL backend. Additionaly,
 defining a class using defsketch enables selected Sketch methods, like DRAW and
 SETUP to automatically wrap their bodies inside WITH-SLOTS, using all slot names."
@@ -174,7 +250,8 @@ SETUP to automatically wrap their bodies inside WITH-SLOTS, using all slot names
 	   (sdl2:set-window-size sdl-win ,sketch-width ,sketch-height)))
        
        ,(alexandria:when-let ((debug-scancode (getf window-options :debug nil)))
-	  `(defmethod kit.sdl2:keyboard-event :after ((window ,sketch-name) s ts rp keysym)
+	  `(defmethod kit.sdl2:keyboard-event :before ((window ,sketch-name) s ts rp keysym)
+	     (declare (ignore s ts rp))
 	     (when (and (env-red-screen *env*)
 			(sdl2:scancode= (sdl2:scancode-value keysym) ,debug-scancode))
 	       (setf (env-debug-key-pressed *env*) t)))))))
