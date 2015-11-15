@@ -8,13 +8,13 @@
 ;; | |_) |  _ <| |_| |\ V  V / | |\  || | / ___ \| |\  |
 ;; |____/|_| \_\\___/  \_/\_/  |_| \_|___/_/   \_\_| \_|
 
-(defsketch brownian-turtle
-    (:title "Brownian turtle" :width 400 :height 400
+(defsketch brownian
+    (:title "Brownian" :width 400 :height 400
 	    :framerate 30 :copy-pixels t :debug :scancode-f1)
     ((pos '(200 . 200)) (dir '(1 . 0))
      (pen (make-pen :stroke (gray 0)))
      (bg (gray 1))
-     (len 6))
+     (len 2))
   (flet ((draw (paces)
 	   (dotimes (i paces)
 	     (let ((new-pos (cons (+ (car pos) (car dir))
@@ -26,8 +26,10 @@
 	   (let ((a (+ a (degrees (atan (cdr dir) (car dir))))))
 	     (setf dir (cons (cos (radians a))
 			     (sin (radians a)))))))
-    (rotate (* 45 (random 4)))
-    (draw (+ (random len) len))))
+    (rotate (- (random 180) 90))
+    (draw (+ (random len) len))
+    (setf (car pos) (alexandria:clamp (car pos) -10 410)
+	  (cdr pos) (alexandria:clamp (cdr pos) -10 410))))
 
-(define-sketch-setup brownian-turtle
+(define-sketch-setup brownian
   (background bg))
