@@ -134,7 +134,7 @@ SETUP to automatically wrap their bodies inside WITH-SLOTS, using all slot names
 	   (sdl2:set-window-title sdl-win ,sketch-title)
 	   (sdl2:set-window-size sdl-win ,sketch-width ,sketch-height)))
        
-       (defmethod initialize-instance :before ((w sketch) &key &allow-other-keys)
+       (defmethod initialize-instance :before ((window ,sketch-name) &key &allow-other-keys)
 	 ,(when sketch-copy-pixels
 	   `(sdl2:gl-set-attr :doublebuffer 0)))
        
