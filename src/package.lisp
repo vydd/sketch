@@ -66,12 +66,9 @@
 	   :background
 
 	   ;; Shapes
-	   :arc
 	   :ellipse
 	   :line
-	   :line2
 	   :point
-	   :quad
 	   :rect
 	   :ngon
 	   :triangle

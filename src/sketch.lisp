@@ -16,27 +16,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; Temporary, until done automatically by sdl2kit
-(kit.sdl2:start)
-(sdl2:in-main-thread ()
-  (sdl2:gl-set-attr :context-major-version 4)
-  (sdl2:gl-set-attr :context-minor-version 1)
-  (sdl2:gl-set-attr :context-profile-mask 1))
-;;;
-
-(defstruct env
-  ;; Drawing
-  (pen nil)
-  ;; Shaders
-  (programs nil)
-  (view-matrix nil)
-  (vao nil)
-  ;; Debugging
-  (debug-key-pressed nil)
-  (red-screen nil))
-
-(defparameter *env* nil)
-
 (defclass sketch (kit.sdl2:gl-window)  
   (;; Environment
    (env :initform (make-env))
@@ -52,85 +31,9 @@
    (height :initform 200)
    (copy-pixels :initform nil)))
 
-(defun framelimit (window &optional (fps 60))
-  "Limits the framerate by using sdl2:delay. Technically, it is not
-the correct way to do things, but it will have to do for now."
-  ;; Adapted from k-stz's code found in sdl2kit cube example. Used
-  ;; with permission.
-  (with-slots (last-frame-time) window
-    (let ((elapsed-time (- (get-internal-real-time) last-frame-time))
-	  (time-per-frame (/ internal-time-units-per-second fps)))
-      (when (< elapsed-time time-per-frame)
-	(sdl2:delay (floor (* 1000 (/ (- time-per-frame elapsed-time)
-				      internal-time-units-per-second)))))
-      (setf last-frame-time (get-internal-real-time)))))
-
-(defmethod kit.sdl2:render ((s sketch))
-  (with-slots (env width height framerate restart-sketch copy-pixels) s
-    (let ((old-env *env*))
-      (setf *env* env)
-      (reset-buffers)
-      (cond (copy-pixels (gl:draw-buffer :front-and-back))
-	    (t (gl:clear-color 0.0 1.0 0.0 1.0)
-	       (gl:clear :color-buffer-bit)))
-      (when restart-sketch
-	(handler-case
-	    (setup s)
-	  (error ()
-	    (progn
-	      (gl:clear-color 1.0 1.0 0.0 1.0)
-	      (gl:clear :color-buffer-bit))))
-	(setf restart-sketch nil))
-      (if (and (env-red-screen *env*)
-	       (env-debug-key-pressed *env*))
-	  (progn
-	    (setf (env-red-screen *env*) nil
-		  (env-debug-key-pressed *env*) nil)
-	    (draw s)
-	    (draw-buffers))	
-	  (handler-case
-	      (progn
-		(let ((red-screen (env-red-screen *env*)))
-		  (setf (env-red-screen *env*) nil
-			(env-debug-key-pressed *env*) nil)
-		  (draw s)
-		  (draw-buffers)
-		  (when red-screen
-		    (setf restart-sketch t))))
-	    (error ()
-	      (progn
-		(gl:clear-color 1.0 0.0 0.0 1.0)
-		(gl:clear :color-buffer-bit)
-		(setf (env-red-screen *env*) t)))))    
-      (when (not (equal framerate :auto))
-	(framelimit s framerate))
-      (setf *env* old-env))))
-
 (defmethod initialize-instance :after ((w sketch) &key &allow-other-keys)
-  (with-slots (env width height) w
-    ;; Environment
-    (setf (env-programs env) (kit.gl.shader:compile-shader-dictionary 'sketch-programs)
-	  (env-view-matrix env) (kit.glm:ortho-matrix 0 width height 0 -1 1)
-	  (env-vao env) (make-instance 'kit.gl.vao:vao
-				       :type '2d-vertices
-				       :primitive :triangles
-				       :vertex-count 0))    
-    (kit.gl.shader:use-program (env-programs env) :fill-shader)
-    (kit.gl.shader:uniform-matrix
-     (env-programs env) :view-m 4 (vector (env-view-matrix env)))
-    
-    ;; GL
-    (sdl2:gl-set-swap-interval 1)
-    (setf (kit.sdl2:idle-render w) t)
-    (gl:viewport 0 0 width height)
-    (gl:enable :line-smooth)
-    (gl:hint :line-smooth-hint :nicest)    
-    (gl:enable :blend)
-    (gl:blend-func :src-alpha :one-minus-src-alpha)
-    (gl:clear-color 0.0 1.0 0.0 1.0)
-    (gl:clear :color-buffer-bit)
-    (gl:clear :depth-buffer-bit)
-    (gl:flush)))
+  (initialize-environment w)
+  (initialize-gl w))
 
 (defgeneric setup (sketch)
   (:documentation "Called before creating the sketch window.")
@@ -140,6 +43,39 @@ the correct way to do things, but it will have to do for now."
   (:documentation "Called repeatedly after creating the sketch window,
 used for drawing.")
   (:method ((s sketch)) ()))
+
+(defmacro gl-catch (error-color &body body)
+  `(handler-case
+       (progn
+	 ,@body)
+     (error ()
+       (progn
+	 (background ,error-color)
+	 (setf restart-sketch t
+	       (env-red-screen *env*) t)))))
+
+(defun draw-all (s)
+  (reset-buffers)
+  (draw s)
+  (draw-buffers))
+
+(defmethod kit.sdl2:render ((s sketch))
+  (with-slots (env width height framerate restart-sketch copy-pixels) s
+    (with-environment env
+      ;; On setup and when recovering from error, restart sketch.
+      (when restart-sketch
+	(gl-catch (rgb 1 1 0)
+	  (setup s))
+	(setf (slot-value s 'restart-sketch) nil))
+      ;;
+      (if (debug-mode-p)
+	  (progn
+	    (exit-debug-mode)
+	    (draw-all s))
+	  (gl-catch (rgb 1 0 0)
+	    (draw-all s)))
+      (when (not (equal framerate :auto))
+	(framelimit s framerate)))))
 
 ;;; Macros
 
@@ -198,8 +134,13 @@ SETUP to automatically wrap their bodies inside WITH-SLOTS, using all slot names
 	   (sdl2:set-window-title sdl-win ,sketch-title)
 	   (sdl2:set-window-size sdl-win ,sketch-width ,sketch-height)))
        
+       (defmethod initialize-instance :before ((w sketch) &key &allow-other-keys)
+	 ,(when sketch-copy-pixels
+	   `(sdl2:gl-set-attr :doublebuffer 0)))
+       
        ,(alexandria:when-let ((debug-scancode (getf window-options :debug nil)))
 	  `(defmethod kit.sdl2:keyboard-event :before ((window ,sketch-name) s ts rp keysym)
+	     (declare (ignore s ts rp))
 	     (with-slots (env) window
 	       (when (and (env-red-screen env)
 			  (sdl2:scancode= (sdl2:scancode-value keysym) ,debug-scancode))
@@ -210,30 +151,3 @@ SETUP to automatically wrap their bodies inside WITH-SLOTS, using all slot names
   `(defmethod setup ((window ,sketch-name))
      (with-slots ,(gethash sketch-name *sketch-slot-hash-table*) window
        ,@body)))
-
-  #|
-
-  Not sure what to do with these yet.
-
-  (defmethod textinput-event :after ((window test-window) ts text)
-  )
-
-  (defmethod keyboard-event :after ((window test-window) state ts repeat-p keysym)
-  )
-
-  (defmethod mousewheel-event ((window simple-window) ts x y)
-  )
-
-  (defmethod textinput-event ((window simple-window) ts text)
-  )
-
-  (defmethod keyboard-event ((window simple-window) state ts repeat-p keysym)
-  )
-
-  (defmethod mousebutton-event ((window simple-window) state ts b x y)
-  )
-
-  (defmethod mousemotion-event ((window simple-window) ts mask x y xr yr)
-  )
-
-  |#

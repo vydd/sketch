@@ -11,7 +11,8 @@
 	       #:static-vectors)
   :pathname "src"
   :serial t
-  :components ((:file "package")	       
+  :components ((:file "package")
+	       (:file "environment")
 	       (:file "color")
 	       (:file "pen")
 	       (:file "utils")
