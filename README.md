@@ -4,7 +4,7 @@ Sketch is a Common Lisp interpretation of [Processing Language](https://processi
 
 In its current form, it is not intended to be used as a game engine, although simple games can be created in Sketch. This is because Sketch is in its infancy, and designing it to be intuitive and easy to use is much more important than optimizing it for speed - which is important for serious game development.
 
-![Examples](http://imgur.com/MNZUwz8)
+![Examples](http://i.imgur.com/MNZUwz8.png)
 
 ## Installation
 
