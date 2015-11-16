@@ -57,7 +57,8 @@
 	   :color-hsba
 	   :lerp-color
 	   :random-color
-
+	   :hash-color
+	   
 	   ;; Pen
 	   :pen
 	   :make-pen

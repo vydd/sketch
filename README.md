@@ -29,6 +29,10 @@ Sketch is known to *not* work with:
 
 If you test it on other systems, please send a pull request to include your results.
 
+### OpenGL
+
+Version 3.3
+
 ### Running provided examples
 
 To get a feel for what Sketch can do, you can look at the examples. The code below will run all three currently provided examples at once. Note that on older machines running three sketches at once might result in small degradation in performance, so you might want to run sketches separately.

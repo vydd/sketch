@@ -11,8 +11,8 @@
 ;;; Temporary, until done automatically by sdl2kit
 (kit.sdl2:start)
 (sdl2:in-main-thread ()
-  (sdl2:gl-set-attr :context-major-version 4)
-  (sdl2:gl-set-attr :context-minor-version 1)
+  (sdl2:gl-set-attr :context-major-version 3)
+  (sdl2:gl-set-attr :context-minor-version 3)
   (sdl2:gl-set-attr :context-profile-mask 1)
   
   (sdl2:gl-set-attr :red-size 8)

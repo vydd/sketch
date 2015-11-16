@@ -107,3 +107,14 @@
 
 (defun random-color ()
   (rgb (random 1.0) (random 1.0) (random 1.0)))
+
+(defun hash-color (n)
+  (let* ((grp (group-bits n))
+	 (arr (make-array (length grp)
+			  :element-type '(unsigned-byte 8)
+			  :initial-contents grp))
+	 (seq (md5:md5sum-sequence arr))
+	 (hash (loop for i across seq sum i)))
+    (hsb-360 (mod hash 359)
+	     (alexandria:clamp (expt (mod (* n hash) 13) 3) 50 100)
+	     (alexandria:clamp (expt (mod (* n hash) 17) 3) 50 100))))

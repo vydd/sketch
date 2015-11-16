@@ -6,6 +6,7 @@
   :license "MIT"
   :depends-on (#:alexandria
 	       #:glkit
+	       #:md5
 	       #:sdl2
 	       #:sdl2kit
 	       #:static-vectors)
