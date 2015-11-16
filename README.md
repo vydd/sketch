@@ -4,6 +4,8 @@ Sketch is a Common Lisp interpretation of [Processing Language](https://processi
 
 In its current form, it is not intended to be used as a game engine, although simple games can be created in Sketch. This is because Sketch is in its infancy, and designing it to be intuitive and easy to use is much more important than optimizing it for speed - which is important for serious game development.
 
+![Examples](http://imgur.com/MNZUwz8)
+
 ## Installation
 
 Today (November 2015), [Quicklisp](https://www.quicklisp.org/beta/) is Common Lisp's de facto package manager. Sketch is not part of Quicklisp yet, but it is intended to be used with it, so you will have to clone it to your local-projects directory manually. If you're not sure how to do that, read the [Quicklisp FAQ](https://www.quicklisp.org/beta/faq.html).
