@@ -93,7 +93,6 @@ the correct way to do things, but it will have to do for now."
 		(let ((red-screen (env-red-screen *env*)))
 		  (setf (env-red-screen *env*) nil
 			(env-debug-key-pressed *env*) nil)
-					;(draw s)
 		  (draw s)
 		  (draw-buffers)
 		  (when red-screen
@@ -121,7 +120,7 @@ the correct way to do things, but it will have to do for now."
      (env-programs env) :view-m 4 (vector (env-view-matrix env)))
     
     ;; GL
-    ;(sdl2:gl-set-swap-interval 1)
+    (sdl2:gl-set-swap-interval 1)
     (setf (kit.sdl2:idle-render w) t)
     (gl:viewport 0 0 width height)
     (gl:enable :line-smooth)
@@ -201,10 +200,10 @@ SETUP to automatically wrap their bodies inside WITH-SLOTS, using all slot names
        
        ,(alexandria:when-let ((debug-scancode (getf window-options :debug nil)))
 	  `(defmethod kit.sdl2:keyboard-event :before ((window ,sketch-name) s ts rp keysym)
-	     (declare (ignore s ts rp))
-	     (when (and (env-red-screen *env*)
-			(sdl2:scancode= (sdl2:scancode-value keysym) ,debug-scancode))
-	       (setf (env-debug-key-pressed *env*) t)))))))
+	     (with-slots (env) window
+	       (when (and (env-red-screen env)
+			  (sdl2:scancode= (sdl2:scancode-value keysym) ,debug-scancode))
+		 (setf (env-debug-key-pressed env) t))))))))
 
 (defmacro define-sketch-setup (sketch-name &body body)
   "Defines a sketch SETUP method. Body is wrapped with WITH-SLOTS for all slots defined. "

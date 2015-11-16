@@ -15,19 +15,23 @@
 	     (vertex :float 2)
 	     (color :float 4)))
 
-#|
-((sv (static-vectors:make-static-vector
-                  (length vector)
-                  :element-type 'single-float
-		  :initial-element ))
- (ptr (static-vectors:static-vector-pointer sv)))
-|#
-
-(defparameter *vertex-count* (expt 2 8))
-(defparameter *vertex-buffer* (make-array (* 2 *vertex-count*) :element-type 'single-float))
-(defparameter *color-buffer* (make-array (* 4 *vertex-count*) :element-type 'single-float))
-(defparameter *vertex-head* 0)
-(defparameter *color-head* 0)
+(defvar *vertex-count* (expt 2 20))
+(defvar *vertex-buffer*
+  (static-vectors:make-static-vector
+   (* 2 *vertex-count*)
+   :element-type 'single-float
+   :initial-element 0.0))
+(defvar *vertex-buffer-pointer*
+  (static-vectors:static-vector-pointer *vertex-buffer*))
+(defvar *color-buffer*
+  (static-vectors:make-static-vector
+   (* 4 *vertex-count*)
+   :element-type 'single-float
+   :initial-element 0.0))
+(defvar *color-buffer-pointer*
+  (static-vectors:static-vector-pointer *color-buffer*))
+(defvar *vertex-head* 0)
+(defvar *color-head* 0)
 
 (defmacro fill-array (arr start &rest vals)
   `(setf 
@@ -56,9 +60,13 @@
 
 (defun quad (x1 y1 x2 y2 x3 y3 x4 y4))
 
-(defun rect (a b c d &key (mode :corner))0
-  (push-vertices a b a (+ b d) (+ a c) (+ b d))
+(defun rect (a b c d &key (mode :corner))
+  (push-vertices a b a (+ b d) (+ a c) (+ b d)
+		 a b (+ a c) (+ b d) (+ a c) b)
   (push-colors 1.0 0.0 1.0 1.0
+	       1.0 1.0 0.0 1.0
+	       0.0 1.0 1.0 1.0
+	       1.0 0.0 1.0 1.0
 	       1.0 1.0 0.0 1.0
 	       0.0 1.0 1.0 1.0))
 
@@ -73,8 +81,10 @@
 (defun draw-buffers ()
   (when (plusp *vertex-head*)
     (let ((vao (env-vao *env*)))
-
-      (kit.gl.vao:vao-buffer-vector vao 0 (* 4 (length *vertex-buffer*)) *vertex-buffer*)
-      (kit.gl.vao:vao-buffer-vector vao 1 (* 4 (length *color-buffer*)) *color-buffer*)
+      
+      (kit.gl.vao:vao-buffer-data vao 0 (* 4 (length *vertex-buffer*))
+				  *vertex-buffer-pointer*)
+      (kit.gl.vao:vao-buffer-data vao 1 (* 4 (length *color-buffer*))
+				    *color-buffer-pointer*)
       (kit.gl.vao:vao-draw vao :first 0 :count (/ *vertex-head* 2)))))
 
