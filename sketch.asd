@@ -5,17 +5,20 @@
   :author "Danilo Vidovic (vydd)"
   :license "MIT"
   :depends-on (#:alexandria
-	       #:closer-mop
+	       #:glkit
 	       #:sdl2
-	       #:sdl2kit)
+	       #:sdl2kit
+	       #:static-vectors)
   :pathname "src"
   :serial t
-  :components ((:file "package")	       
+  :components ((:file "package")
+	       (:file "environment")
 	       (:file "color")
 	       (:file "pen")
 	       (:file "utils")
 	       (:file "math")
+	       (:file "shaders")
 	       (:file "shapes")
-	       (:file "transforms")	       
+	       (:file "transforms")
                (:file "sketch")))
 

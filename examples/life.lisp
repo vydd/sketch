@@ -11,9 +11,9 @@
 ;;; Press any key to toggle between editing and iterating.
 ;;; When in edit mode, click on cells to toggle them.
 
-(defparameter *columns* 30)
-(defparameter *rows* 30)
-(defparameter *cell-size* 18)
+(defparameter *columns* 20)
+(defparameter *rows* 20)
+(defparameter *cell-size* 20)
 
 (defsketch life
     (:title "Conway's Game of Life"

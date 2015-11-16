@@ -61,23 +61,22 @@
 	   ;; Pen
 	   :pen
 	   :make-pen
+	   :set-pen
 	   :with-pen
 	   :background
 
 	   ;; Shapes
-	   :arc
 	   :ellipse
 	   :line
 	   :point
-	   :quad
 	   :rect
 	   :ngon
 	   :triangle
 
 	   ;; Transforms
-	   :ntranslate
-	   :nrotate
-	   :nscale
+	   :set-translation
+	   :set-rotation
+	   :set-scale
 	   :with-identity-matrix))
 
 
