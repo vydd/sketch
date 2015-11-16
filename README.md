@@ -18,6 +18,7 @@ Sketch is known to work with:
 
 * CCL 1.10 on Mac OS X
 * SBCL on Debian Unstable
+* SBCL 1.2.16 on Arch Linux
 
 Sketch is known to *not* work with:
 
