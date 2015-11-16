@@ -2,7 +2,7 @@
 
 (defpackage #:sketch-examples
   (:use #:cl #:sketch)
-  (:export :brownian
+  (:export :brownian-turtle
 	   :life
 	   :sinewave))
 
