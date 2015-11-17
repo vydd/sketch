@@ -9,17 +9,13 @@
 ;;;   |_| |_| \_\/_/   \_\_| \_|____/|_|   \___/|_| \_\_|  |_|____/
 
 (defun set-translation (x y)
-  (gl:translate x y 0.0))
+  (error "SET-TRANSLATION not implemented"))
 
 (defun set-rotation (angle)
-  (gl:rotate angle 0.0 0.0 1.0))
+  (error "SET-ROTATION not implemented"))
 
 (defun set-scale (sx sy)
-  (gl:scale sx sy 1.0))
+  (error "SET-SCALE not implemented"))
 
 (defmacro with-identity-matrix (&body body)
-  `(progn
-     (gl:push-matrix)
-     (gl:load-identity)
-     ,@body
-     (gl:pop-matrix)))
+  `(error "WITH-IDENTITY-MATRIX not implemented"))

@@ -17,7 +17,7 @@
 	     (vertex :float 2)
 	     (color :float 4)))
 
-(defvar *vertex-count* (expt 2 20))
+(defvar *vertex-count* (expt 2 18))
 (defvar *vertex-buffer*
   (static-vectors:make-static-vector
    (* 2 *vertex-count*)
@@ -25,6 +25,7 @@
    :initial-element 0.0))
 (defvar *vertex-buffer-pointer*
   (static-vectors:static-vector-pointer *vertex-buffer*))
+
 (defvar *color-buffer*
   (static-vectors:make-static-vector
    (* 4 *vertex-count*)
@@ -32,6 +33,7 @@
    :initial-element 0.0))
 (defvar *color-buffer-pointer*
   (static-vectors:static-vector-pointer *color-buffer*))
+
 (defvar *vertex-head* 0)
 (defvar *color-head* 0)
 
@@ -136,4 +138,3 @@
       (kit.gl.vao:vao-buffer-data
        vao 1 (* 4 *color-head*) *color-buffer-pointer*)
       (kit.gl.vao:vao-draw vao :first 0 :count (/ *vertex-head* 2)))))
-

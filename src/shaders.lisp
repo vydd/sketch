@@ -14,7 +14,6 @@
 #version 410
 
 uniform mat4 view_m;
-uniform vec4 fill_color;
 
 layout (location = 0) in vec2 vertex;
 layout (location = 1) in vec4 color;
