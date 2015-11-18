@@ -41,7 +41,7 @@ void main() {
 	     (vertex :float 2)
 	     (color :float 4)))
 
-(defparameter *vertex-count* (expt 2 18))
+(defparameter *vertex-count* (expt 2 20))
 
 ;;; SIZE---------------------------+
 ;;; HEAD-------------------------+ |
