@@ -135,5 +135,5 @@
       (gl:bind-buffer :array-buffer 1)
       (gl:unmap-buffer :array-buffer)
       (gl:bind-buffer :array-buffer 0)
-      (setf *vertex-pointer* nil
-	    *color-head* nil))))
+      (setf *vertex-buffer* nil
+	    *color-buffer* nil))))
