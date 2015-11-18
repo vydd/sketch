@@ -127,13 +127,12 @@
   (setf *color-buffer* (gl:map-buffer :array-buffer :write-only)))
 
 (defun draw-buffers ()
-  (when (plusp *vertex-head*)
-    (let ((vao (env-vao *env*)))      
-      (kit.gl.vao:vao-draw vao :first 0 :count (/ *vertex-head* 2))
-      (gl:bind-buffer :array-buffer 2)
-      (gl:unmap-buffer :array-buffer)
-      (gl:bind-buffer :array-buffer 1)
-      (gl:unmap-buffer :array-buffer)
-      (gl:bind-buffer :array-buffer 0)
-      (setf *vertex-buffer* nil
-	    *color-buffer* nil))))
+  (let ((vao (env-vao *env*)))      
+    (kit.gl.vao:vao-draw vao :first 0 :count (/ *vertex-head* 2)))
+  (gl:bind-buffer :array-buffer 2)
+  (gl:unmap-buffer :array-buffer)
+  (gl:bind-buffer :array-buffer 1)
+  (gl:unmap-buffer :array-buffer)
+  (gl:bind-buffer :array-buffer 0)
+  (setf *vertex-buffer* nil
+	*color-buffer* nil))
