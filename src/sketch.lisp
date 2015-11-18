@@ -59,8 +59,6 @@ used for drawing.")
   (draw s)
   (draw-buffers))
 
-(defparameter *dbgdbg* nil)
-
 (defmethod kit.sdl2:render ((s sketch))    
   (with-slots (env width height framerate restart-sketch copy-pixels) s
     (with-environment env
