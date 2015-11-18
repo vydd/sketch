@@ -8,55 +8,7 @@
 ;;;  ___) |  _  |/ ___ \|  __/| |___ ___) |
 ;;; |____/|_| |_/_/   \_\_|   |_____|____/
 
-;;; TODO: Refactor all of this and make use of indexing.
-
 ;;; 2D Primitives
-
-(kit.gl.vao:defvao 2d-vertices ()
-  (:separate ()
-	     (vertex :float 2)
-	     (color :float 4)))
-
-
-(defparameter *vertex-count* (expt 2 18))
-
-(defparameter *vertex-buffer* nil)
-(defparameter *color-buffer* nil)
-
-(defparameter *vertex-head* 0)
-(defparameter *color-head* 0)
-
-(defmacro fill-array (arr start &rest vals)
-  `(setf 
-    ,@(loop
-	 for i from 0 below (length vals)
-	 for j in vals
-	 append `((cffi:mem-aref ,arr :float (+ ,start ,i))
-		  (coerce ,j 'single-float)))))
-
-(defmacro push-vertices (&rest vals)
-  `(progn
-     (fill-array *vertex-buffer* *vertex-head* ,@vals)
-     (setf *vertex-head* (+ ,(length vals) *vertex-head*))))
-
-(defmacro push-colors (&rest vals)
-  `(progn
-     (fill-array *color-buffer* *color-head* ,@vals)
-     (setf *color-head* (+ ,(length vals) *color-head*))))
-
-(defmacro push-color-struct (cs)
-  `(push-colors
-    (color-red ,cs) (color-green ,cs) (color-blue ,cs) (color-alpha ,cs)))
-
-(defmacro push-fill (vertices)
-  `(progn
-     ,@(loop for i from 0 below vertices collect
-	    `(push-color-struct (pen-fill (env-pen *env*))))))
-
-(defmacro push-stroke (vertices)
-  `(progn
-     ,@(loop for i from 0 below vertices collect
-	    `(push-color-struct (pen-stroke (env-pen *env*))))))
 
 (defun line (x1 y1 x2 y2)
   ;; TODO: Make this sane.
@@ -115,24 +67,3 @@
   (line x1 y1 x2 y2)
   (line x2 y2 x3 y3)
   (line x3 y3 x1 y1))
-
-(defun reset-buffers ()  
-  (setf *vertex-head* 0
-	*color-head* 0)
-  (gl:bind-buffer :array-buffer 1)
-  (%gl:buffer-data :array-buffer (* 2 *vertex-count*) (cffi:null-pointer) :stream-draw)
-  (setf *vertex-buffer* (gl:map-buffer :array-buffer :write-only))
-  (gl:bind-buffer :array-buffer 2)
-  (%gl:buffer-data :array-buffer (* 4 *vertex-count*) (cffi:null-pointer) :stream-draw)
-  (setf *color-buffer* (gl:map-buffer :array-buffer :write-only)))
-
-(defun draw-buffers ()
-  (let ((vao (env-vao *env*)))      
-    (kit.gl.vao:vao-draw vao :first 0 :count (/ *vertex-head* 2)))
-  (gl:bind-buffer :array-buffer 2)
-  (gl:unmap-buffer :array-buffer)
-  (gl:bind-buffer :array-buffer 1)
-  (gl:unmap-buffer :array-buffer)
-  (gl:bind-buffer :array-buffer 0)
-  (setf *vertex-buffer* nil
-	*color-buffer* nil))

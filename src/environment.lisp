@@ -20,6 +20,7 @@
   (pen nil)
   ;; Shaders
   (programs nil)
+  (model-matrix (sb-cga:identity-matrix))
   (view-matrix nil)
   (vao nil)
   ;; Debugging  

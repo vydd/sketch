@@ -8,16 +8,17 @@
 	       #:cffi
 	       #:glkit
 	       #:md5
+	       #:sb-cga
 	       #:sdl2
 	       #:sdl2kit
 	       #:static-vectors)
   :pathname "src"
   :serial t
   :components ((:file "package")
+	       (:file "utils")
 	       (:file "environment")
 	       (:file "color")
 	       (:file "pen")
-	       (:file "utils")
 	       (:file "math")
 	       (:file "shaders")
 	       (:file "shapes")

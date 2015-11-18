@@ -75,9 +75,9 @@
 	   :triangle
 
 	   ;; Transforms
-	   :set-translation
-	   :set-rotation
-	   :set-scale
+	   :ntranslate
+	   :nrotate
+	   :nscale
 	   :with-identity-matrix))
 
 
