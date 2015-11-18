@@ -5,6 +5,7 @@
   :author "Danilo Vidovic (vydd)"
   :license "MIT"
   :depends-on (#:alexandria
+	       #:cffi
 	       #:glkit
 	       #:md5
 	       #:sdl2
@@ -21,5 +22,6 @@
 	       (:file "shaders")
 	       (:file "shapes")
 	       (:file "transforms")
+	       (:file "profiler")
                (:file "sketch")))
 

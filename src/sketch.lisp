@@ -19,7 +19,7 @@
 (defclass sketch (kit.sdl2:gl-window)  
   (;; Environment
    (env :initform (make-env))
-   (benchmarks :initform nil)
+   (profiler :initform (make-instance 'profiler))
    ;; Timekeeping
    (start-time :initform (get-internal-real-time))
    (last-frame-time :initform (get-internal-real-time))
@@ -59,7 +59,9 @@ used for drawing.")
   (draw s)
   (draw-buffers))
 
-(defmethod kit.sdl2:render ((s sketch))
+(defparameter *dbgdbg* nil)
+
+(defmethod kit.sdl2:render ((s sketch))    
   (with-slots (env width height framerate restart-sketch copy-pixels) s
     (with-environment env
       ;; On setup and when recovering from error, restart sketch.
@@ -113,7 +115,9 @@ SETUP to automatically wrap their bodies inside WITH-SLOTS, using all slot names
 		    (copy-pixels ,sketch-copy-pixels))))	 
 	 (slots (mapcar #'car slot-bindings))	 
 	 (initforms (mapcar #'(lambda (binding)
-			       `(,(car binding) :initform ,(cadr binding)))
+				`(,(car binding)
+				   :initform ,(cadr binding)
+				   :accessor ,(car binding)))
 			    slot-bindings)))
     ;; We are going to need slot names available during macroexpansion, so that
     ;; our enhanced methods can know what slots should be provided to WITH-SLOTS.

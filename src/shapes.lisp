@@ -17,32 +17,22 @@
 	     (vertex :float 2)
 	     (color :float 4)))
 
-(defvar *vertex-count* (expt 2 18))
-(defvar *vertex-buffer*
-  (static-vectors:make-static-vector
-   (* 2 *vertex-count*)
-   :element-type 'single-float
-   :initial-element 0.0))
-(defvar *vertex-buffer-pointer*
-  (static-vectors:static-vector-pointer *vertex-buffer*))
 
-(defvar *color-buffer*
-  (static-vectors:make-static-vector
-   (* 4 *vertex-count*)
-   :element-type 'single-float
-   :initial-element 0.0))
-(defvar *color-buffer-pointer*
-  (static-vectors:static-vector-pointer *color-buffer*))
+(defparameter *vertex-count* (expt 2 18))
 
-(defvar *vertex-head* 0)
-(defvar *color-head* 0)
+(defparameter *vertex-buffer* nil)
+(defparameter *color-buffer* nil)
+
+(defparameter *vertex-head* 0)
+(defparameter *color-head* 0)
 
 (defmacro fill-array (arr start &rest vals)
   `(setf 
     ,@(loop
 	 for i from 0 below (length vals)
 	 for j in vals
-	 append `((aref ,arr (+ ,start ,i)) (coerce ,j 'single-float)))))
+	 append `((cffi:mem-aref ,arr :float (+ ,start ,i))
+		  (coerce ,j 'single-float)))))
 
 (defmacro push-vertices (&rest vals)
   `(progn
@@ -126,15 +116,24 @@
   (line x2 y2 x3 y3)
   (line x3 y3 x1 y1))
 
-(defun reset-buffers ()
-  (setf *vertex-head* 0)
-  (setf *color-head* 0))
+(defun reset-buffers ()  
+  (setf *vertex-head* 0
+	*color-head* 0)
+  (gl:bind-buffer :array-buffer 1)
+  (%gl:buffer-data :array-buffer (* 2 *vertex-count*) (cffi:null-pointer) :stream-draw)
+  (setf *vertex-buffer* (gl:map-buffer :array-buffer :write-only))
+  (gl:bind-buffer :array-buffer 2)
+  (%gl:buffer-data :array-buffer (* 4 *vertex-count*) (cffi:null-pointer) :stream-draw)
+  (setf *color-buffer* (gl:map-buffer :array-buffer :write-only)))
 
 (defun draw-buffers ()
   (when (plusp *vertex-head*)
     (let ((vao (env-vao *env*)))      
-      (kit.gl.vao:vao-buffer-data
-       vao 0 (* 4 *vertex-head*) *vertex-buffer-pointer*) 
-      (kit.gl.vao:vao-buffer-data
-       vao 1 (* 4 *color-head*) *color-buffer-pointer*)
-      (kit.gl.vao:vao-draw vao :first 0 :count (/ *vertex-head* 2)))))
+      (kit.gl.vao:vao-draw vao :first 0 :count (/ *vertex-head* 2))
+      (gl:bind-buffer :array-buffer 2)
+      (gl:unmap-buffer :array-buffer)
+      (gl:bind-buffer :array-buffer 1)
+      (gl:unmap-buffer :array-buffer)
+      (gl:bind-buffer :array-buffer 0)
+      (setf *vertex-pointer* nil
+	    *color-head* nil))))

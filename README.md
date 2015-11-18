@@ -8,7 +8,7 @@ In its current form, it is not intended to be used as a game engine, although si
 
 ## Installation
 
-Today (November 2015), [Quicklisp](https://www.quicklisp.org/beta/) is Common Lisp's de facto package manager. Sketch is not part of Quicklisp yet, but it is intended to be used with it, so you will have to clone it to your local-projects directory manually. If you're not sure how to do that, read the [Quicklisp FAQ](https://www.quicklisp.org/beta/faq.html).
+Today (November 2015), [Quicklisp](https://www.quicklisp.org/beta/) is Common Lisp's de facto package manager. Sketch is not a part of Quicklisp yet, but it is intended to be used with it. So, you will have to clone it to your local-projects directory manually. If you're not sure how to do that, read the [Quicklisp FAQ](https://www.quicklisp.org/beta/faq.html).
 
 SDL2 is Sketch's only backend. It is a C library which you will need to download manually from [libsdl webpage](https://www.libsdl.org/download-2.0.php). Select the relase compatible with your operating system, or compile from the source code.
 
