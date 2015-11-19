@@ -69,7 +69,6 @@ void main() {
     (gl:bind-buffer :array-buffer 0)))
 
 (defmacro fill-buffer (idx &rest vals)
-       (setf 
   `(setf 
     ,@(loop
 	 for i from 0 below (length vals)
