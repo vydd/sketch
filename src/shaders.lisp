@@ -43,11 +43,14 @@ void main() {
 
 (defparameter *vertex-count* (expt 2 20))
 
-;;; SIZE---------------------------+
-;;; HEAD-------------------------+ |
-;;; POINTER-------------------+  | |
+;;; size --------------------------+
+;;; head ------------------------+ |
+;;; pointer ------------------+  | |
 ;;;                           V  V V
 (defparameter *buffers* #2A((nil 0 2) (nil 0 4)))
+;;;                         \_______/ \_______/
+;;;                             |         |
+;;;                          vertices   colors
 
 (defun reset-buffers ()
   (dotimes (i (array-dimension *buffers* 0))
@@ -80,18 +83,15 @@ void main() {
 		  (coerce ,j 'single-float)))
     (aref *buffers* ,idx 1) (+ ,(length vals) (aref *buffers* ,idx 1))))
 
-(defun push-transformed-vertices (&rest vertices)
-  (dolist (vertex vertices)
-    (let ((transformed (kit.math:matrix*vec4 (env-model-matrix *env*) vertex)))
-      (fill-buffer 0 (aref transformed 0) (aref transformed 1)))))
-
 (defmacro push-vertices (&rest vals)
-  `(push-transformed-vertices
-    ,@(loop for (x y) in vals collect
-	   `(kit.math:vec4 (coerce ,x 'single-float)
-			   (coerce ,y 'single-float)
-			   0.0f0
-			   1.0f0))))
+  (alexandria:with-gensyms (m00 m01 m03 m10 m11 m13)
+    (macrolet ((mx (i j) ``(aref (env-model-matrix *env*) ,,(+ (* j 4) i))))
+      `(let ((,m00 ,(mx 0 0)) (,m01 ,(mx 0 1)) (,m03 ,(mx 0 3))
+	     (,m10 ,(mx 1 0)) (,m11 ,(mx 1 1)) (,m13 ,(mx 1 3)))
+	 (fill-buffer 0
+		      ,@(loop for (x y) in vals append
+			     `((+ (* ,m00 ,x) (* ,m01 ,y) ,m03)
+			       (+ (* ,m10 ,x) (* ,m11 ,y) ,m13))))))))
 
 (defmacro push-colors (&rest vals)
   `(fill-buffer 1 ,@vals))
@@ -100,12 +100,12 @@ void main() {
   `(push-colors
     (color-red ,cs) (color-green ,cs) (color-blue ,cs) (color-alpha ,cs)))
 
-(defmacro push-fill (vertices)
+(defmacro push-fill (vertex-count)
   `(progn
-     ,@(loop for i from 0 below vertices collect
+     ,@(loop for i from 0 below vertex-count collect
 	    `(push-color-struct (pen-fill (env-pen *env*))))))
 
-(defmacro push-stroke (vertices)
+(defmacro push-stroke (vertex-count)
   `(progn
-     ,@(loop for i from 0 below vertices collect
+     ,@(loop for i from 0 below vertex-count collect
 	    `(push-color-struct (pen-stroke (env-pen *env*))))))

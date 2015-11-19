@@ -10,13 +10,14 @@
 
 ;;; 2D Primitives
 
-(defun line (x1 y1 x2 y2)
+(defun line (x1 y1 x2 y2)  
+  ;(declare (optimize (speed 3) (safety 0) (debug 0)))
   ;; TODO: Make this sane.
   (when (pen-stroke (env-pen *env*))
     (let* ((a (atan (- y2 y1) (- x2 x1)))
 	   (w (/ (or (pen-weight (env-pen *env*)) 1) 2))
 	   (dx (* (sin a) w))
-	   (dy (* (cos a) w)))
+	   (dy (* (cos a) w)))     
       (push-vertices ((- x1 dx) (+ y1 dy))
 		     ((- x2 dx) (+ y2 dy))
 		     ((+ x1 dx) (- y1 dy))		     
@@ -26,14 +27,17 @@
       (push-stroke 6))))
 
 (defun ellipse (a b c d &key (mode :corner))
+  ;(declare (optimize (speed 3) (safety 0) (debug 0)))
   (ngon (max 22 (truncate (* 5 (sqrt (/ (+ c d) 2))))) a b c d :mode mode))
 
 (defun point (x y)
+  ;(declare (optimize (speed 3) (safety 0) (debug 0)))
   (when (pen-stroke (env-pen *env*))
     (push-vertices (x y) (x y) (x y))
     (push-stroke 3)))
 
 (defun rect (a b c d &key (mode :corner))
+  ;(declare (optimize (speed 3) (safety 0 (debug 0))))
   (when (pen-fill (env-pen *env*))
     (push-vertices (a b) (a (+ b d)) ((+ a c) (+ b d))
 		   (a b) ((+ a c) (+ b d)) ((+ a c) b))
@@ -45,6 +49,7 @@
     (line (+ a c) b a b)))
 
 (defun ngon (n a b c d &key (mode :corner) (angle 0))
+  ;(declare (optimize (speed 3) (safety 0) (debug 0)))
   ;; http://slabode.exofire.net/circle_draw.shtml
   (let* ((theta (/ +tau+ n))
 	 (tangential (tan theta))
@@ -70,6 +75,7 @@
 		y next-y))))))
 
 (defun triangle (x1 y1 x2 y2 x3 y3)
+  ;(declare (optimize (speed 3) (safety 0) (debug 0)))
   (when (pen-fill (env-pen *env*))
     (push-vertices (x1 y1) (x2 y2) (x3 y3))
     (push-fill 3))
