@@ -69,19 +69,30 @@ void main() {
     (gl:bind-buffer :array-buffer 0)))
 
 (defmacro fill-buffer (idx &rest vals)
-  `(progn
-     (symbol-macrolet ((buffer (aref *buffers* ,idx 0))
-		       (head (aref *buffers* ,idx 1)))
        (setf 
-	,@(loop
-	     for i from 0 below (length vals)
-	     for j in vals
-	     append `((cffi:mem-aref buffer :float (+ head ,i))
-		      (coerce ,j 'single-float))))
-       (setf head (+ ,(length vals) head)))))
+  `(setf 
+    ,@(loop
+	 for i from 0 below (length vals)
+	 for j in vals
+	 append `((cffi:mem-aref
+		   (aref *buffers* ,idx 0)
+		   :float
+		   (+ (aref *buffers* ,idx 1) ,i))
+		  (coerce ,j 'single-float)))
+    (aref *buffers* ,idx 1) (+ ,(length vals) (aref *buffers* ,idx 1))))
+
+(defun push-transformed-vertices (&rest vertices)
+  (dolist (vertex vertices)
+    (let ((transformed (kit.math:matrix*vec4 (env-model-matrix *env*) vertex)))
+      (fill-buffer 0 (aref transformed 0) (aref transformed 1)))))
 
 (defmacro push-vertices (&rest vals)
-  `(fill-buffer 0 ,@vals))
+  `(push-transformed-vertices
+    ,@(loop for (x y) in vals collect
+	   `(kit.math:vec4 (coerce ,x 'single-float)
+			   (coerce ,y 'single-float)
+			   0.0f0
+			   1.0f0))))
 
 (defmacro push-colors (&rest vals)
   `(fill-buffer 1 ,@vals))

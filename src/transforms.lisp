@@ -12,13 +12,13 @@
   `(defun ,name ,args
      (let ((transform-matrix ,multiplicant))
        (setf (env-model-matrix *env*)
-	     (sb-cga:matrix* (env-model-matrix *env*) transform-matrix)))))
+	     (sb-cga:matrix* transform-matrix (env-model-matrix *env*))))))
 
 (define-ntransform ntranslate (dx dy)
   (sb-cga::translate* (coerce dx 'single-float) (coerce dy 'single-float) 0.0))
 
 (define-ntransform nrotate (angle)
-  (sb-cga::rotate*  0.0 0.0 (coerce angle 'single-float)))
+  (sb-cga::rotate* 0.0 0.0 (coerce (radians angle) 'single-float)))
 
 (define-ntransform nscale (sx sy)
   (sb-cga::scale* (coerce sx 'single-float) (coerce sy 'single-float) 0.0))
@@ -32,5 +32,5 @@
        (setf (env-model-matrix *env*) previous-matrix))))
 
 (defmacro with-identity-matrix (&body body)
-  `(with-matrix (sb-cga::identity-matrix)
+  `(with-matrix sb-cga::+identity-matrix+
      ,@body))

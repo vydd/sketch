@@ -7,6 +7,7 @@
   :depends-on (#:alexandria
 	       #:cffi
 	       #:glkit
+	       #:mathkit
 	       #:md5
 	       #:sb-cga
 	       #:sdl2

@@ -10,6 +10,13 @@
 
 ;;; Temporary, until done automatically by sdl2kit
 (kit.sdl2:start)
+(sdl2:gl-set-attr :red-size 8)
+(sdl2:gl-set-attr :green-size 8)
+(sdl2:gl-set-attr :blue-size 8)
+(sdl2:gl-set-attr :alpha-size 8)
+(sdl2:gl-set-attr :multisamplebuffers 1)
+(sdl2:gl-set-attr :multisamplesamples 4)
+
 (sdl2:gl-set-attr :context-major-version 3)
 (sdl2:gl-set-attr :context-minor-version 3)
 (sdl2:gl-set-attr :context-profile-mask 1)
@@ -43,13 +50,6 @@
      (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
 
 (defun initialize-gl (w)
-  (sdl2:gl-set-attr :red-size 8)
-  (sdl2:gl-set-attr :green-size 8)
-  (sdl2:gl-set-attr :blue-size 8)
-  (sdl2:gl-set-attr :alpha-size 8)
-  (sdl2:gl-set-attr :multisamplebuffers 1)
-  (sdl2:gl-set-attr :multisamplesamples 4)
-  
   (with-slots (env width height copy-pixels) w
     (sdl2:gl-set-swap-interval 1)
     (setf (kit.sdl2:idle-render w) t)
