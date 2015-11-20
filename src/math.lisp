@@ -30,6 +30,7 @@
 (defconstant +tau+ +two-pi+)
 (defconstant +half-pi+(/ PI 2))
 (defconstant +quarter-pi+ (/ PI 4))
+(defconstant +epsilon+ single-float-epsilon)
 
 (defun radians (deg)
   (* PI (/ deg 180)))

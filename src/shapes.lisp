@@ -51,7 +51,8 @@
 (defun ngon (n a b c d &key (mode :corner) (angle 0))
   ;(declare (optimize (speed 3) (safety 0) (debug 0)))
   ;; http://slabode.exofire.net/circle_draw.shtml
-  (let* ((theta (/ +tau+ n))
+  (let* ((c (if (zerop c) +epsilon+ c))
+	 (theta (/ +tau+ n))
 	 (tangential (tan theta))
 	 (radial (cos theta))
 	 (x c)
