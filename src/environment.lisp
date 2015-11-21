@@ -10,16 +10,13 @@
 
 ;;; Temporary, until done automatically by sdl2kit
 (kit.sdl2:start)
-(sdl2:gl-set-attr :red-size 8)
-(sdl2:gl-set-attr :green-size 8)
-(sdl2:gl-set-attr :blue-size 8)
-(sdl2:gl-set-attr :alpha-size 8)
-(sdl2:gl-set-attr :multisamplebuffers 1)
-(sdl2:gl-set-attr :multisamplesamples 4)
+(sdl2:in-main-thread ()
+  (sdl2:gl-set-attr :multisamplebuffers 1)
+  (sdl2:gl-set-attr :multisamplesamples 4)
 
-(sdl2:gl-set-attr :context-major-version 3)
-(sdl2:gl-set-attr :context-minor-version 3)
-(sdl2:gl-set-attr :context-profile-mask 1)
+  (sdl2:gl-set-attr :context-major-version 3)
+  (sdl2:gl-set-attr :context-minor-version 3)
+  (sdl2:gl-set-attr :context-profile-mask 1))
 ;;;
 
 (defstruct env

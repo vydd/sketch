@@ -18,7 +18,7 @@
      (flower-pos nil)
      (flower-timer 30)
      (flower-color nil)
-     (flower-size (+ 200 (random 200))))  
+     (flower-size (+ 200 (random 200))))
   (flet ((draw (paces)
 	   (dotimes (i paces)
 	     (let ((new-pos (cons (+ (car pos) (car dir))
