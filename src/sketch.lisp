@@ -31,6 +31,9 @@
    (height :initform 200)
    (copy-pixels :initform nil)))
 
+(defmethod initialize-instance :before ((w sketch) &key &allow-other-keys)
+  (initialize-sdl))
+
 (defmethod initialize-instance :after ((w sketch) &key &allow-other-keys)
   (initialize-environment w)
   (initialize-gl w))

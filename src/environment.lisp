@@ -9,14 +9,20 @@
 ;;; |_____|_| \_|  \_/  |___|_| \_\\___/|_| \_|_|  |_|_____|_| \_| |_|
 
 ;;; Temporary, until done automatically by sdl2kit
-(kit.sdl2:start)
-(sdl2:in-main-thread ()
-  (sdl2:gl-set-attr :multisamplebuffers 1)
-  (sdl2:gl-set-attr :multisamplesamples 4)
 
-  (sdl2:gl-set-attr :context-major-version 3)
-  (sdl2:gl-set-attr :context-minor-version 3)
-  (sdl2:gl-set-attr :context-profile-mask 1))
+(defparameter *sdl-initialized* nil)
+
+(defun initialize-sdl ()
+  (unless *sdl-initialized*
+    (kit.sdl2:start)
+    (sdl2:in-main-thread ()
+      (sdl2:gl-set-attr :multisamplebuffers 1)
+      (sdl2:gl-set-attr :multisamplesamples 4)
+
+      (sdl2:gl-set-attr :context-major-version 3)
+      (sdl2:gl-set-attr :context-minor-version 3)
+      (sdl2:gl-set-attr :context-profile-mask 1))
+    (setf *sdl-initialized* t)))
 ;;;
 
 (defstruct env
@@ -48,6 +54,7 @@
 
 (defun initialize-gl (w)
   (with-slots (env width height copy-pixels) w
+    ;(sdl2:set-window-fullscreen (kit.sdl2:sdl-window w) t)
     (sdl2:gl-set-swap-interval 1)
     (setf (kit.sdl2:idle-render w) t)
     (gl:viewport 0 0 width height)
