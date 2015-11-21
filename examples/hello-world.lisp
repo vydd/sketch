@@ -10,5 +10,5 @@
 
 (defsketch hello-world (:title "Hello, World!" :debug :scancode-f1) ()
   (background (gray 0.6))
-  (with-pen (make-pen :fill (rgb 1 1 0))
+  (with-pen (make-pen :stroke (rgb 1 1 0) :weight 2)
     (triangle 100 20 20 180 180 180)))

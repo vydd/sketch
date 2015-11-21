@@ -42,6 +42,7 @@
 				       :type '2d-vertices
 				       :primitive :triangles
 				       :vertex-count 0))
+    (gl:gen-buffer) ;; index buffer
     (kit.gl.shader:use-program (env-programs env) :fill-shader)
     (kit.gl.shader:uniform-matrix
      (env-programs env) :view-m 4 (vector (env-view-matrix env)))))

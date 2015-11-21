@@ -43,44 +43,46 @@ void main() {
 
 (defparameter *vertex-count* (expt 2 20))
 
-;;; size --------------------------+
-;;; head ------------------------+ |
-;;; pointer ------------------+  | |
-;;;                           V  V V
-(defparameter *buffers* #2A((nil 0 2) (nil 0 4)))
-;;;                         \_______/ \_______/
-;;;                             |         |
-;;;                          vertices   colors
+;;; buffer type ---------------------------+
+;;; size --------------------------+       |
+;;; head ------------------------+ |       |
+;;; pointer ------------------+  | |       |
+;;;                           V  V V       V
+(defparameter *buffers* #2A((nil 0 2 :array-buffer)           ; vertices
+			    (nil 0 4 :array-buffer)           ; colors
+			    (nil 0 4 :element-array-buffer))) ; indices
 
 (defun reset-buffers ()
   (dotimes (i (array-dimension *buffers* 0))
-    (gl:bind-buffer :array-buffer (1+ i))
-    (%gl:buffer-data :array-buffer
-		     (* (aref *buffers* i 2) *vertex-count*)
-		     (cffi:null-pointer)
-		     :stream-draw)
-    (setf (aref *buffers* i 0) (gl:map-buffer :array-buffer :write-only)
-	  (aref *buffers* i 1) 0)))
+    (let ((buffer-type (aref *buffers* i 3)))
+      (gl:bind-buffer buffer-type (1+ i))
+      (%gl:buffer-data buffer-type
+		       (* (aref *buffers* i 2) *vertex-count*)
+		       (cffi:null-pointer)
+		       :stream-draw)
+      (setf (aref *buffers* i 0) (gl:map-buffer buffer-type :write-only)
+	    (aref *buffers* i 1) 0))))
 
 (defun draw-buffers ()
   (let ((vao (env-vao *env*)))      
-    (kit.gl.vao:vao-draw vao :first 0 :count (/ (aref *buffers* 0 1) 2))
+    (kit.gl.vao:vao-bind vao)
+    (%gl:draw-elements :triangles (aref *buffers* 2 1) :unsigned-int 0)
     (dotimes (i (array-dimension *buffers* 0))
       (gl:bind-buffer :array-buffer (- (array-dimension *buffers* 0) i))
       (gl:unmap-buffer :array-buffer)
       (setf (aref *buffers* i 0) nil))
     (gl:bind-buffer :array-buffer 0)))
 
-(defmacro fill-buffer (idx &rest vals)
+(defmacro fill-buffer (idx f-type cl-type &rest vals)
   `(setf 
     ,@(loop
 	 for i from 0 below (length vals)
 	 for j in vals
 	 append `((cffi:mem-aref
 		   (aref *buffers* ,idx 0)
-		   :float
+		   ,f-type
 		   (+ (aref *buffers* ,idx 1) ,i))
-		  (coerce ,j 'single-float)))
+		  (coerce ,j ,cl-type)))
     (aref *buffers* ,idx 1) (+ ,(length vals) (aref *buffers* ,idx 1))))
 
 (defmacro push-vertices (&rest vals)
@@ -88,13 +90,20 @@ void main() {
     (macrolet ((mx (i j) ``(aref (env-model-matrix *env*) ,,(+ (* j 4) i))))
       `(let ((,m00 ,(mx 0 0)) (,m01 ,(mx 0 1)) (,m03 ,(mx 0 3))
 	     (,m10 ,(mx 1 0)) (,m11 ,(mx 1 1)) (,m13 ,(mx 1 3)))
-	 (fill-buffer 0
+	 (fill-buffer 0 :float 'single-float
 		      ,@(loop for (x y) in vals append
 			     `((+ (* ,m00 ,x) (* ,m01 ,y) ,m03)
 			       (+ (* ,m10 ,x) (* ,m11 ,y) ,m13))))))))
 
 (defmacro push-colors (&rest vals)
-  `(fill-buffer 1 ,@vals))
+  `(fill-buffer 1 :float 'single-float ,@vals))
+
+(defmacro push-indices (&rest vals)
+  (let ((delta (gensym)))
+    `(let ((,delta (/ (aref *buffers* 0 1) 2)))
+       (fill-buffer 2 :unsigned-int 'integer
+		    ,@(loop for v in vals append
+			   `((+ ,v ,delta)))))))
 
 (defmacro push-color-struct (cs)
   `(push-colors
@@ -109,3 +118,4 @@ void main() {
   `(progn
      ,@(loop for i from 0 below vertex-count collect
 	    `(push-color-struct (pen-stroke (env-pen *env*))))))
+
