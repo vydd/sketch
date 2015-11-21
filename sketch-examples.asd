@@ -13,4 +13,5 @@
   :components ((:file "package")
 	       (:file "sinewave")
 	       (:file "life")
-	       (:file "brownian")))
+	       (:file "brownian")
+	       (:file "hello-world")))
