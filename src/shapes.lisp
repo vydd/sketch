@@ -71,8 +71,6 @@
 	(push-fill 1))
       (dotimes (i n)
 	(push-indices (- 0 n 1) (- i n) (- (mod (+ i 1) n) n))))
-    ;; (dotimes (i n)
-    ;; 	(push-indices (- 0 n 1) (- 0 i) (- 0 (mod (+ i 1) n)))
     
     (when (pen-stroke (env-pen *env*))
       (dotimes (i n)
