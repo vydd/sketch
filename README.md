@@ -12,7 +12,7 @@ Today (November 2015), [Quicklisp](https://www.quicklisp.org/beta/) is Common Li
 
 ### Requirements
 
-## Common Lisp Implementation
+#### Common Lisp Implementation
 
 Sketch should be compatible with all major Common Lisp implementations and all major operating systems - more specifically, all CL implementations and operating systems that [cl-sdl2](https://github.com/lispgames/cl-sdl2) runs on. Incompatibily with any of those is considered a bug.
 
@@ -30,11 +30,11 @@ Sketch is known to *not* work with:
 
 If you test it on other systems, please send a pull request to include your results.
 
-## SDL2
+#### SDL2
 
 SDL2 is Sketch's only backend. It is a C library which you will need to download manually from [libsdl webpage](https://www.libsdl.org/download-2.0.php). Select the relase compatible with your operating system, or compile from the source code.
 
-## OpenGL
+#### OpenGL
 
 Sketch requires graphics hardware and drivers with support for GL version 3.3.
 
