@@ -27,7 +27,7 @@
   (model-matrix (sb-cga:identity-matrix))
   (view-matrix nil)
   (vao nil)
-  ;; Debugging  
+  ;; Debugging
   (debug-key-pressed nil)
   (red-screen nil))
 
@@ -42,7 +42,7 @@
 				       :type '2d-vertices
 				       :primitive :triangles
 				       :vertex-count 0))
-    (gl:gen-buffer) ;; index buffer
+    (gl:gen-buffer) ; index buffer
     (kit.gl.shader:use-program (env-programs env) :fill-shader)
     (kit.gl.shader:uniform-matrix
      (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
@@ -52,13 +52,11 @@
     (sdl2:gl-set-swap-interval 1)
     (setf (kit.sdl2:idle-render w) t)
     (gl:viewport 0 0 width height)
-    (gl:enable :line-smooth)
-    (gl:hint :line-smooth-hint :nicest)    
-    (gl:enable :blend)
+    (gl:enable :blend :line-smooth)
     (gl:blend-func :src-alpha :one-minus-src-alpha)
+    (gl:hint :line-smooth-hint :nicest)
     (gl:clear-color 0.0 1.0 0.0 1.0)
-    (gl:clear :color-buffer-bit)
-    (gl:clear :depth-buffer-bit)
+    (gl:clear :color-buffer :depth-buffer)
     (gl:flush)))
 
 (defun debug-mode-p ()

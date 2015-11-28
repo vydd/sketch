@@ -52,7 +52,7 @@
 
 (defun hsb (hue saturation brightness &optional (alpha 1.0))
   (destructuring-bind (hue saturation brightness alpha)
-      (mapcar #'clamp-1 (list hue saturation brightness alpha))    
+      (mapcar #'clamp-1 (list hue saturation brightness alpha))
     (let ((rgb (hsb-to-rgb hue saturation brightness)))
       (make-color :hue hue :saturation saturation :brightness brightness :alpha alpha
 		  :red (elt rgb 0) :green (elt rgb 1) :blue (elt rgb 2)))))
