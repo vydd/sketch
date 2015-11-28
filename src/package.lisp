@@ -19,7 +19,6 @@
 
 	   ::width
 	   ::height
-	   ::framerate
 	   ::title
 	   
 	   ;; Math

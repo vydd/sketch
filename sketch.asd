@@ -24,6 +24,4 @@
 	       (:file "shaders")
 	       (:file "shapes")
 	       (:file "transforms")
-	       (:file "profiler")
                (:file "sketch")))
-

@@ -45,14 +45,18 @@
     (gl:gen-buffer) ;; index buffer
     (kit.gl.shader:use-program (env-programs env) :fill-shader)
     (kit.gl.shader:uniform-matrix
-     (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
+     (env-programs env) :view-m 4 (vector (env-view-matrix env)))
+    (kit.gl.shader:uniform-matrix
+     (env-programs env) :model-m 4 (vector (env-model-matrix env)))
+    (kit.gl.shader:uniformfv
+     (env-programs env) :color (vector color))))
 
 (defun initialize-gl (w)
   (with-slots (env width height copy-pixels) w
     (sdl2:gl-set-swap-interval 1)
     (setf (kit.sdl2:idle-render w) t)
     (gl:viewport 0 0 width height)
-    (gl:enable :line-smooth)
+    (gl:enable :line-smooth :polygon-smooth)
     (gl:hint :line-smooth-hint :nicest)    
     (gl:enable :blend)
     (gl:blend-func :src-alpha :one-minus-src-alpha)

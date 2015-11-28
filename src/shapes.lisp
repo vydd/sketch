@@ -8,7 +8,91 @@
 ;;;  ___) |  _  |/ ___ \|  __/| |___ ___) |
 ;;; |____/|_| |_/_/   \_\_|   |_____|____/
 
+
+(defun grow-polygon (vertices distance)
+  (let ((edges
+	 (loop
+	    for i in (append (last vertices) (butlast vertices) ())
+	    for j in vertices
+	    collect (list i j))))    
+    edges))
+
+(grow-polygon '((1 1) (2 3) (3 5) (4 6)))
+
+(let ((vertices '((1 1) (2 3) (3 5) (4 6))))
+  (append (last vertices) (butlast vertices) ()))
+
+;;; Meshes
+
+(defun make-meshes (vertices)
+  (static-vectors:make-static-vector
+   (* 2 (length vertices))
+   :element-type 'single-float
+   :initial-contents (apply #'append vertices)))
+
+(defmacro define-mesh (name arglist vertices &body body)
+  (let ((mesh (gensym)))
+    `(let ((,mesh (make-meshes ,@body)))
+       (defun ,name ,arglist
+	 ))))
+
+(define-mesh rect ())
+
+
+;; (defparameter *sketch-mesh-rectangle*
+;;   (define-mesh '((-0.5 -0.5)
+;; 		 (-0.5 0.5)
+;; 		 (0.5 0.5)
+;; 		 (0.5 -0.5))))
+
+
+
+
+;; (defparameter *sketch-mesh-ellipse*
+;;   (define-mesh 
+;;       )))
+
+
+
+;; (define-mesh sketch-mesh-rectangle
+;;   (-0.5 -0.5)
+;;   (-0.5 0.5)
+;;   (0.5 0.5)
+;;   (0.5 -0.5))
+
+;; (define-mesh sketch-mesh-ellipse
+;;   )
+
+;; (define-mesh sketch-mesh-ngon)
+
+
+
+;; (defun draw-mesh (mesh)
+;;   (let ((stroke (pen-stroke (env-pen *env*)))
+;; 	(fill (pen-fill (env-pen *env*))))
+;;     (when stroke
+;;       (draw-mesh-stroke mesh stroke))
+;;     (when fill
+;;       (draw-mesh-fill mesh fill))))
+
+;; (defun draw-polygon (mesh)
+;;   ()
+;;   )
+
+
+
 ;;; 2D Primitives
+
+
+
+
+(defmethod draw-sketch-primitive (primitive)
+  
+
+
+  
+  )
+
 
 (defun line (x1 y1 x2 y2)  
   ;(declare (optimize (speed 3) (safety 0) (debug 0)))
@@ -52,7 +136,6 @@
     (line (+ a c) b a b)))
 
 (defun ngon (n a b c d &key (mode :corner) (angle 0))
-  ;(declare (optimize (speed 3) (safety 0) (debug 0)))
   ;; http://slabode.exofire.net/circle_draw.shtml
   (let* ((c (if (zerop c) +epsilon+ c))
 	 (theta (/ +tau+ n))
@@ -81,7 +164,7 @@
 	  (setf x next-x
 		y next-y))))))
 
-(defun triangle (x1 y1 x2 y2 x3 y3)
+(defun triangle (x1 y1 x2 y2 x3 y3)  
   ;(declare (optimize (speed 3) (safety 0) (debug 0)))
   (when (pen-fill (env-pen *env*))
     (push-indices 0 1 2)
@@ -91,3 +174,5 @@
     (line x1 y1 x2 y2)
     (line x2 y2 x3 y3)
     (line x3 y3 x1 y1)))
+
+
