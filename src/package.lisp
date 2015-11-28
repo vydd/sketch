@@ -21,16 +21,16 @@
 	   ::height
 	   ::framerate
 	   ::title
-	   
+
 	   ;; Math
 	   :clamp-1
 	   :normalize
-	   
+
 	   :+two-pi+
 	   :+tau+
 	   :+half-pi+
 	   :+quarter-pi+
-	   
+
 	   :radians
 	   :degrees
 
@@ -58,7 +58,7 @@
 	   :lerp-color
 	   :random-color
 	   :hash-color
-	   
+
 	   ;; Pen
 	   :pen
 	   :make-pen

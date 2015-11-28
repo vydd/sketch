@@ -64,7 +64,7 @@ void main() {
 	    (aref *buffers* i 1) 0))))
 
 (defun draw-buffers ()
-  (let ((vao (env-vao *env*)))      
+  (let ((vao (env-vao *env*)))
     (kit.gl.vao:vao-bind vao)
     (%gl:draw-elements :triangles (aref *buffers* 2 1) :unsigned-int 0)
     (dotimes (i (array-dimension *buffers* 0))
@@ -74,9 +74,9 @@ void main() {
     (gl:bind-buffer :array-buffer 0)))
 
 (defmacro fill-buffer (idx f-type cl-type &rest vals)
-  `(setf 
+  `(setf
     ,@(loop
-	 for i from 0 below (length vals)
+	 for i below (length vals)
 	 for j in vals
 	 append `((cffi:mem-aref
 		   (aref *buffers* ,idx 0)
@@ -111,11 +111,11 @@ void main() {
 
 (defmacro push-fill (vertex-count)
   `(progn
-     ,@(loop for i from 0 below vertex-count collect
+     ,@(loop for i below vertex-count collect
 	    `(push-color-struct (pen-fill (env-pen *env*))))))
 
 (defmacro push-stroke (vertex-count)
   `(progn
-     ,@(loop for i from 0 below vertex-count collect
+     ,@(loop for i below vertex-count collect
 	    `(push-color-struct (pen-stroke (env-pen *env*))))))
 

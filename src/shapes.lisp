@@ -10,7 +10,7 @@
 
 ;;; 2D Primitives
 
-(defun line (x1 y1 x2 y2)  
+(defun line (x1 y1 x2 y2)
   ;(declare (optimize (speed 3) (safety 0) (debug 0)))
   ;; TODO: Make this sane.
   (when (pen-stroke (env-pen *env*))
@@ -21,7 +21,7 @@
       (push-indices 0 1 2 2 1 3)
       (push-vertices (x1 (+ y1 dy))
 		     (x2 (+ y2 dy))
-		     ((+ x1 dx) y1)		     
+		     ((+ x1 dx) y1)
 		     ((+ x2 dx) y2))
       (push-stroke 4))))
 
@@ -71,7 +71,6 @@
 	(push-fill 1))
       (dotimes (i n)
 	(push-indices (- 0 n 1) (- i n) (- (mod (+ i 1) n) n))))
-    
     (when (pen-stroke (env-pen *env*))
       (dotimes (i n)
 	(let ((next-x (* radial (+ x (* (- y) tangential))))

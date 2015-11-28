@@ -16,7 +16,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defclass sketch (kit.sdl2:gl-window)  
+(defclass sketch (kit.sdl2:gl-window)
   (;; Environment
    (env :initform (make-env))
    (profiler :initform (make-instance 'profiler))
@@ -59,7 +59,7 @@ used for drawing.")
   (draw s)
   (draw-buffers))
 
-(defmethod kit.sdl2:render ((s sketch))    
+(defmethod kit.sdl2:render ((s sketch))
   (with-slots (env width height framerate restart-sketch copy-pixels) s
     (with-environment env
       ;; On setup and when recovering from error, restart sketch.
@@ -67,7 +67,6 @@ used for drawing.")
 	(gl-catch (rgb 1 1 0)
 	  (setup s))
 	(setf (slot-value s 'restart-sketch) nil))
-      ;;
       (if (debug-mode-p)
 	  (progn
 	    (exit-debug-mode)
@@ -110,8 +109,8 @@ SETUP to automatically wrap their bodies inside WITH-SLOTS, using all slot names
 		    (width ,sketch-width)
 		    (height ,sketch-height)
 		    (framerate ,sketch-framerate)
-		    (copy-pixels ,sketch-copy-pixels))))	 
-	 (slots (mapcar #'car slot-bindings))	 
+		    (copy-pixels ,sketch-copy-pixels))))
+	 (slots (mapcar #'car slot-bindings))
 	 (initforms (mapcar #'(lambda (binding)
 				`(,(car binding)
 				   :initform ,(cadr binding)
@@ -122,24 +121,24 @@ SETUP to automatically wrap their bodies inside WITH-SLOTS, using all slot names
     ;; This is accomplished by saving slot names provided via SLOT-BINDINGS and
     ;; WINDOW-OPTIONS into *SKETCH-SLOT-HASH-TABLE*.
     (setf (gethash sketch-name *sketch-slot-hash-table*) slots)
-    
+
     `(progn
        (defclass ,sketch-name (sketch)
 	 ,initforms)
-       
+
        (defmethod draw ((window ,sketch-name))
 	 (with-slots ,(gethash sketch-name *sketch-slot-hash-table*) window
 	   ,@body))
-       
+
        (defmethod initialize-instance :after ((window ,sketch-name) &key &allow-other-keys)
 	 (let ((sdl-win (kit.sdl2:sdl-window window)))
 	   (sdl2:set-window-title sdl-win ,sketch-title)
 	   (sdl2:set-window-size sdl-win ,sketch-width ,sketch-height)))
-       
+
        (defmethod initialize-instance :before ((window ,sketch-name) &key &allow-other-keys)
 	 ,(when sketch-copy-pixels
 	   `(sdl2:gl-set-attr :doublebuffer 0)))
-       
+
        ,(alexandria:when-let ((debug-scancode (getf window-options :debug nil)))
 	  `(defmethod kit.sdl2:keyboard-event :before ((window ,sketch-name) s ts rp keysym)
 	     (declare (ignore s ts rp))

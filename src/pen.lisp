@@ -29,4 +29,4 @@
 
 (defun background (color)
   (apply #'gl:clear-color (color-rgba color))
-  (gl:clear :color-buffer-bit))
+  (gl:clear :color-buffer))

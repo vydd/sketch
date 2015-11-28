@@ -36,7 +36,7 @@
 (defun hsb-to-rgb (h s b)
   (let* ((h (mod (* h 360) 360))
 	 (c (* b s))
-	 (x (* c (- 1 (abs (- (mod (/ h 60) 2) 1)))))
+	 (x (* c (1- (abs (- (mod (/ h 60) 2) 1)))))
 	 (m (- b c)))
     (mapcar (lambda (x) (+ m x))
 	    (aref `#((,c ,x 0) (,x ,c 0) (0 ,c ,x)
@@ -52,7 +52,7 @@
 
 (defun hsb (hue saturation brightness &optional (alpha 1.0))
   (destructuring-bind (hue saturation brightness alpha)
-      (mapcar #'clamp-1 (list hue saturation brightness alpha))    
+      (mapcar #'clamp-1 (list hue saturation brightness alpha))
     (let ((rgb (hsb-to-rgb hue saturation brightness)))
       (make-color :hue hue :saturation saturation :brightness brightness :alpha alpha
 		  :red (elt rgb 0) :green (elt rgb 1) :blue (elt rgb 2)))))
