@@ -36,7 +36,7 @@
 (defun hsb-to-rgb (h s b)
   (let* ((h (mod (* h 360) 360))
 	 (c (* b s))
-	 (x (* c (1- (abs (- (mod (/ h 60) 2) 1)))))
+	 (x (* c (- 1 (abs (- (mod (/ h 60) 2) 1)))))
 	 (m (- b c)))
     (mapcar (lambda (x) (+ m x))
 	    (aref `#((,c ,x 0) (,x ,c 0) (0 ,c ,x)
