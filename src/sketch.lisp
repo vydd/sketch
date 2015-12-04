@@ -16,7 +16,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defclass sketch (kit.sdl2:gl-window)  
+(defclass sketch (kit.sdl2:gl-window)
   (;; Environment
    (env :initform (make-env))
    (restart-sketch :initform t)
@@ -55,7 +55,12 @@ used for drawing.")
 	 (setf restart-sketch t
 	       (env-red-screen *env*) t)))))
 
-(defmethod kit.sdl2:render ((sketch-window sketch))    
+(defun draw-window (window)
+  (start-draw)
+  (draw window)
+  (end-draw))
+
+(defmethod kit.sdl2:render ((sketch-window sketch))
   (with-slots (env width height restart-sketch copy-pixels) sketch-window
     (with-environment env
       ;; On setup and when recovering from error, restart sketch.
@@ -67,9 +72,9 @@ used for drawing.")
       (if (debug-mode-p)
 	  (progn
 	    (exit-debug-mode)
-	    (draw sketch-window))
+	    (draw-window sketch-window))
 	  (gl-catch (rgb 1 0 0)
-	    (draw sketch-window)))))
+	    (draw-window sketch-window)))))
   (handle-sketch-event sketch-window :frame-draw))
 
 ;;; Macros
@@ -85,8 +90,8 @@ Additionaly, defining a class using defsketch enables selected Sketch methods,
 like DRAW and SETUP to automatically wrap their bodies inside WITH-SLOTS, using
 all slot names."
   (let* ((sketch-title (getf window-options :title "Sketch"))
-	 (sketch-width (getf window-options :width 200))
-	 (sketch-height (getf window-options :height 200))
+	 (sketch-width (getf window-options :width 400))
+	 (sketch-height (getf window-options :height 400))
 	 (sketch-copy-pixels (getf window-options :copy-pixels nil))
 	 ;; We need to append SKETCH-TITLE, SKETCH-WIDTH, SKETCH-HEIGHT
 	 ;; and SKETCH-COPY_PIXELS from WINDOW-OPTIONS to SLOT-BINDINGS.
@@ -104,8 +109,8 @@ all slot names."
 		  `((title ,sketch-title)
 		    (width ,sketch-width)
 		    (height ,sketch-height)
-		    (copy-pixels ,sketch-copy-pixels))))	 
-	 (slots (mapcar #'car slot-bindings))	 
+		    (copy-pixels ,sketch-copy-pixels))))
+	 (slots (mapcar #'car slot-bindings))
 	 (initforms (mapcar #'(lambda (binding)
 				`(,(car binding)
 				   :initform ,(cadr binding)
@@ -116,26 +121,26 @@ all slot names."
     ;; This is accomplished by saving slot names provided via SLOT-BINDINGS and
     ;; WINDOW-OPTIONS into *SKETCH-SLOT-HASH-TABLE*.
     (setf (gethash sketch-name *sketch-slot-hash-table*) slots)
-    
+
     `(progn
        (defclass ,sketch-name (sketch)
 	 ,initforms)
-       
+
        (defmethod draw ((sketch-window ,sketch-name))
 	 (with-slots ,(gethash sketch-name *sketch-slot-hash-table*) sketch-window
 	   ,@body))
-       
+
        (defmethod initialize-instance :after ((sketch-window ,sketch-name)
 					      &key &allow-other-keys)
 	 (let ((sdl-win (kit.sdl2:sdl-window sketch-window)))
 	   (sdl2:set-window-title sdl-win ,sketch-title)
 	   (sdl2:set-window-size sdl-win ,sketch-width ,sketch-height)))
-       
-       (defmethod initialize-instance : (debug-mode-p) before ((sketch-window ,sketch-name)
-							       &key &allow-other-keys)
+
+       (defmethod initialize-instance :before ((sketch-window ,sketch-name)
+					       &key &allow-other-keys)
 	 ,(when sketch-copy-pixels
 	   `(sdl2:gl-set-attr :doublebuffer 0)))
-       
+
        ,(alexandria:when-let ((debug-scancode (getf window-options :debug nil)))
 	   `(defmethod kit.sdl2:keyboard-event :before ((sketch-window ,sketch-name)
 							state timestamp repeat-p keysym)

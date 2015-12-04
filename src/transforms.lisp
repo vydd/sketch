@@ -34,3 +34,10 @@
 (defmacro with-identity-matrix (&body body)
   `(with-matrix sb-cga::+identity-matrix+
      ,@body))
+
+(defmacro with-current-matrix (&body body)
+  `(with-matrix (env-model-matrix *env*)
+     ,@body))
+
+(defun set-matrix (matrix)
+  (setf (env-model-matrix *env*) matrix))

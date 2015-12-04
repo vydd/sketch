@@ -52,7 +52,7 @@
 
 (defun hsb (hue saturation brightness &optional (alpha 1.0))
   (destructuring-bind (hue saturation brightness alpha)
-      (mapcar #'clamp-1 (list hue saturation brightness alpha))    
+      (mapcar #'clamp-1 (list hue saturation brightness alpha))
     (let ((rgb (hsb-to-rgb hue saturation brightness)))
       (make-color :hue hue :saturation saturation :brightness brightness :alpha alpha
 		  :red (elt rgb 0) :green (elt rgb 1) :blue (elt rgb 2)))))
@@ -95,6 +95,12 @@
 	(color-saturation color)
 	(color-brightness color)
 	(color-alpha color)))
+
+(defun color-vector (color)
+  (vector (coerce (color-red color) 'single-float)
+	  (coerce (color-green color) 'single-float)
+	  (coerce (color-blue color) 'single-float)
+	  (coerce (color-alpha color) 'single-float)))
 
 (defun lerp-color (c1 c2 amount &key (mode :hsb))
   (let ((a (clamp-1 amount)))

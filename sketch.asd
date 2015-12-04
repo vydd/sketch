@@ -22,6 +22,8 @@
 	       (:file "pen")
 	       (:file "math")
 	       (:file "shaders")
+	       (:file "geometry")
+	       (:file "drawing")
 	       (:file "shapes")
 	       (:file "transforms")
                (:file "sketch")))

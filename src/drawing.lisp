@@ -8,91 +8,62 @@
 ;;; | |_| |  _ <  / ___ \ V  V /  | || |\  | |_| |
 ;;; |____/|_| \_\/_/   \_\_/\_/  |___|_| \_|\____|
 
-(kit.gl.vao:defvao 2d-vertices ()
-  (:separate ()
-	     (vertex :float 2)))
+;;;  http://onrendering.blogspot.rs/2011/10/buffer-object-streaming-in-opengl.html
+
+(kit.gl.vao:defvao sketch-vao ()
+  (:separate () (vertex :float 2)))
+
+(defparameter *stream-buffer-capacity* (expt 2 23))
+
+(defun start-draw ()
+  (%gl:bind-buffer :array-buffer 1)
+  ;(%gl:buffer-data :array-buffer *stream-buffer-capacity* (cffi:null-pointer) :stream-draw)
+  ;(%gl:bind-buffer :array-buffer 0)
+  )
+
+(defun end-draw ()
+  ;(%gl:unmap-buffer :array-buffer)
+  (%gl:bind-buffer :array-buffer 0))
 
 
-(defun draw-sketch-primitive ()
-  (kit.gl.vao:vao-bind vao)
-  (gl:bind-buffer ))
+(defun flatten-vertices (vertices)
+  (mapcar (lambda (x) (coerce x 'single-float))
+	  (apply #'append vertices)))
+
+(defun draw-shape (primitive fill-vertices stroke-vertices)
+  (kit.gl.shader:uniform-matrix (env-programs *env*) :model-m 4
+				(vector (env-model-matrix *env*)))
+  (when (and fill-vertices (pen-fill (env-pen *env*)))
+    (draw-fill (make-array (* 2 (length fill-vertices))
+			   :element-type 'single-float
+			   :initial-contents (flatten-vertices fill-vertices))
+	       primitive))
+  (when (and stroke-vertices (pen-stroke (env-pen *env*)))
+    (let* ((weight (or (pen-weight (env-pen *env*)) 1))
+	   (mixed (mix-lists stroke-vertices
+			     (grow-polygon stroke-vertices weight)))
+	   (vertices (append mixed (list (first mixed) (second mixed)))))
+      (draw-stroke (make-array (* 2 (length vertices))
+			       :element-type 'single-float
+			       :initial-contents (flatten-vertices vertices))))))
+
+(defun draw-fill (buffer primitive)
+  (kit.gl.shader:uniformfv (env-programs *env*)
+			   :color (color-vector (pen-fill (env-pen *env*))))
+  (kit.gl.vao:vao-buffer-vector (env-vao *env*) 0 (* 4 (length buffer)) buffer :stream-draw)
+  (%gl:draw-arrays primitive 0 (/ (length buffer) 2)))
+
+(defun draw-stroke (buffer)
+  (kit.gl.shader:uniformfv (env-programs *env*)
+			   :color (color-vector (pen-stroke (env-pen *env*))))
+  (kit.gl.vao:vao-buffer-vector (env-vao *env*) 0 (* 4 (length buffer)) buffer :stream-draw)
+  (%gl:draw-arrays :triangle-strip 0 (/ (length buffer) 2)))
 
 
 
 
-
-
-
-
-
-
-
-
-
-(defun reset-buffers ()
-  (dotimes (i (array-dimension *buffers* 0))
-    (let ((buffer-type (aref *buffers* i 3)))
-      (gl:bind-buffer buffer-type (1+ i))
-      (%gl:buffer-data buffer-type
-		       (* (aref *buffers* i 2) *vertex-count*)
-		       (cffi:null-pointer)
-		       :stream-draw)
-      (setf (aref *buffers* i 0) (gl:map-buffer buffer-type :write-only)
-	    (aref *buffers* i 1) 0))))
-
-(defun draw-buffers ()
-  (let ((vao (env-vao *env*)))      
-    (kit.gl.vao:vao-bind vao)
-    (%gl:draw-elements :triangles (aref *buffers* 2 1) :unsigned-int 0)
-    (dotimes (i (array-dimension *buffers* 0))
-      (gl:bind-buffer :array-buffer (- (array-dimension *buffers* 0) i))
-      (gl:unmap-buffer :array-buffer)
-      (setf (aref *buffers* i 0) nil))
-    (gl:bind-buffer :array-buffer 0)))
-
-(defmacro fill-buffer (idx f-type cl-type &rest vals)
-  `(setf 
-    ,@(loop
-	 for i from 0 below (length vals)
-	 for j in vals
-	 append `((cffi:mem-aref
-		   (aref *buffers* ,idx 0)
-		   ,f-type
-		   (+ (aref *buffers* ,idx 1) ,i))
-		  (coerce ,j ,cl-type)))
-    (aref *buffers* ,idx 1) (+ ,(length vals) (aref *buffers* ,idx 1))))
-
-(defmacro push-vertices (&rest vals)
-  (alexandria:with-gensyms (m00 m01 m03 m10 m11 m13)
-    (macrolet ((mx (i j) ``(aref (env-model-matrix *env*) ,,(+ (* j 4) i))))
-      `(let ((,m00 ,(mx 0 0)) (,m01 ,(mx 0 1)) (,m03 ,(mx 0 3))
-	     (,m10 ,(mx 1 0)) (,m11 ,(mx 1 1)) (,m13 ,(mx 1 3)))
-	 (fill-buffer 0 :float 'single-float
-		      ,@(loop for (x y) in vals append
-			     `((+ (* ,m00 ,x) (* ,m01 ,y) ,m03)
-			       (+ (* ,m10 ,x) (* ,m11 ,y) ,m13))))))))
-
-(defmacro push-colors (&rest vals)
-  `(fill-buffer 1 :float 'single-float ,@vals))
-
-(defmacro push-indices (&rest vals)
-  (let ((delta (gensym)))
-    `(let ((,delta (/ (aref *buffers* 0 1) 2)))
-       (fill-buffer 2 :unsigned-int 'integer
-		    ,@(loop for v in vals append
-			   `((+ ,v ,delta)))))))
-
-(defmacro push-color-struct (cs)
-  `(push-colors
-    (color-red ,cs) (color-green ,cs) (color-blue ,cs) (color-alpha ,cs)))
-
-(defmacro push-fill (vertex-count)
-  `(progn
-     ,@(loop for i from 0 below vertex-count collect
-	    `(push-color-struct (pen-fill (env-pen *env*))))))
-
-(defmacro push-stroke (vertex-count)
-  `(progn
-     ,@(loop for i from 0 below vertex-count collect
-	    `(push-color-struct (pen-stroke (env-pen *env*))))))
-
+;;   (%gl:bind-vertex-array 0)
+;;   (glBindVertexArray(vertexArrays[VERTEX_ARRAY_MD2]);
+;; glDrawArrays( GL_TRIANGLES,
+;;               drawOffset,
+;;               md2->TriangleCount()*3);)

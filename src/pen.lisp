@@ -11,9 +11,7 @@
 (defstruct pen
   fill
   stroke
-  weight
-  join
-  cap)
+  weight)
 
 (defmacro with-pen (pen &body body)
   (alexandria:once-only (pen)
