@@ -19,7 +19,7 @@
 (defun coerce-float (x)
   (coerce x 'single-float))
 
-(defparameter *buffer-size* (expt 2 16))
+(defparameter *buffer-size* (expt 2 18))
 (defparameter *vertex-attributes* 6)
 (defparameter *bytes-per-vertex* (+ (* 4 6)))
 
