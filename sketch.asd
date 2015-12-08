@@ -5,12 +5,10 @@
   :author "Danilo Vidovic (vydd)"
   :license "MIT"
   :depends-on (#:alexandria
-	       #:cffi
 	       #:glkit
 	       #:mathkit
 	       #:md5
 	       #:sb-cga
-	       #:sdl2
 	       #:sdl2kit
 	       #:static-vectors)
   :pathname "src"
