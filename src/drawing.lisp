@@ -19,11 +19,12 @@
 (defun coerce-float (x)
   (coerce x 'single-float))
 
-(defparameter *buffer-size* (expt 2 18))
+(defparameter *buffer-size* (expt 2 16))
+(defparameter *vertex-attributes* 6)
 (defparameter *bytes-per-vertex* (+ (* 4 6)))
 
 (defun start-draw ()
-  (%gl:bind-buffer :array-buffer (aref (slot-value (env-vao *env*) 'kit.gl.vao::vbos) 0))
+  (%gl:bind-buffer :array-buffer 1)
   (%gl:buffer-data :array-buffer *buffer-size* (cffi:null-pointer) :stream-draw)
   (setf (env-buffer-position *env*) 0)
   (kit.gl.vao:vao-bind (env-vao *env*)))
@@ -32,14 +33,9 @@
   (%gl:bind-buffer :array-buffer 0)
   (kit.gl.vao:vao-unbind))
 
-(defun update-model-uniform ()
-  (when (getf (env-update-uniform *env*) :model-m)
-    (kit.gl.shader:uniform-matrix (env-programs *env*) :model-m 4
-				  (vector (env-model-matrix *env*)))
-    (setf (getf (env-update-uniform *env*) :model-m) nil)))
-
 (defun draw-shape (primitive fill-vertices stroke-vertices)
-  (update-model-uniform)
+  (kit.gl.shader:uniform-matrix (env-programs *env*) :model-m 4
+				(vector (env-model-matrix *env*)))
   (when (and fill-vertices (pen-fill (env-pen *env*)))
     (push-vertices fill-vertices
 		   (color-vector (pen-fill (env-pen *env*)))
@@ -61,7 +57,7 @@
 						(* (length vertices) *bytes-per-vertex*)
   						#x22)))
       (loop
-	 for idx from 0 by 6
+	 for idx from 0 by *vertex-attributes*
 	 for (x y) in vertices
 	 do (setf (cffi:mem-aref buffer-pointer :float idx) (coerce-float x)
 		  (cffi:mem-aref buffer-pointer :float (+ idx 1)) (coerce-float y)

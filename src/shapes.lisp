@@ -44,8 +44,8 @@
   (ngon (min 24 (truncate (* 5 (sqrt (/ (+ rx ry) 2))))) cx cy rx ry))
 
 (defun circle (x y r)
-  (declare (type real cx cy r))
-  (ellipse cx cy r r))
+  (declare (type real x y r))
+  (ellipse x y r r))
 
 (defun polygon (&rest vertices)
   (draw-shape

@@ -26,7 +26,6 @@
   (model-matrix (sb-cga:identity-matrix))
   (view-matrix nil)
   (vao nil)
-  (update-uniform '(:model-m t))
   (buffer-position 0)
   ;; Debugging
   (debug-key-pressed nil)
