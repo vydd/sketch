@@ -43,6 +43,10 @@
   (declare (type real cx cy rx ry))
   (ngon (min 24 (truncate (* 5 (sqrt (/ (+ rx ry) 2))))) cx cy rx ry))
 
+(defun circle (x y r)
+  (declare (type real cx cy r))
+  (ellipse cx cy r r))
+
 (defun polygon (&rest vertices)
   (draw-shape
    :triangle-fan

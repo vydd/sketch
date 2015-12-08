@@ -22,11 +22,12 @@
 (defstruct env
   ;; Drawing
   (pen nil)
-  ;; Shaders
   (programs nil)
   (model-matrix (sb-cga:identity-matrix))
   (view-matrix nil)
   (vao nil)
+  (update-uniform '(:model-m t))
+  (buffer-position 0)
   ;; Debugging
   (debug-key-pressed nil)
   (red-screen nil))
@@ -40,7 +41,6 @@
 	  (env-view-matrix env) (kit.glm:ortho-matrix 0 width height 0 -1 1)
 	  (env-vao env) (make-instance 'kit.gl.vao:vao :type 'sketch-vao))
     (kit.gl.shader:use-program (env-programs env) :fill-shader)
-    (kit.gl.vao:vao-bind (env-vao env))
     (kit.gl.shader:uniform-matrix
      (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
 

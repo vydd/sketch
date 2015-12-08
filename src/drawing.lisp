@@ -9,61 +9,66 @@
 ;;; |____/|_| \_\/_/   \_\_/\_/  |___|_| \_|\____|
 
 ;;;  http://onrendering.blogspot.rs/2011/10/buffer-object-streaming-in-opengl.html
+;;;  http://www.java-gaming.org/index.php?topic=32169.0
 
 (kit.gl.vao:defvao sketch-vao ()
-  (:separate () (vertex :float 2)))
+  (:interleave ()
+	     (vertex :float 2)
+	     (color :float 4)))
 
-(defparameter *stream-buffer-capacity* (expt 2 23))
+(defun coerce-float (x)
+  (coerce x 'single-float))
+
+(defparameter *buffer-size* (expt 2 18))
+(defparameter *bytes-per-vertex* (+ (* 4 6)))
 
 (defun start-draw ()
-  (%gl:bind-buffer :array-buffer 1)
-  ;(%gl:buffer-data :array-buffer *stream-buffer-capacity* (cffi:null-pointer) :stream-draw)
-  ;(%gl:bind-buffer :array-buffer 0)
-  )
+  (%gl:bind-buffer :array-buffer (aref (slot-value (env-vao *env*) 'kit.gl.vao::vbos) 0))
+  (%gl:buffer-data :array-buffer *buffer-size* (cffi:null-pointer) :stream-draw)
+  (setf (env-buffer-position *env*) 0)
+  (kit.gl.vao:vao-bind (env-vao *env*)))
 
 (defun end-draw ()
-  ;(%gl:unmap-buffer :array-buffer)
-  (%gl:bind-buffer :array-buffer 0))
+  (%gl:bind-buffer :array-buffer 0)
+  (kit.gl.vao:vao-unbind))
 
-
-(defun flatten-vertices (vertices)
-  (mapcar (lambda (x) (coerce x 'single-float))
-	  (apply #'append vertices)))
+(defun update-model-uniform ()
+  (when (getf (env-update-uniform *env*) :model-m)
+    (kit.gl.shader:uniform-matrix (env-programs *env*) :model-m 4
+				  (vector (env-model-matrix *env*)))
+    (setf (getf (env-update-uniform *env*) :model-m) nil)))
 
 (defun draw-shape (primitive fill-vertices stroke-vertices)
-  (kit.gl.shader:uniform-matrix (env-programs *env*) :model-m 4
-				(vector (env-model-matrix *env*)))
+  (update-model-uniform)
   (when (and fill-vertices (pen-fill (env-pen *env*)))
-    (draw-fill (make-array (* 2 (length fill-vertices))
-			   :element-type 'single-float
-			   :initial-contents (flatten-vertices fill-vertices))
-	       primitive))
+    (push-vertices fill-vertices
+		   (color-vector (pen-fill (env-pen *env*)))
+		   primitive))
   (when (and stroke-vertices (pen-stroke (env-pen *env*)))
     (let* ((weight (or (pen-weight (env-pen *env*)) 1))
 	   (mixed (mix-lists stroke-vertices
-			     (grow-polygon stroke-vertices weight)))
-	   (vertices (append mixed (list (first mixed) (second mixed)))))
-      (draw-stroke (make-array (* 2 (length vertices))
-			       :element-type 'single-float
-			       :initial-contents (flatten-vertices vertices))))))
+			     (grow-polygon stroke-vertices weight))))
+      (push-vertices (append mixed (list (first mixed) (second mixed)))
+		     (color-vector (pen-stroke (env-pen *env*)))
+		     :triangle-strip))))
 
-(defun draw-fill (buffer primitive)
-  (kit.gl.shader:uniformfv (env-programs *env*)
-			   :color (color-vector (pen-fill (env-pen *env*))))
-  (kit.gl.vao:vao-buffer-vector (env-vao *env*) 0 (* 4 (length buffer)) buffer :stream-draw)
-  (%gl:draw-arrays primitive 0 (/ (length buffer) 2)))
-
-(defun draw-stroke (buffer)
-  (kit.gl.shader:uniformfv (env-programs *env*)
-			   :color (color-vector (pen-stroke (env-pen *env*))))
-  (kit.gl.vao:vao-buffer-vector (env-vao *env*) 0 (* 4 (length buffer)) buffer :stream-draw)
-  (%gl:draw-arrays :triangle-strip 0 (/ (length buffer) 2)))
-
-
-
-
-;;   (%gl:bind-vertex-array 0)
-;;   (glBindVertexArray(vertexArrays[VERTEX_ARRAY_MD2]);
-;; glDrawArrays( GL_TRIANGLES,
-;;               drawOffset,
-;;               md2->TriangleCount()*3);)
+(defun push-vertices (vertices color primitive)
+  (symbol-macrolet ((position (env-buffer-position *env*)))
+    (when (> (* *bytes-per-vertex* (+ position (length vertices))) *buffer-size*)
+      (start-draw))
+    (let ((buffer-pointer (%gl:map-buffer-range :array-buffer
+  						(* position *bytes-per-vertex*)
+						(* (length vertices) *bytes-per-vertex*)
+  						#x22)))
+      (loop
+	 for idx from 0 by 6
+	 for (x y) in vertices
+	 do (setf (cffi:mem-aref buffer-pointer :float idx) (coerce-float x)
+		  (cffi:mem-aref buffer-pointer :float (+ idx 1)) (coerce-float y)
+		  (cffi:mem-aref buffer-pointer :float (+ idx 2)) (aref color 0)
+		  (cffi:mem-aref buffer-pointer :float (+ idx 3)) (aref color 1)
+		  (cffi:mem-aref buffer-pointer :float (+ idx 4)) (aref color 2)
+		  (cffi:mem-aref buffer-pointer :float (+ idx 5)) (aref color 3)))
+      (%gl:draw-arrays primitive position (length vertices))
+      (setf position (+ position (length vertices)))
+      (%gl:unmap-buffer :array-buffer))))

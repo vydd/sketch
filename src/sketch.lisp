@@ -63,18 +63,22 @@ used for drawing.")
 (defmethod kit.sdl2:render ((sketch-window sketch))
   (with-slots (env width height restart-sketch copy-pixels) sketch-window
     (with-environment env
-      ;; On setup and when recovering from error, restart sketch.
+      ;; Restart sketch on setup and when recovering from an error.
       (when restart-sketch
 	(gl-catch (rgb 1 1 0)
 	  (setup sketch-window))
 	(setf (slot-value sketch-window 'restart-sketch) nil))
-      ;;
+      ;; If we're in the debug mode, we exit from it immediately,
+      ;; so that the restarts are shown only once. Afterwards, we
+      ;; continue presenting the user with the red screen, waiting for
+      ;; the error to be fixed, or for the debug key to be pressed again.
       (if (debug-mode-p)
 	  (progn
 	    (exit-debug-mode)
 	    (draw-window sketch-window))
 	  (gl-catch (rgb 1 0 0)
 	    (draw-window sketch-window)))))
+
   (handle-sketch-event sketch-window :frame-draw))
 
 ;;; Macros

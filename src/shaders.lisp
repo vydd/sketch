@@ -9,15 +9,15 @@
 ;;; |____/|_| |_/_/   \_\____/|_____|_| \_\____/
 
 (kit.gl.shader:defdict sketch-programs ()
-  (kit.gl.shader:program :fill-shader (:view-m :model-m :color)
+  (kit.gl.shader:program :fill-shader (:view-m :model-m)
 			 (:vertex-shader "
 #version 330
 
 uniform mat4 model_m;
 uniform mat4 view_m;
-uniform vec4 color;
 
 layout (location = 0) in vec2 vertex;
+layout (location = 1) in vec4 color;
 
 smooth out vec4 f_color;
 

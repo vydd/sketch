@@ -55,7 +55,7 @@
 		  (/ (- (* (- (* x1 y2) (* y1 x2)) (- y3 y4))
 			(* (- (* x3 y4) (* y3 x4)) (- y1 y2)))
 		     denominator))))
-      `(,a ,b))))
+      (list a b))))
 
 (defun grow-polygon (polygon d)
   (let ((poly
