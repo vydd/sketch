@@ -102,6 +102,12 @@
 	  (coerce (color-blue color) 'single-float)
 	  (coerce (color-alpha color) 'single-float)))
 
+(defun color-vector-255 (color)
+  (vector (coerce (truncate (* 255 (color-red color))) 'unsigned-byte)
+	  (coerce (truncate (* 255 (color-green color))) 'unsigned-byte)
+	  (coerce (truncate (* 255 (color-blue color))) 'unsigned-byte)
+	  (coerce (truncate (* 255 (color-alpha color))) 'unsigned-byte)))
+
 (defun lerp-color (c1 c2 amount &key (mode :hsb))
   (let ((a (clamp-1 amount)))
     (flet ((norm (field)
