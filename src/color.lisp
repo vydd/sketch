@@ -60,14 +60,14 @@
 (defun gray (amount &optional (alpha 1.0))
   (rgb amount amount amount alpha))
 
-(defun rgb-255 (r g b &optional (a 255))
-  (rgb (/ r 255) (/ g 255) (/ b 255) (/ a 255)))
+(defun rgb-255 (red green blue &optional (alpha 255))
+  (rgb (/ red 255) (/ green 255) (/ blue 255) (/ alpha 255)))
 
-(defun hsb-360 (h s b &optional (a 255))
-  (hsb (/ h 360) (/ s 100) (/ b 100) (/ a 255)))
+(defun hsb-360 (hue saturation brightness &optional (alpha 255))
+  (hsb (/ hue 360) (/ saturation 100) (/ brightness 100) (/ alpha 255)))
 
-(defun gray-255 (g &optional (a 255))
-  (gray (/ g 255) (/ a 255)))
+(defun gray-255 (amount &optional (alpha 255))
+  (gray (/ amount 255) (/ alpha 255)))
 
 (defun hex-to-color (string)
   (destructuring-bind (r g b &optional (a 1.0))
@@ -76,7 +76,7 @@
 		     ((6 8) 8)
 		     (t (error "~a is invalid hex color." string))))
 	     (groups (group-bits (parse-integer string :radix 16 :junk-allowed t)
-				 :bits bits)))
+				 bits)))
 	(pad-list (mapcar (lambda (x) (/ x (if (= bits 4) 15 255))) groups)
 		  0
 		  (if (= 4 bits)
@@ -117,10 +117,10 @@
 	  (apply #'hsb (mapcar #'norm '(hue saturation brightness alpha)))
 	  (apply #'rgb (mapcar #'norm '(red green blue alpha)))))))
 
-(defun random-color ()
-  (rgb (random 1.0) (random 1.0) (random 1.0)))
+(defun random-color (&optional (alpha 1.0))
+  (rgb (random 1.0) (random 1.0) (random 1.0) alpha))
 
-(defun hash-color (n)
+(defun hash-color (n &optional (alpha 1.0))
   (let* ((grp (group-bits n))
 	 (arr (make-array (length grp)
 			  :element-type '(unsigned-byte 8)
@@ -129,4 +129,5 @@
 	 (hash (loop for i across seq sum i)))
     (hsb-360 (mod hash 359)
 	     (alexandria:clamp (expt (mod (* n hash) 13) 3) 50 100)
-	     (alexandria:clamp (expt (mod (* n hash) 17) 3) 50 100))))
+	     (alexandria:clamp (expt (mod (* n hash) 17) 3) 50 100)
+	     (* 255 alpha))))

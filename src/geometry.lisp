@@ -63,3 +63,10 @@
 		 (edges (mapcar (lambda (x) (translate-line x (- d)))
 				(edges polygon))))))
     (append (cdr poly) (list (car poly)))))
+
+(defun triangulate (polygon)
+  (mapcar (lambda (point) (list (2d-geometry:x point) (2d-geometry:y point)))
+	  (apply #'append
+		 (mapcar #'2d-geometry:point-list
+			 (2d-geometry:decompose-complex-polygon-triangles
+			  (apply #'2d-geometry:make-polygon-from-coords polygon))))))

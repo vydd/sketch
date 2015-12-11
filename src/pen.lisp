@@ -28,3 +28,5 @@
 (defun background (color)
   (apply #'gl:clear-color (color-rgba color))
   (gl:clear :color-buffer))
+
+(defparameter *default-pen* (make-pen :fill (gray 1) :stroke (gray 0)))

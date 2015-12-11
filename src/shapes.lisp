@@ -12,6 +12,13 @@
   (declare (type real x y))
   (draw-shape :points nil `((,x ,y))))
 
+(defun line (x1 y1 x2 y2)
+  (declare (type real x1 y1 x2 y2))
+  )
+
+(defun polyline (&rest vertices)
+  )
+
 (defun rect (x y w h)
   (declare (type real x y w h))
   (when (and (plusp w) (plusp h))
@@ -41,14 +48,14 @@
 
 (defun ellipse (cx cy rx ry)
   (declare (type real cx cy rx ry))
-  (ngon (min 24 (truncate (* 5 (sqrt (/ (+ rx ry) 2))))) cx cy rx ry))
+  (ngon (max 24 (truncate (* 5 (sqrt (/ (+ rx ry) 2))))) cx cy rx ry))
 
 (defun circle (x y r)
   (declare (type real x y r))
   (ellipse x y r r))
 
-(defun polygon (&rest vertices)
+(defun polygon (&rest coordinates)
   (draw-shape
-   :triangle-fan
-   vertices
-   vertices))
+   :triangles
+   (triangulate coordinates)
+   (group coordinates)))

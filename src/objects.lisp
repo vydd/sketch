@@ -9,4 +9,10 @@
 ;;  \___/|____/ \___/|_____\____| |_| |____/
 
 ;; (defmacro define-sketch-object (name args &body body)
+
+;;   )
+
+
+;; (let (()))
+;; (defun square-10-10-3 (x y)
 ;;   )

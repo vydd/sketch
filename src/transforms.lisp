@@ -8,15 +8,11 @@
 ;;;   | | |  _ <  / ___ \| |\  |___) |  _|| |_| |  _ <| |  | |___) |
 ;;;   |_| |_| \_\/_/   \_\_| \_|____/|_|   \___/|_| \_\_|  |_|____/
 
-(defun queue-model-uniform-update ()
-  (setf (getf (env-update-uniform *env*) :model-m) t))
-
 (defmacro define-ntransform (name args multiplicant)
   `(defun ,name ,args
      (let ((transform-matrix ,multiplicant))
        (setf (env-model-matrix *env*)
-	     (sb-cga:matrix* transform-matrix (env-model-matrix *env*))))
-     (queue-model-uniform-update)))
+	     (sb-cga:matrix* transform-matrix (env-model-matrix *env*))))))
 
 (define-ntransform ntranslate (dx dy)
   (sb-cga::translate* (coerce dx 'single-float) (coerce dy 'single-float) 0.0))
@@ -32,10 +28,8 @@
      (progn
        (setf previous-matrix (env-model-matrix *env*)
 	     (env-model-matrix *env*) ,matrix)
-       (queue-model-uniform-update)
        ,@body
-       (setf (env-model-matrix *env*) previous-matrix)
-       (queue-model-uniform-update))))
+       (setf (env-model-matrix *env*) previous-matrix))))
 
 (defmacro with-identity-matrix (&body body)
   `(with-matrix sb-cga::+identity-matrix+
@@ -46,5 +40,4 @@
      ,@body))
 
 (defun set-matrix (matrix)
-  (setf (env-model-matrix *env*) matrix)
-  (queue-model-uniform-update))
+  (setf (env-model-matrix *env*) matrix))
