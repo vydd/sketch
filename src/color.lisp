@@ -84,6 +84,11 @@
 		      (/ (length string) 2))))
     (rgb r g b a)))
 
+(defun color-rgb (color)
+  (list (color-red color)
+	(color-green color)
+	(color-blue color)))
+
 (defun color-rgba (color)
   (list (color-red color)
 	(color-green color)
@@ -108,11 +113,14 @@
 	  (coerce (truncate (* 255 (color-blue color))) 'unsigned-byte)
 	  (coerce (truncate (* 255 (color-alpha color))) 'unsigned-byte)))
 
-(defun lerp-color (c1 c2 amount &key (mode :hsb))
+;;; Generators
+
+(defun lerp-color (start-color end-color amount &key (mode :hsb))
   (let ((a (clamp-1 amount)))
     (flet ((norm (field)
 	     (normalize a 0.0 1.0
-			:out-low (slot-value c1 field) :out-high (slot-value c2 field))))
+			:out-low (slot-value start-color field)
+			:out-high (slot-value end-color field))))
       (if (eq mode :hsb)
 	  (apply #'hsb (mapcar #'norm '(hue saturation brightness alpha)))
 	  (apply #'rgb (mapcar #'norm '(red green blue alpha)))))))
@@ -131,3 +139,31 @@
 	     (alexandria:clamp (expt (mod (* n hash) 13) 3) 50 100)
 	     (alexandria:clamp (expt (mod (* n hash) 17) 3) 50 100)
 	     (* 255 alpha))))
+
+;;; Filters
+
+(defun color-filter-grayscale (color &optional (mode :luminosity))
+  (case mode
+    ((:lightness 1) (gray (/ (+ (apply #'max (color-rgb color))
+			       (apply #'min (color-rgb color))))
+			 (color-alpha color)))
+    ((:average 2) (gray (/ (apply #'+ (color-rgb color)) 3)
+		       (color-alpha color)))
+    (t (gray (+ (* 0.21 (color-red color))
+		(* 0.72 (color-green color))
+		(* 0.07 (color-blue color)))
+	     (color-alpha color)))))
+
+(defun color-filter-invert (color)
+  (hsb (let ((h (- (color-hue color) 0.5)))
+	 (if (plusp h)
+	     h
+	     (+ 1 h)))
+       (color-saturation color)
+       (color-brightness color)
+       (color-alpha color)))
+
+(defun color-filter-rotate (color)
+  (rgb (color-green color)
+       (color-blue color)
+       (color-red color)))
