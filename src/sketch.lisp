@@ -16,6 +16,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;; Sketch definition
+
 (defclass sketch (kit.sdl2:gl-window)
   (;; Environment
    (env :initform (make-env))
@@ -44,6 +46,9 @@ used for drawing.")
   (:documentation "Hooks into sketch to handle internal events, like
 :FRAME-DRAW and :TRIANGLES-DRAW.")
   (:method ((sketch-window sketch) event) (declare (ignore event))))
+
+
+;;; Rendering
 
 (defmacro gl-catch (error-color &body body)
   `(handler-case

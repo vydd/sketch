@@ -11,7 +11,7 @@
 (kit.gl.shader:defdict sketch-programs ()
   (kit.gl.shader:program :fill-shader (:view-m :model-m)
 			 (:vertex-shader "
-#version 330
+#version 330 core
 
 uniform mat4 model_m;
 uniform mat4 view_m;
@@ -27,7 +27,7 @@ void main() {
 }
 ")
 			 (:fragment-shader "
-#version 330
+#version 330 core
 
 smooth in vec4 f_color;
 out vec4 f_out;

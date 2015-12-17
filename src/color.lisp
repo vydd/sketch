@@ -74,7 +74,7 @@
       (let* ((bits (case (length string)
 		     ((3 4) 4)
 		     ((6 8) 8)
-		     (t (error "~a is invalid hex color." string))))
+		     (t (error "~a is not a valid hex color." string))))
 	     (groups (group-bits (parse-integer string :radix 16 :junk-allowed t)
 				 bits)))
 	(pad-list (mapcar (lambda (x) (/ x (if (= bits 4) 15 255))) groups)
