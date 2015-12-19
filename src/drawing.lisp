@@ -7,7 +7,7 @@
 ;;; | | | | |_) |  / _ \ \ /\ / / | ||  \| | |  _
 ;;; | |_| |  _ <  / ___ \ V  V /  | || |\  | |_| |
 ;;; |____/|_| \_\/_/   \_\_/\_/  |___|_| \_|\____|
-
+;;;
 ;;;  http://onrendering.blogspot.rs/2011/10/buffer-object-streaming-in-opengl.html
 ;;;  http://www.java-gaming.org/index.php?topic=32169.0
 

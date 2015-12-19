@@ -25,10 +25,15 @@
 	   :clamp-1
 	   :normalize
 
+	   :+pi+
 	   :+two-pi+
 	   :+tau+
 	   :+half-pi+
 	   :+quarter-pi+
+	   :+epsilon+
+	   :+phi+
+	   :+golden-ratio+
+	   :+e+
 
 	   :radians
 	   :degrees
@@ -52,31 +57,46 @@
 	   :hsb-360
 	   :gray-255
 	   :hex-to-color
+	   :color-rgb
 	   :color-rgba
 	   :color-hsba
+	   :color-vector
+	   :color-vector-255
 	   :lerp-color
 	   :random-color
 	   :hash-color
+	   :color-filter-grayscale
+	   :color-filter-invert
+	   :color-filter-rotate
 
 	   ;; Pen
 	   :pen
+	   :pen-stroke
+	   :pen-fill
+	   :pen-weight
 	   :make-pen
 	   :set-pen
+	   :copy-pen
+	   :flip-pen
 	   :with-pen
 	   :background
 
 	   ;; Shapes
-	   :ellipse
-	   :line
 	   :point
+	   :line
+	   :polyline
 	   :rect
 	   :ngon
-	   :triangle
+	   :ellipse
+	   :circle
+	   :polygon
+	   :bezier
 
 	   ;; Transforms
 	   :ntranslate
 	   :nrotate
 	   :nscale
-	   :with-identity-matrix))
-
-
+	   :with-matrix
+	   :with-identity-matrix
+	   :with-current-matrix
+	   :set-matrix))

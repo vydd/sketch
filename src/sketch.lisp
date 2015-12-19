@@ -47,7 +47,6 @@ used for drawing.")
 :FRAME-DRAW and :TRIANGLES-DRAW.")
   (:method ((sketch-window sketch) event) (declare (ignore event))))
 
-
 ;;; Rendering
 
 (defmacro gl-catch (error-color &body body)

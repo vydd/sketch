@@ -49,3 +49,8 @@
      do (setf acc (append acc (mapcar #'car lists))
 	      lists (mapcar #'cdr lists))
      finally (return acc)))
+
+(defun div2-inexact (a)
+  (multiple-value-bind (x y)
+      (ceiling a 2)
+    (values x (+ x y))))

@@ -16,3 +16,6 @@
 ;; (let (()))
 ;; (defun square-10-10-3 (x y)
 ;;   )
+
+;; (defun star (x y)
+;;   (polygon ))

@@ -17,11 +17,21 @@
 (define-ntransform ntranslate (dx dy)
   (sb-cga::translate* (coerce dx 'single-float) (coerce dy 'single-float) 0.0))
 
-(define-ntransform nrotate (angle)
-  (sb-cga::rotate* 0.0 0.0 (coerce (radians angle) 'single-float)))
+(define-ntransform nrotate (angle &optional (cx 0) (cy 0))
+  (if (and (zerop cx) (zerop cy))
+      (sb-cga::rotate* 0.0 0.0 (coerce (radians angle) 'single-float))
+      (progn
+	(ntranslate (- cx) (- cy))
+	(nrotate angle)
+	(ntranslate cx cy))))
 
-(define-ntransform nscale (sx sy)
-  (sb-cga::scale* (coerce sx 'single-float) (coerce sy 'single-float) 0.0))
+(define-ntransform nscale (sx sy &optional (cx 0) (cy 0))
+  (if (and (zerop cx) (zerop cy))
+      (sb-cga::scale* (coerce sx 'single-float) (coerce sy 'single-float) 0.0)
+      (progn
+	(ntranslate (- cx) (- cy))
+	(nscale sx sy)
+	(ntranslate cx cy))))
 
 (defmacro with-matrix (matrix &body body)
   `(alexandria:with-gensyms (previous-matrix)

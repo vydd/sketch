@@ -8,10 +8,14 @@
 ;;; | |_| | |__| |_| | |  | | |___  | | |  _ < | |
 ;;;  \____|_____\___/|_|  |_|_____| |_| |_| \_\|_|
 
-(defun edges (vertices)
+(defun edges (vertices &optional (closed t))
   (loop
-     for i in (append (last vertices) (butlast vertices))
-     for j in vertices
+     for i in (if closed
+		  (append (last vertices) (butlast vertices))
+		  (butlast vertices))
+     for j in (if closed
+		  vertices
+		  (cdr vertices))
      collect (list i j)))
 
 (defmacro with-lines (lines &body body)
@@ -58,11 +62,11 @@
       (list a b))))
 
 (defun grow-polygon (polygon d)
-  (let ((poly
+  (let ((polygon
 	 (mapcar (lambda (x) (apply #'intersect-lines x))
 		 (edges (mapcar (lambda (x) (translate-line x (- d)))
 				(edges polygon))))))
-    (append (cdr poly) (list (car poly)))))
+    (append (cdr polygon) (list (car polygon)))))
 
 (defun triangulate (polygon)
   (mapcar (lambda (point) (list (2d-geometry:x point) (2d-geometry:y point)))
