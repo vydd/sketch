@@ -9,9 +9,10 @@
 ;;; |_|   |_____|_| \_|
 
 (defstruct pen
-  fill
-  stroke
-  weight)
+  (fill nil)
+  (stroke nil)
+  (weight 1)
+  (curve-steps 100))
 
 (defmacro with-pen (pen &body body)
   (alexandria:once-only (pen)

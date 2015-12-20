@@ -21,8 +21,7 @@
 		  for i below n
 		  do (setf acc (cons (car list) acc)
 			   list (cdr list))
-		  finally (return (cons (nreverse acc)
-					list))))))
+		  finally (return (cons (nreverse acc) list))))))
     (loop with acc = '()
        while (or (not acc) (cdr list))
        do (let ((split (split-n list group-length)))
@@ -38,19 +37,21 @@
 	       (cons (boole boole-and x bit-fill) acc)))
 	 ((zerop x) (cdr acc)))))
 
+(declaim (inline order-list))
 (defun order-list (order list)
   (loop for o in order
      collect (nth o list)))
 
+(declaim (inline mix-lists))
 (defun mix-lists (&rest lists)
-  (loop
-     with acc
-     while (car lists)
-     do (setf acc (append acc (mapcar #'car lists))
-	      lists (mapcar #'cdr lists))
-     finally (return acc)))
+  (apply #'append (apply #'mapcar #'list lists)))
 
+(declaim (inline div2-inexact))
 (defun div2-inexact (a)
   (multiple-value-bind (x y)
       (ceiling a 2)
     (values x (+ x y))))
+
+(declaim (inline lerp-list))
+(defun lerp-lists (v list-a list-b)
+  (mapcar (lambda (a b) (alexandria:lerp v a b)) list-a list-b))
