@@ -25,4 +25,5 @@
 	       (:file "drawing" :depends-on ("package" "geometry"))
 	       (:file "shapes" :depends-on ("package" "drawing"))
 	       (:file "transforms" :depends-on ("package" "environment"))
-               (:file "sketch")))
+               (:file "sketch")
+	       (:file "channels" :depends-on ("sketch"))))

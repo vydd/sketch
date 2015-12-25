@@ -55,3 +55,21 @@
 (declaim (inline lerp-list))
 (defun lerp-lists (v list-a list-b)
   (mapcar (lambda (a b) (alexandria:lerp v a b)) list-a list-b))
+
+(defun flatten (tree &optional (unless-test (lambda (_) nil)))
+  (let ((flattened '()))
+    (dolist (subtree tree)
+      (if (or (atom subtree) (funcall unless-test subtree))
+	  (push subtree flattened)
+	  (setf flattened (append (flatten subtree unless-test) flattened))))
+    (nreverse flattened)))
+
+(defun object-to-keyword-hash (object)
+  "Expensive operation that turns CL objects into keywords whose names
+are MD5 hashes of those objects, stringified. Uniqueness is not guaranteed,
+but may be considered unique for all practical purposes."
+  (alexandria:make-keyword
+   (apply #'alexandria:symbolicate
+	  (coerce (map 'array (lambda (x) (format nil "~x" x))
+		       (md5:md5sum-string (write-to-string object)))
+		  'list))))

@@ -99,4 +99,11 @@
 	   :with-matrix
 	   :with-identity-matrix
 	   :with-current-matrix
-	   :set-matrix))
+	   :set-matrix
+
+	   ;; Channels
+	   :register-input
+	   :in
+	   :out
+	   :reset-all-channels
+	   :define-channel-propagation))
