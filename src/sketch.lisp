@@ -68,7 +68,8 @@ used for drawing.")
   (with-slots (env width height restart-sketch copy-pixels) sketch-window
     (with-environment env
       (with-pen *default-pen*
-	(background (gray 0.4))
+	(unless copy-pixels
+	  (background (gray 0.4)))
 	;; Restart sketch on setup and when recovering from an error.
 	(when restart-sketch
 	  (gl-catch (rgb 1 1 0)
@@ -132,6 +133,9 @@ all slot names."
     (setf (gethash sketch-name *sketch-slot-hash-table*) slots)
 
     `(progn
+
+       ;; Sketch Initialization
+
        (defclass ,sketch-name (sketch)
 	 ,initforms)
 
@@ -157,7 +161,33 @@ all slot names."
 	     (with-slots (env) sketch-window
 	       (when (and (env-red-screen env)
 			  (sdl2:scancode= (sdl2:scancode-value keysym) ,debug-scancode))
-		 (setf (env-debug-key-pressed env) t))))))))
+		 (setf (env-debug-key-pressed env) t)))))
+
+       ;; Sketch Events
+
+       (out :mouse-wheel '(0 . 0) :mouse-wheel-x 0 :mouse-wheel-y 0
+	    :mouse '(0 . 0) :mouse-x 0 :mouse-y 0
+	    :mouse-rel '(0 . 0) :mouse-xrel 0 :mouse-yrel 0
+	    :mouse-button 0)
+
+       (defmethod kit.sdl2:mousewheel-event :after ((sketch-window ,sketch-name)
+						    timestamp x y)
+	 (out :mouse-wheel (cons x y)
+	      :mouse-wheel-x x
+	      :mouse-wheel-y y))
+
+       (defmethod kit.sdl2:mousemotion-event :after ((sketch-window ,sketch-name)
+						     timestamp button-mask x y xrel yrel)
+	 (out :mouse (cons x y)
+	      :mouse-x x
+	      :mouse-y y
+	      :mouse-rel (cons xrel yrel)
+	      :mouse-xrel xrel
+	      :mouse-yrel yrel))
+
+       (defmethod kit.sdl2:mousebutton-event :after ((sketch-window ,sketch-name)
+						     state timestamp button x y)
+	 (out :mouse-button button)))))
 
 (defmacro define-sketch-setup (sketch-name &body body)
   "Defines a sketch SETUP method. Body is wrapped with WITH-SLOTS for all slots defined."

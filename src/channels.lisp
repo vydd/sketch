@@ -11,8 +11,6 @@
 ;;; Channel interface
 
 (defparameter *channels* (make-hash-table))
-(defparameter *channel-propagators* (make-hash-table))
-(defparameter *channel-propagator-body-hashes* '())
 
 (defun drop-first (&optional a b) (declare (ignore a)) b)
 
@@ -23,11 +21,12 @@
 	    (cons (cons reducer (funcall reducer))
 		  channel-reducers)))))
 
-(defun in (channel &optional (reducer #'drop-first))
+(defun in (channel &optional (initial nil) (reducer #'drop-first))
   (register-input channel reducer)
-  (cdr (assoc reducer (gethash channel *channels*))))
+  (let ((a (assoc reducer (gethash channel *channels*))))
+    (if a (cdr a) initial)))
 
-(defun out (channel message)
+(defun out-1 (channel message)
   (register-input channel #'drop-first)
   (mapcar (lambda (reducer-value-cons)
 	    (setf (cdr reducer-value-cons)
@@ -37,10 +36,24 @@
 	  (gethash channel *channels*))
   (propagate channel))
 
+(defun out (&rest channel-message)
+  (mapcar (lambda (x) (out-1 (first x) (second x)))
+	  (group channel-message)))
+
 ;;; Channel propagation
 
+(defstruct propagation
+  name
+  inputs
+  outputs
+  function)
+
+(defparameter *propagations* (make-hash-table))
+(defparameter *channel-propagations* (make-hash-table))
+
 (defun propagate (channel)
-  (mapcar #'funcall (gethash channel *channel-propagators*)))
+  (mapcar (lambda (p) (funcall (propagation-function p)))
+	  (gethash channel *channel-propagations*)))
 
 (defun find-inputs-and-outputs (body)
   (let ((flat-body (alexandria:flatten body))
@@ -57,45 +70,57 @@
     inputs-and-outputs))
 
 (defun extract-input-registration (body)
-  (mapcar
-   (lambda (in-form) (cons 'register-in (cdr in-form)))
-   (remove-if #'atom (flatten body (lambda (x) (eql (car x) 'in))))))
+  (mapcar (lambda (in-form) (cons 'register-input (cdr in-form)))
+	  (remove-if #'atom (flatten body (lambda (x) (eql (car x) 'in))))))
 
-(defmacro define-channel-propagation (&body body)
-  (let* ((body-hash (object-to-keyword-hash body))
-	 (inputs-and-outputs (find-inputs-and-outputs body))
+(defun delete-channel-propagation (channel propagation)
+  (setf (gethash channel *channel-propagations*)
+	(remove-if (lambda (x) (eql x propagation))
+		   (gethash channel *channel-propagations*))))
+
+(defun update-propagation-data (name inputs outputs)
+  (let ((propagation (gethash name *propagations*)))
+    (if propagation
+      (mapcar (lambda (channel)
+		(delete-channel-propagation channel propagation))
+	      (propagation-inputs propagation))
+      (setf propagation (make-propagation :name name)
+	    (gethash name *propagations*) propagation))
+    (setf (propagation-inputs propagation) inputs
+	  (propagation-outputs propagation) outputs)
+    (mapcar (lambda (channel)
+	      (push propagation (gethash channel *channel-propagations*)))
+	    inputs)))
+
+(defmacro define-channel-propagation (name &body body)
+  (let* ((inputs-and-outputs (find-inputs-and-outputs body))
 	 (inputs (cdr (assoc 'in inputs-and-outputs)))
-	 (input-registrations (extract-input-registration body))
-	 (channels (append (assoc 'in inputs-and-outputs)
-			   (assoc 'out inputs-and-outputs))))
-    (unless (member body-hash *channel-propagator-body-hashes*)
-      (push body-hash *channel-propagator-body-hashes*)
-      `(progn
-	 ,@input-registrations
-	 ,@(mapcar (lambda (input)
-		     `(push (lambda () ,@body)
-			    (gethash ,input *channel-propagators*)))
-		   inputs)))))
+	 (outputs (cdr (assoc 'out inputs-and-outputs)))
+	 (input-registrations (extract-input-registration body)))
+    (update-propagation-data name inputs outputs)
+    `(progn
+       ,@input-registrations
+       (setf (propagation-function (gethash ',name *propagations*))
+	      (lambda () ,@body))
+       (mapcar #'propagate ',inputs))))
 
-;;; Utility reset functions
+;;; Utility functions
+
+(defun reset-channel (channel)
+  (remhash channel *channels*)
+  (remhash channel *channel-propagations*)
+  (maphash (lambda (name propagation)
+	     (setf (propagation-inputs propagation)
+		   (remove-if (lambda (x) (eql x channel))
+			      (propagation-inputs propagation))
+		   (propagation-outputs propagation)
+		   (remove-if (lambda (x) (eql x channel))
+			      (propagation-outputs propagation))))
+	   *propagations*)
+  nil)
 
 (defun reset-all-channels ()
   (setf *channels* (make-hash-table)
-	*channel-propagators* (make-hash-table)
-	*channel-propagator-body-hashes* '()))
-
-;;; Default Sketch channels
-
-(defmethod kit.sdl2:mousewheel-event ((sketch-window sketch) timestamp x y)
-  (out :mouse-wheel (cons x y))
-  (out :mouse-wheel-x x)
-  (out :mouse-wheel-y y))
-
-(defmethod kit.sdl2:mousemotion-event ((sketch-window sketch)
-				       timestamp button-mask x y xrel yrel)
-  (out :mouse (cons x y))
-  (out :mouse-x x)
-  (out :mouse-y y)
-  (out :mouse-rel (cons xrel yrel))
-  (out :mouse-xrel xrel)
-  (out :mouse-yrel yrel))
+	*propagations* (make-hash-table)
+	*channel-propagations* (make-hash-table))
+  nil)
