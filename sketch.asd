@@ -10,6 +10,7 @@
 	       #:mathkit
 	       #:md5
 	       #:sb-cga
+	       #:sdl2-image
 	       #:sdl2kit
 	       #:static-vectors)
   :pathname "src"
@@ -26,5 +27,6 @@
 	       (:file "drawing" :depends-on ("package" "geometry"))
 	       (:file "shapes" :depends-on ("package" "drawing"))
 	       (:file "transforms" :depends-on ("package" "environment"))
+	       (:file "images")
                (:file "sketch")
 	       (:file "controllers")))

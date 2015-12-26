@@ -19,9 +19,10 @@
     (unless (assoc reducer channel-reducers)
       (setf (gethash channel *channels*)
 	    (cons (cons reducer (funcall reducer))
-		  channel-reducers)))))
+		  channel-reducers))
+      t)))
 
-(defun in (channel &optional (initial nil) (reducer #'drop-first))
+(defun in (channel &key (initial nil) (reducer #'drop-first))
   (register-input channel reducer)
   (let ((a (cdr (assoc reducer (gethash channel *channels*)))))
     (or a initial)))
@@ -38,7 +39,8 @@
 
 (defun out (&rest channel-message)
   (mapcar (lambda (x) (out-1 (first x) (second x)))
-	  (group channel-message)))
+	  (group channel-message))
+  (values))
 
 ;;; Channel propagation
 
@@ -64,13 +66,15 @@
 	(push-into nil))
     (dolist (token flat-body)
       (alexandria:if-let ((io-cons (assoc push-into inputs-and-outputs)))
-	(setf (cdr io-cons) (cons token (cdr io-cons))
-	      push-into nil)
+	(progn
+	  (when (not (member token (cdr io-cons)))
+	    (setf (cdr io-cons) (cons token (cdr io-cons))))
+	  (setf push-into nil))
 	(setf push-into token)))
     inputs-and-outputs))
 
 (defun extract-input-registration (body)
-  (mapcar (lambda (in-form) (cons 'register-input (cdr in-form)))
+  (mapcar (lambda (in-form) (list 'register-input (cadr in-form)))
 	  (remove-if #'atom (flatten body (lambda (x) (eql (car x) 'in))))))
 
 (defun delete-channel-propagation (channel propagation)
