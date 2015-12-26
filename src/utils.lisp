@@ -57,12 +57,16 @@
   (mapcar (lambda (a b) (alexandria:lerp v a b)) list-a list-b))
 
 (defun flatten (tree &optional (unless-test (lambda (_) nil)))
-  (let ((flattened '()))
-    (dolist (subtree tree)
-      (if (or (atom subtree) (funcall unless-test subtree))
-	  (push subtree flattened)
-	  (setf flattened (append (flatten subtree unless-test) flattened))))
-    (nreverse flattened)))
+  (let (list)
+    (labels ((traverse (subtree)
+	       (when subtree
+		 (if (and (consp subtree) (not (funcall unless-test subtree)))
+		     (progn
+		       (traverse (car subtree))
+		       (traverse (cdr subtree)))
+		     (push subtree list)))))
+      (traverse tree))
+    (nreverse list)))
 
 (defun object-to-keyword-hash (object)
   "Expensive operation that turns CL objects into keywords whose names

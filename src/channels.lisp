@@ -23,8 +23,8 @@
 
 (defun in (channel &optional (initial nil) (reducer #'drop-first))
   (register-input channel reducer)
-  (let ((a (assoc reducer (gethash channel *channels*))))
-    (if a (cdr a) initial)))
+  (let ((a (cdr (assoc reducer (gethash channel *channels*)))))
+    (or a initial)))
 
 (defun out-1 (channel message)
   (register-input channel #'drop-first)
