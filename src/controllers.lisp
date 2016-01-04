@@ -44,7 +44,9 @@
 
 (defmethod keyboard-event :after ((sketch-window sketch)
 				  state timestamp repeatp keysym)
-  (out :what (code-char (sdl2:get-key-from-scancode (sdl2:scancode-value keysym)))))
+  ()
+  ;(out :pressed (sdl2: keysym))
+  )
 
 ;;; Clock
 
