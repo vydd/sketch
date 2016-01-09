@@ -68,6 +68,14 @@
 	   :color-filter-grayscale
 	   :color-filter-invert
 	   :color-filter-rotate
+	   :+red+
+	   :+green+
+	   :+blue+
+	   :+yellow+
+	   :+magenta+
+	   :+cyan+
+	   :+white+
+	   :+black+
 
 	   ;; Pen
 	   :pen
@@ -106,4 +114,7 @@
 	   :in
 	   :out
 	   :reset-all-channels
-	   :define-channel-propagation))
+	   :deflink
+
+	   ;; Figures
+	   :deffigure))

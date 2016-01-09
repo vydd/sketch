@@ -28,5 +28,6 @@
 	       (:file "shapes" :depends-on ("package" "drawing"))
 	       (:file "transforms" :depends-on ("package" "environment"))
 	       (:file "images")
+	       (:file "figures")
                (:file "sketch")
 	       (:file "controllers")))

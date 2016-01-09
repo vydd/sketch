@@ -37,7 +37,7 @@
   (:documentation "Called before creating the sketch window.")
   (:method ((sketch-window sketch)) ()))
 
-(defgeneric draw (sketch)
+(defgeneric draw (object)
   (:documentation "Called repeatedly after creating the sketch window,
 used for drawing.")
   (:method ((sketch-window sketch)) ()))
@@ -103,6 +103,7 @@ all slot names."
 	 (sketch-width (getf window-options :width 400))
 	 (sketch-height (getf window-options :height 400))
 	 (sketch-copy-pixels (getf window-options :copy-pixels nil))
+	 (sketch-fullscreen (getf window-options :fullscreen nil))
 	 ;; We need to append SKETCH-TITLE, SKETCH-WIDTH, SKETCH-HEIGHT
 	 ;; and SKETCH-COPY_PIXELS from WINDOW-OPTIONS to SLOT-BINDINGS.
 	 ;; If SLOT-BINDINGS already contains any of these, we're going
@@ -145,21 +146,25 @@ all slot names."
 					      &key &allow-other-keys)
 	 (let ((sdl-win (kit.sdl2:sdl-window sketch-window)))
 	   (sdl2:set-window-title sdl-win ,sketch-title)
-	   (sdl2:set-window-size sdl-win ,sketch-width ,sketch-height)))
+	   (sdl2:set-window-size sdl-win ,sketch-width ,sketch-height)
+	   (when ,sketch-fullscreen
+	     (sdl2:set-window-fullscreen sdl-win t))))
 
        (defmethod initialize-instance :before ((sketch-window ,sketch-name)
 					       &key &allow-other-keys)
 	 ,(when sketch-copy-pixels
 	   `(sdl2:gl-set-attr :doublebuffer 0)))
 
-       ,(alexandria:when-let ((debug-scancode (getf window-options :debug nil)))
-	   `(defmethod kit.sdl2:keyboard-event :before ((sketch-window ,sketch-name)
-							state timestamp repeat-p keysym)
-	     (declare (ignore state timestamp repeat-p))
-	     (with-slots (env) sketch-window
-	       (when (and (env-red-screen env)
-			  (sdl2:scancode= (sdl2:scancode-value keysym) ,debug-scancode))
-		 (setf (env-debug-key-pressed env) t))))))))
+       (defmethod kit.sdl2:keyboard-event :before ((sketch-window ,sketch-name)
+						   state timestamp repeatp keysym)
+	  (declare (ignore state timestamp repeatp))
+	  (with-slots (env) sketch-window
+	    ,(alexandria:when-let ((debug-scancode (getf window-options :debug nil)))
+	       `(when (and (env-red-screen env)
+			   (sdl2:scancode= (sdl2:scancode-value keysym) ,debug-scancode))
+		  (setf (env-debug-key-pressed env) t)))
+	    (when (sdl2:scancode= (sdl2:scancode-value keysym) :scancode-escape)
+	      (kit.sdl2:close-window sketch-window)))))))
 
 (defmacro define-sketch-setup (sketch-name &body body)
   "Defines a sketch SETUP method. Body is wrapped with WITH-SLOTS for all slots defined."

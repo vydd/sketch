@@ -12,28 +12,21 @@
 
 (defparameter *channels* (make-hash-table))
 
-(defun drop-first (&optional a b) (declare (ignore a)) b)
+(defun register-input (channel &key (initial nil) (adapter #'identity))
+  (unless (assoc adapter (gethash channel *channels*))
+    (push (cons adapter initial) (gethash channel *channels*)))
+  t)
 
-(defun register-input (channel &optional (reducer #'drop-first))
-  (let ((channel-reducers (gethash channel *channels*)))
-    (unless (assoc reducer channel-reducers)
-      (setf (gethash channel *channels*)
-	    (cons (cons reducer (funcall reducer))
-		  channel-reducers))
-      t)))
-
-(defun in (channel &key (initial nil) (reducer #'drop-first))
-  (register-input channel reducer)
-  (let ((a (cdr (assoc reducer (gethash channel *channels*)))))
+(defun in (channel &key (initial nil) (adapter #'identity))
+  (register-input channel :initial initial :adapter adapter)
+  (let ((a (cdr (assoc adapter (gethash channel *channels*)))))
     (or a initial)))
 
 (defun out-1 (channel message)
-  (register-input channel #'drop-first)
-  (mapcar (lambda (reducer-value-cons)
-	    (setf (cdr reducer-value-cons)
-		  (funcall (car reducer-value-cons)
-			   (cdr reducer-value-cons)
-			   message)))
+  (register-input channel :initial message :adapter #'identity)
+  (mapcar (lambda (adapter-value-cons)
+	    (setf (cdr adapter-value-cons)
+		  (funcall (car adapter-value-cons) message)))
 	  (gethash channel *channels*))
   (propagate channel))
 
@@ -96,7 +89,7 @@
 	      (push propagation (gethash channel *channel-propagations*)))
 	    inputs)))
 
-(defmacro define-channel-propagation (name &body body)
+(defmacro deflink (name &body body)
   (let* ((inputs-and-outputs (find-inputs-and-outputs body))
 	 (inputs (cdr (assoc 'in inputs-and-outputs)))
 	 (outputs (cdr (assoc 'out inputs-and-outputs)))

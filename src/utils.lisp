@@ -77,3 +77,6 @@ but may be considered unique for all practical purposes."
 	  (coerce (map 'array (lambda (x) (format nil "~x" x))
 		       (md5:md5sum-string (write-to-string object)))
 		  'list))))
+
+(defun coerce-float (x)
+  (coerce x 'single-float))

@@ -168,3 +168,14 @@
   (rgb (color-green color)
        (color-blue color)
        (color-red color)))
+
+;;; Predefined colors
+
+(defparameter +red+ (rgb 1 0 0))
+(defparameter +green+ (rgb 0 1 0))
+(defparameter +blue+ (rgb 0 0 1))
+(defparameter +yellow+ (rgb 1 1 0))
+(defparameter +magenta+ (rgb 1 0 1))
+(defparameter +cyan+ (rgb 0 1 1))
+(defparameter +white+ (gray 1))
+(defparameter +black+ (gray 0))

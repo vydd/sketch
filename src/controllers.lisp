@@ -10,17 +10,6 @@
 
 ;;; Mouse
 
-(out :mouse '(0 . 0)
-     :mouse-x 0
-     :mouse-y 0
-     :mouse-rel '(0 . 0)
-     :mouse-xrel 0
-     :mouse-yrel 0
-     :mouse-button 0
-     :mouse-wheel '(0 . 0)
-     :mouse-wheel-x 0
-     :mouse-wheel-y 0)
-
 (defmethod kit.sdl2:mousemotion-event :after ((sketch-window sketch)
 					      timestamp button-mask x y xrel yrel)
   (out :mouse (cons x y)
@@ -38,37 +27,23 @@
 
 (defmethod kit.sdl2:mousebutton-event :after ((sketch-window sketch)
 					      state timestamp button x y)
-  (out :mouse-button button))
+  (when (eq state :mousebuttondown)
+    (out :controller-mouse-click t)))
 
 ;;; Keyboard
 
 (defmethod keyboard-event :after ((sketch-window sketch)
 				  state timestamp repeatp keysym)
-  ()
-  ;(out :pressed (sdl2: keysym))
-  )
+  (when repeatp
+    (print "repeat!")
+    (finish-output)))
 
-;;; Clock
+;; (defmacro defcontroller (name &body forms)
+;;   )
 
-  ;; Not sure what to do with these yet.
+;; (defcontroller default
+;;   (:click ))
 
-  ;; (defmethod textinput-event :after ((window test-window) ts text)
-  ;; )
+;; (use-controller )
 
-  ;; (defmethod keyboard-event :after ((window test-window) state ts repeat-p keysym)
-  ;; )
-
-  ;; (defmethod mousewheel-event ((window simple-window) ts x y)
-  ;; )
-
-  ;; (defmethod textinput-event ((window simple-window) ts text)
-  ;; )
-
-  ;; (defmethod keyboard-event ((window simple-window) state ts repeat-p keysym)
-  ;; )
-
-  ;; (defmethod mousebutton-event ((window simple-window) state ts b x y)
-  ;; )
-
-  ;; (defmethod mousemotion-event ((window simple-window) ts mask x y xr yr)
-  ;; )
+;; (deflink )

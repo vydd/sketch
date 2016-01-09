@@ -21,7 +21,7 @@
 
 (defstruct env
   ;; Drawing
-  (pen nil)
+  (pen *default-pen*)
   (programs nil)
   (model-matrix (sb-cga:identity-matrix))
   (view-matrix nil)
@@ -35,8 +35,7 @@
 
 (defun initialize-environment (w)
   (with-slots (env width height) w
-    (setf (env-programs env) (kit.gl.shader:compile-shader-dictionary
-			      'sketch-programs)
+    (setf (env-programs env) (kit.gl.shader:compile-shader-dictionary 'sketch-programs)
 	  (env-view-matrix env) (kit.glm:ortho-matrix 0 width height 0 -1 1)
 	  (env-vao env) (make-instance 'kit.gl.vao:vao :type 'sketch-vao))
     (kit.gl.shader:use-program (env-programs env) :fill-shader)
