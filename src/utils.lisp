@@ -80,3 +80,9 @@ but may be considered unique for all practical purposes."
 
 (defun coerce-float (x)
   (coerce x 'single-float))
+
+(defun copy-buffer (src dst length &key (src-offset 0) (dst-offset 0))
+  (declare (optimize (speed 3) (debug 0)))
+  (loop for i from 0 below length
+     do (setf (cffi:mem-aref dst :uint8 (+ i src-offset))
+	      (cffi:mem-aref src :uint8 (+ i dst-offset)))))

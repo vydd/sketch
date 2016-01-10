@@ -11,11 +11,6 @@
 (defclass figure ()
   ((draws :initarg :draws)))
 
-(defun copy-buffer (src dst length)
-  (loop for i from 0 below length
-       do (setf (cffi:mem-aref dst :uint8 i)
-		(cffi:mem-aref src :uint8 i))))
-
 (defmethod draw ((figure figure))
   (symbol-macrolet ((position (env-buffer-position *env*)))
     (with-slots (draws) figure
