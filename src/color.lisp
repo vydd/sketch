@@ -10,14 +10,14 @@
 
 ;;; General
 
-(defstruct color
-  (red 0.0)
-  (green 0.0)
-  (blue 0.0)
-  (hue 0.0)
-  (saturation 0.0)
-  (brightness 0.0)
-  (alpha 1.0))
+(defclass color (resource)
+  ((red :initform 0.0 :accessor color-red :initarg :red)
+   (green :initform 0.0 :accessor color-green :initarg :green)
+   (blue :initform 0.0 :accessor color-blue :initarg :blue)
+   (hue :initform 0.0 :accessor color-hue :initarg :hue)
+   (saturation :initform 0.0 :accessor color-saturation :initarg :saturation)
+   (brightness :initform 0.0 :accessor color-brightness :initarg :brightness)
+   (alpha :initform 1.0 :accessor color-alpha :initarg :alpha)))
 
 (defun rgb-to-hsb (r g b)
   (let* ((c-max (max r g b))
@@ -47,15 +47,15 @@
   (destructuring-bind (red green blue alpha)
       (mapcar #'clamp-1 (list red green blue alpha))
     (let ((hsb (rgb-to-hsb red green blue)))
-      (make-color :red red :green green :blue blue :alpha alpha
-		  :hue (elt hsb 0) :saturation (elt hsb 1) :brightness (elt hsb 2)))))
+      (make-instance 'color :red red :green green :blue blue :alpha alpha
+		     :hue (elt hsb 0) :saturation (elt hsb 1) :brightness (elt hsb 2)))))
 
 (defun hsb (hue saturation brightness &optional (alpha 1.0))
   (destructuring-bind (hue saturation brightness alpha)
       (mapcar #'clamp-1 (list hue saturation brightness alpha))
     (let ((rgb (hsb-to-rgb hue saturation brightness)))
-      (make-color :hue hue :saturation saturation :brightness brightness :alpha alpha
-		  :red (elt rgb 0) :green (elt rgb 1) :blue (elt rgb 2)))))
+      (make-instance 'color :hue hue :saturation saturation :brightness brightness :alpha alpha
+		     :red (elt rgb 0) :green (elt rgb 1) :blue (elt rgb 2)))))
 
 (defun gray (amount &optional (alpha 1.0))
   (rgb amount amount amount alpha))

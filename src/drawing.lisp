@@ -17,7 +17,7 @@
 	       (texcoord :float 2)
 	       (color :unsigned-byte 4 :out-type :float)))
 
-(defparameter *buffer-size* (expt 2 16))
+(defparameter *buffer-size* (expt 2 17))
 (defparameter *vertex-attributes* 5)
 (defparameter *bytes-per-vertex* (+ (* 4 *vertex-attributes*)))
 
@@ -34,24 +34,38 @@
   (%gl:bind-buffer :array-buffer 0)
   (kit.gl.vao:vao-unbind))
 
+(defun shader-color-texture-values (res)
+  (typecase res
+    (color (values (or (color-vector-255 res) (env-white-color-vector *env*))
+		   (env-white-pixel-texture *env*)))
+    (image (values (env-white-color-vector *env*)
+		   (or (image-texture res) (env-white-pixel-texture *env*))))))
+
 (defun draw-shape (primitive fill-vertices stroke-vertices)
   (when (and fill-vertices (pen-fill (env-pen *env*)))
-    (push-vertices fill-vertices
-		   (color-vector-255 (pen-fill (env-pen *env*)))
-		   primitive
-		   *draw-mode*))
+    (multiple-value-bind (shader-color shader-texture)
+	(shader-color-texture-values (pen-fill (env-pen *env*)))
+      (push-vertices fill-vertices
+		     shader-color
+		     shader-texture
+		     primitive
+		     *draw-mode*)))
   (when (and stroke-vertices (pen-stroke (env-pen *env*)))
-    (let* ((weight (or (pen-weight (env-pen *env*)) 1))
-	   (mixed (mix-lists stroke-vertices
-			     (grow-polygon stroke-vertices weight))))
-      (push-vertices (append mixed (list (first mixed) (second mixed)))
-		     (color-vector-255 (pen-stroke (env-pen *env*)))
-		     :triangle-strip
-		     *draw-mode*))))
+    (multiple-value-bind (shader-color shader-texture)
+	(shader-color-texture-values (pen-stroke (env-pen *env*)))
+      (let* ((weight (or (pen-weight (env-pen *env*)) 1))
+	     (mixed (mix-lists stroke-vertices
+			       (grow-polygon stroke-vertices weight))))
+	(push-vertices (append mixed (list (first mixed) (second mixed)))
+		       shader-color
+		       shader-texture
+		       :triangle-strip
+		       *draw-mode*)))))
 
-(defmethod push-vertices (vertices color primitive (draw-mode (eql :gpu)))
+(defmethod push-vertices (vertices color texture primitive (draw-mode (eql :gpu)))
   (kit.gl.shader:uniform-matrix (env-programs *env*) :model-m 4
 				(vector (env-model-matrix *env*)))
+  (gl:bind-texture :texture-2d texture)
   (symbol-macrolet ((position (env-buffer-position *env*)))
     (when (> (* *bytes-per-vertex* (+ position (length vertices))) *buffer-size*)
       (start-draw))
@@ -64,11 +78,10 @@
       (setf position (+ position (length vertices)))
       (%gl:unmap-buffer :array-buffer))))
 
-(defmethod push-vertices (vertices color primitive (draw-mode (eql :figure)))
-  (let* ((buffer
-	 (static-vectors:make-static-vector
-	  (* *bytes-per-vertex* (length vertices))
-	  :element-type '(unsigned-byte 8)))
+(defmethod push-vertices (vertices color texture primitive (draw-mode (eql :figure)))
+  (let* ((buffer (static-vectors:make-static-vector
+		  (* *bytes-per-vertex* (length vertices))
+		  :element-type '(unsigned-byte 8)))
 	 (buffer-pointer (static-vectors:static-vector-pointer buffer)))
     (fill-buffer buffer-pointer vertices color)
     (push (list :primitive primitive

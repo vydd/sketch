@@ -28,7 +28,6 @@
 	       (:file "drawing")
 	       (:file "shapes")
 	       (:file "transforms")
-	       (:file "images")
 	       (:file "figures")
                (:file "sketch")
 	       (:file "controllers")))

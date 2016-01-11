@@ -27,17 +27,32 @@
   (view-matrix nil)
   (vao nil)
   (buffer-position 0)
+  ;; Textures
+  (white-pixel-texture nil)
+  (white-color-vector nil)
+  ;; Resources
+  (resources (make-hash-table))
   ;; Debugging
   (debug-key-pressed nil)
   (red-screen nil))
 
 (defparameter *env* nil)
 
+(defun make-white-pixel-texture ()
+  "Sent to shaders when no image is active."
+  (let ((texture (car (gl:gen-textures 1))))
+    (gl:bind-texture :texture-2d texture)
+    (gl:tex-parameter :texture-2d :texture-min-filter :linear)
+    (gl:tex-image-2d :texture-2d 0 :rgba 1 1 0 :bgra :unsigned-byte #(255 255 255 255))
+    texture))
+
 (defun initialize-environment (w)
   (with-slots (env width height) w
     (setf (env-programs env) (kit.gl.shader:compile-shader-dictionary 'sketch-programs)
 	  (env-view-matrix env) (kit.glm:ortho-matrix 0 width height 0 -1 1)
-	  (env-vao env) (make-instance 'kit.gl.vao:vao :type 'sketch-vao))
+	  (env-vao env) (make-instance 'kit.gl.vao:vao :type 'sketch-vao)
+	  (env-white-pixel-texture env) (make-white-pixel-texture)
+	  (env-white-color-vector env) #(255 255 255 255))
     (kit.gl.shader:use-program (env-programs env) :fill-shader)
     (kit.gl.shader:uniform-matrix
      (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
