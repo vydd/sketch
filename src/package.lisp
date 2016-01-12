@@ -117,4 +117,9 @@
 	   :deflink
 
 	   ;; Figures
-	   :deffigure))
+	   :deffigure
+
+	   ;; Resources
+	   :load-resource
+	   :image
+	   :text))

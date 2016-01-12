@@ -96,6 +96,10 @@
 	(color-blue color)
 	(color-alpha color)))
 
+(defun color-rgba-255 (color)
+  (mapcar (lambda (x) (coerce (truncate (* 255 x)) 'unsigned-byte))
+	  (color-rgba color)))
+
 (defun color-hsba (color)
   (list (color-hue color)
 	(color-saturation color)
@@ -103,16 +107,10 @@
 	(color-alpha color)))
 
 (defun color-vector (color)
-  (vector (coerce (color-red color) 'single-float)
-	  (coerce (color-green color) 'single-float)
-	  (coerce (color-blue color) 'single-float)
-	  (coerce (color-alpha color) 'single-float)))
+  (apply #'vector (mapcar #'coerce-float (color-rgba color))))
 
 (defun color-vector-255 (color)
-  (vector (coerce (truncate (* 255 (color-red color))) 'unsigned-byte)
-	  (coerce (truncate (* 255 (color-green color))) 'unsigned-byte)
-	  (coerce (truncate (* 255 (color-blue color))) 'unsigned-byte)
-	  (coerce (truncate (* 255 (color-alpha color))) 'unsigned-byte)))
+  (apply #'vector (color-rgba-255 color)))
 
 ;;; Generators
 

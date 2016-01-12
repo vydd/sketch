@@ -12,7 +12,8 @@
   (fill nil)
   (stroke nil)
   (weight 1)
-  (curve-steps 100))
+  (curve-steps 100)
+  (font nil))
 
 (defmacro with-pen (pen &body body)
   (alexandria:once-only (pen)
@@ -31,7 +32,10 @@
   "Makes a new pen by swapping PEN's fill and stroke colors."
   (make-pen :weight (pen-weight pen)
 	    :stroke (pen-fill pen)
-	    :fill (pen-stroke pen)))
+	    :fill (pen-stroke pen)
+	    :weight (pen-weight pen)
+	    :curve-steps (pen-curve-steps pen)
+	    :font (pen-font pen)))
 
 (defun background (color)
   "Fills the sketch window with COLOR."

@@ -11,6 +11,7 @@
 	       #:md5
 	       #:sb-cga
 	       #:sdl2-image
+	       #:sdl2-ttf
 	       #:sdl2kit
 	       #:static-vectors)
   :pathname "src"

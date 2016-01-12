@@ -10,6 +10,7 @@
 
 ;;; Temporary, until done automatically by sdl2kit
 (kit.sdl2:start)
+(sdl2-ttf:init)
 (sdl2:in-main-thread ()
   (sdl2:gl-set-attr :multisamplebuffers 1)
   (sdl2:gl-set-attr :multisamplesamples 4)
