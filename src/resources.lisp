@@ -99,7 +99,7 @@
       (destructuring-bind (r g b a)
 	  (typecase (pen-stroke (env-pen *env*))
 	    (color (color-rgba-255 (pen-stroke (env-pen *env*))))
-	    (image '(255 0 0 255)))
+	    (image '(0 0 0 255)))
 	(let* ((key (alexandria:make-keyword
 		     (alexandria:symbolicate
 		      text-string
