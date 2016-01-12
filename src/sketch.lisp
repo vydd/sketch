@@ -16,6 +16,26 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;; Defaults
+
+
+(defparameter *default-font*
+  (make-instance 'font
+		 :filename "sketch-default-font"
+		 :pointer (sdl2-ttf:open-font
+			   (format nil "~a"
+				   (asdf:system-relative-pathname
+				    'sketch
+				    "res/sourcesans/SourceSansPro-Regular.otf"))
+			   18)
+		 :size 18))
+
+(defparameter *default-pen*
+  (make-pen :weight 1
+	    :fill (gray 1)
+	    :stroke (gray 0)
+	    :font *default-font*))
+
 ;;; Sketch definition
 
 (defclass sketch (kit.sdl2:gl-window)
@@ -56,6 +76,10 @@ used for drawing.")
      (error ()
        (progn
 	 (background ,error-color)
+	 (with-pen (make-pen :stroke +white+
+			     :font *default-font*)
+	   (text "ERROR" 20 20)
+	   (text "For restarts, press the debug key." 20 40))
 	 (setf restart-sketch t
 	       (env-red-screen *env*) t)))))
 

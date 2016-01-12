@@ -41,5 +41,3 @@
   "Fills the sketch window with COLOR."
   (apply #'gl:clear-color (color-rgba color))
   (gl:clear :color-buffer))
-
-(defparameter *default-pen* (make-pen :weight 1 :fill (gray 1) :stroke (gray 0)))
