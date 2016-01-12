@@ -192,6 +192,6 @@ all slot names."
 
 (defmacro define-sketch-setup (sketch-name &body body)
   "Defines a sketch SETUP method. Body is wrapped with WITH-SLOTS for all slots defined."
-  `(defmethod setup ((sketch ,sketch-name))
-     (with-slots ,(gethash sketch-name *sketch-slot-hash-table*) sketch
+  `(defmethod setup ((sketch-window ,sketch-name))
+     (with-slots ,(gethash sketch-name *sketch-slot-hash-table*) sketch-window
        ,@body)))

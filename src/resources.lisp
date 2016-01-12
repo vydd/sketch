@@ -32,21 +32,22 @@
       (subseq name (1+ pos)))))
 
 (defun load-resource (filename &rest all-keys &key type force-reload &allow-other-keys)
-  (symbol-macrolet ((resource (gethash key (env-resources *env*))))
-    (let* ((key (alexandria:make-keyword
-		 (alexandria:symbolicate filename (format nil "~a" all-keys)))))
-      (when (or force-reload (not resource))
-	(setf resource
-	      (apply #'load-typed-resource
-		     (list*  filename
-			     (or type
-				 (case (alexandria:make-keyword
-					(alexandria:symbolicate
-					 (string-upcase (file-name-extension filename))))
-				   ((:png :jpg :jpeg :tga :gif :bmp) :image)
-				   ((:ttf :otf) :font)))
-			     all-keys))))
-      resource)))
+  (let ((*env* (if *env* *env* (make-env)))) ;; try faking env if we still don't have one
+    (symbol-macrolet ((resource (gethash key (env-resources *env*))))
+      (let* ((key (alexandria:make-keyword
+		   (alexandria:symbolicate filename (format nil "~a" all-keys)))))
+	(when (or force-reload (not resource))
+	  (setf resource
+		(apply #'load-typed-resource
+		       (list*  filename
+			       (or type
+				   (case (alexandria:make-keyword
+					  (alexandria:symbolicate
+					   (string-upcase (file-name-extension filename))))
+				     ((:png :jpg :jpeg :tga :gif :bmp) :image)
+				     ((:ttf :otf) :font)))
+			       all-keys))))
+	resource))))
 
 (defgeneric load-typed-resource (filename type &key &allow-other-keys))
 
