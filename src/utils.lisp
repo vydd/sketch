@@ -55,7 +55,7 @@
 (defun abs-or-rel (val src)
   (if (numberp val)
       (cond ((< 0 val 1) (* src val))
-	    ((> 1 val) val)
+	    ((<= 1 val) val)
 	    (t src))
       (or src 0)))
 
