@@ -23,6 +23,7 @@
 	       (:file "shaders")
 	       (:file "environment")
 	       (:file "pen")
+	       (:file "font")
 	       (:file "geometry")
 	       (:file "drawing")
 	       (:file "shapes")

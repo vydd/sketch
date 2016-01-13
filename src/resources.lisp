@@ -8,7 +8,6 @@
 ;;; |  _ <| |___ ___) | |_| | |_| |  _ <| |___| |___ ___) |
 ;;; |_| \_\_____|____/ \___/ \___/|_| \_\\____|_____|____/
 
-(declaim (optimize (debug 3)))
 ;;; Classes
 
 (defclass resource () ())
@@ -18,10 +17,9 @@
    (width :accessor image-width :initarg :width)
    (height :accessor image-height :initarg :height)))
 
-(defclass font (resource)
-  ((filename :accessor font-filename :initarg :filename)
-   (pointer :accessor font-pointer :initarg :pointer)
-   (size :accessor font-size :initarg :size)))
+(defclass typeface (resource)
+  ((filename :accessor typeface-filename :initarg :filename)
+   (pointer :accessor typeface-pointer :initarg :pointer)))
 
 ;;; Loading
 
@@ -31,12 +29,15 @@
     (when (numberp pos)
       (subseq name (1+ pos)))))
 
-(defun load-resource (filename &rest all-keys &key type force-reload &allow-other-keys)
-  (let ((*env* (if *env* *env* (make-env)))) ;; try faking env if we still don't have one
+(defun load-resource (filename &rest all-keys &key type force-reload-p &allow-other-keys)
+  (let ((*env* (or *env* (make-env)))) ;; try faking env if we still don't have one
     (symbol-macrolet ((resource (gethash key (env-resources *env*))))
       (let* ((key (alexandria:make-keyword
 		   (alexandria:symbolicate filename (format nil "~a" all-keys)))))
-	(when (or force-reload (not resource))
+	(when force-reload-p
+	  (free-resource resource)
+	  (remhash key (env-resources *env*)))
+	(when (not resource)
 	  (setf resource
 		(apply #'load-typed-resource
 		       (list*  filename
@@ -45,7 +46,7 @@
 					  (alexandria:symbolicate
 					   (string-upcase (file-name-extension filename))))
 				     ((:png :jpg :jpeg :tga :gif :bmp) :image)
-				     ((:ttf :otf) :font)))
+				     ((:ttf :otf) :typeface)))
 			       all-keys))))
 	resource))))
 
@@ -77,12 +78,22 @@
 (defmethod load-typed-resource (filename (type (eql :image)) &key &allow-other-keys)
   (make-image-from-surface (sdl2-image:load-image filename)))
 
-(defmethod load-typed-resource (filename (type (eql :font))
-				&key (size 12) &allow-other-keys)
-  (make-instance 'font
+(defmethod load-typed-resource (filename (type (eql :typeface))
+				&key (size 18) &allow-other-keys)
+  (make-instance 'typeface
 		 :filename filename
-		 :pointer (sdl2-ttf:open-font filename size)
-		 :size size))
+		 :pointer (sdl2-ttf:open-font filename size)))
+
+(defgeneric free-resource (resource))
+
+(defmethod free-resource :around (resource)
+  (when resource
+    (call-next-method)))
+
+(defmethod free-resource ((image image))
+  (gl:delete-textures (list (image-texture image))))
+
+(defmethod free-resource ((typeface typeface)))
 
 ;;; Sketch drawing functions
 
@@ -92,26 +103,5 @@
 		      :weight (pen-weight (env-pen *env*)))
     (rect x
 	  y
-	  (or width (image-width image-resource))
-	  (or height (image-height image-resource)))))
-
-(defun text (text-string x y &optional width height)
-  (let ((font (pen-font (env-pen *env*))))
-    (when font
-      (destructuring-bind (r g b a)
-	  (typecase (pen-stroke (env-pen *env*))
-	    (color (color-rgba-255 (pen-stroke (env-pen *env*))))
-	    (image '(0 0 0 255)))
-	(let* ((key (alexandria:make-keyword
-		     (alexandria:symbolicate
-		      text-string
-		      (font-filename font)
-		      (format nil "~a"
-			      (list (font-size font) width height r g b a))))))
-	  (symbol-macrolet ((resource (gethash key (env-resources *env*))))
-	    (when t
-	      (setf resource (make-image-from-surface
-			      (sdl2-ttf:render-text-blended
-			       (font-pointer font) text-string r g b a))))
-	    (with-pen (make-pen :stroke nil)
-	      (image resource x y width height))))))))
+	  (or (abs-or-rel width (image-width image-resource)))
+	  (or (abs-or-rel height (image-height image-resource))))))

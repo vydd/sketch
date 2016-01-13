@@ -122,4 +122,9 @@
 	   ;; Resources
 	   :load-resource
 	   :image
+
+	   ;; Font
+	   :make-font
+	   :with-font
+	   :set-font
 	   :text))

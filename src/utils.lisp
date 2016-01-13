@@ -52,6 +52,13 @@
       (ceiling a 2)
     (values x (+ x y))))
 
+(defun abs-or-rel (val src)
+  (if (numberp val)
+      (cond ((< 0 val 1) (* src val))
+	    ((> 1 val) val)
+	    (t src))
+      (or src 0)))
+
 (declaim (inline lerp-list))
 (defun lerp-lists (v list-a list-b)
   (mapcar (lambda (a b) (alexandria:lerp v a b)) list-a list-b))
@@ -86,3 +93,6 @@ but may be considered unique for all practical purposes."
   (loop for i from 0 below length
      do (setf (cffi:mem-aref dst :uint8 (+ i src-offset))
 	      (cffi:mem-aref src :uint8 (+ i dst-offset)))))
+
+(defun relative-path (path &optional (system 'sketch))
+  (format nil "~a" (asdf:system-relative-pathname system path)))

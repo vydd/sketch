@@ -22,12 +22,14 @@
 
 (defstruct env
   ;; Drawing
-  (pen *default-pen*)
+  (pen nil)
   (programs nil)
   (model-matrix (sb-cga:identity-matrix))
   (view-matrix nil)
   (vao nil)
   (buffer-position 0)
+  ;; Typography
+  (font nil)
   ;; Textures
   (white-pixel-texture nil)
   (white-color-vector nil)
@@ -53,7 +55,9 @@
 	  (env-view-matrix env) (kit.glm:ortho-matrix 0 width height 0 -1 1)
 	  (env-vao env) (make-instance 'kit.gl.vao:vao :type 'sketch-vao)
 	  (env-white-pixel-texture env) (make-white-pixel-texture)
-	  (env-white-color-vector env) #(255 255 255 255))
+	  (env-white-color-vector env) #(255 255 255 255)
+	  (env-pen env) (make-default-pen)
+	  (env-font env) (make-default-font))
     (kit.gl.shader:use-program (env-programs env) :fill-shader)
     (kit.gl.shader:uniform-matrix
      (env-programs env) :view-m 4 (vector (env-view-matrix env)))))

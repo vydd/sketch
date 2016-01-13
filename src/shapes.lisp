@@ -10,7 +10,7 @@
 
 (defun point (x y)
   (declare (type real x y))
-  (draw-shape :points nil `((,x ,y))))
+  (rect x y 1 1))
 
 (defun line (x1 y1 x2 y2)
   (declare (type real x1 y1 x2 y2))
