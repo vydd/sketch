@@ -49,14 +49,14 @@ Sketch requires graphics hardware and drivers with support for GL version 3.3.
 
 Not all CL systems (or system version) that Sketch uses can be found in Quicklisp. These systems will need to be cloned to the local-projects directory in addition to Sketch itself:
 
-https://github.com/vydd/sketch
-https://github.com/vydd/cl-geometry
-https://github.com/lispgames/glkit
-https://github.com/lispgames/mathkit
-https://github.com/lispgames/cl-sdl2-image
-https://github.com/Failproofshark/cl-sdl2-ttf
-https://github.com/lispgames/sdl2kit
-https://github.com/lispgames/cl-sdl2
+  * https://github.com/vydd/sketch
+  * https://github.com/vydd/cl-geometry
+  * https://github.com/lispgames/glkit
+  * https://github.com/lispgames/mathkit
+  * https://github.com/lispgames/cl-sdl2-image
+  * https://github.com/Failproofshark/cl-sdl2-ttf
+  * https://github.com/lispgames/sdl2kit
+  * https://github.com/lispgames/cl-sdl2
 
 #### Running Sketch
 
