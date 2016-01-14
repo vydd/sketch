@@ -26,6 +26,7 @@
   (programs nil)
   (model-matrix (sb-cga:identity-matrix))
   (view-matrix nil)
+  (matrix-stack nil)
   (vao nil)
   (buffer-position 0)
   ;; Typography

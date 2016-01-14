@@ -101,13 +101,15 @@
 	   :bezier
 
 	   ;; Transforms
-	   :ntranslate
-	   :nrotate
-	   :nscale
+	   :set-matrix
+	   :push-matrix
+	   :pop-matrix
+	   :translate
+	   :rotate
+	   :scale
 	   :with-matrix
 	   :with-identity-matrix
 	   :with-current-matrix
-	   :set-matrix
 
 	   ;; Channels
 	   :register-input

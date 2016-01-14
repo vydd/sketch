@@ -8,38 +8,38 @@
 ;;;   | | |  _ <  / ___ \| |\  |___) |  _|| |_| |  _ <| |  | |___) |
 ;;;   |_| |_| \_\/_/   \_\_| \_|____/|_|   \___/|_| \_\_|  |_|____/
 
-(defmacro define-ntransform (name args multiplicant)
-  `(defun ,name ,args
-     (let ((transform-matrix ,multiplicant))
-       (setf (env-model-matrix *env*)
-	     (sb-cga:matrix* transform-matrix (env-model-matrix *env*))))))
+(defun set-matrix (matrix)
+  (setf (env-model-matrix *env*) matrix))
 
-(define-ntransform ntranslate (dx dy)
-  (sb-cga::translate* (coerce dx 'single-float) (coerce dy 'single-float) 0.0))
+(defun push-matrix ()
+  (push (env-model-matrix *env*) (env-matrix-stack *env*)))
 
-(define-ntransform nrotate (angle &optional (cx 0) (cy 0))
-  (if (and (zerop cx) (zerop cy))
-      (sb-cga::rotate* 0.0 0.0 (coerce (radians angle) 'single-float))
-      (progn
-	(ntranslate (- cx) (- cy))
-	(nrotate angle)
-	(ntranslate cx cy))))
+(defun pop-matrix ()
+  (setf (env-model-matrix *env*) (pop (env-matrix-stack *env*))))
 
-(define-ntransform nscale (sx sy &optional (cx 0) (cy 0))
-  (if (and (zerop cx) (zerop cy))
-      (sb-cga::scale* (coerce sx 'single-float) (coerce sy 'single-float) 0.0)
-      (progn
-	(ntranslate (- cx) (- cy))
-	(nscale sx sy)
-	(ntranslate cx cy))))
+(defun set-matrix* (matrix)
+  (set-matrix (sb-cga:matrix* (env-model-matrix *env*) matrix)))
+
+(defun translate (dx dy)
+  (when (or (not (zerop dx)) (not (zerop dy)))
+    (set-matrix* (sb-cga::translate* (coerce-float dx) (coerce-float dy) 0.0))))
+
+(defun rotate (angle &optional (cx 0) (cy 0))
+  (translate cx cy)
+  (set-matrix* (sb-cga::rotate* 0.0 0.0 (coerce-float (radians angle))))
+  (translate (- cx) (- cy)))
+
+(defun scale (sx &optional sy (cx 0) (cy 0))
+  (translate cx cy)
+  (set-matrix* (sb-cga::scale* (coerce-float sx) (coerce-float (or sy sx)) 0.0))
+  (translate (- cx) (- cy)))
 
 (defmacro with-matrix (matrix &body body)
-  `(alexandria:with-gensyms (previous-matrix)
-     (progn
-       (setf previous-matrix (env-model-matrix *env*)
-	     (env-model-matrix *env*) ,matrix)
-       ,@body
-       (setf (env-model-matrix *env*) previous-matrix))))
+  `(progn
+     (push-matrix)
+     (set-matrix ,matrix)
+     ,@body
+     (pop-matrix)))
 
 (defmacro with-identity-matrix (&body body)
   `(with-matrix sb-cga::+identity-matrix+
@@ -48,6 +48,3 @@
 (defmacro with-current-matrix (&body body)
   `(with-matrix (env-model-matrix *env*)
      ,@body))
-
-(defun set-matrix (matrix)
-  (setf (env-model-matrix *env*) matrix))

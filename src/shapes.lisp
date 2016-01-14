@@ -88,11 +88,13 @@
 
 (defun ellipse (cx cy rx ry)
   (declare (type real cx cy rx ry))
-  (ngon (max 24 (truncate (* 5 (sqrt (/ (+ rx ry) 2))))) cx cy rx ry))
+  (when (and (not (zerop rx)) (not (zerop ry)))
+    (ngon (max 24 (truncate (* 5 (sqrt (/ (+ (abs rx) (abs ry)) 2))))) cx cy (abs rx) (abs ry))))
 
 (defun circle (x y r)
   (declare (type real x y r))
-  (ellipse x y r r))
+  (when (not (zerop r))
+    (ellipse x y (abs r) (abs r))))
 
 (defun polygon (&rest coordinates)
   (draw-shape
