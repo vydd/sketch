@@ -1,12 +1,12 @@
 # Sketch
 
-Sketch is a Common Lisp interpretation of [Processing Language](https://processing.org). Saying it is an interpretation is important, because Sketch doesn't strive to implement Processing API in Common Lisp, but rather reimplement the very idea behind Processing: to build an easy to use environment for the creation of electronic art, visual design, game prototyping, game making, computer graphics, exploration of human-computer interaction, and more.
+Sketch is a Common Lisp interpretation of [Processing Language](https://processing.org). Saying it is an interpretation is important, because Sketch doesn't strive to implement Processing API in Common Lisp, but rather reimplement the idea behind Processing: to build an easy to use environment for the creation of electronic art, visual design, game prototyping, game making, computer graphics, exploration of human-computer interaction, and more.
 
 ![Examples](http://i.imgur.com/MNZUwz8.png)
 
 ## Installation
 
-Today (November 2015), [Quicklisp](https://www.quicklisp.org/beta/) is Common Lisp's de facto package manager. Sketch is not a part of Quicklisp yet, but it is intended to be used with it. So, you will have to clone it to your local-projects directory manually. If you're not sure how to do that, read the [Quicklisp FAQ](https://www.quicklisp.org/beta/faq.html).
+Today (January 2016), [Quicklisp](https://www.quicklisp.org/beta/) is Common Lisp's de facto package manager. Sketch is not a part of Quicklisp yet, but it is intended to be used with it, so you will have to clone it to your local-projects directory manually. If you're not sure how to do that, read the [Quicklisp FAQ](https://www.quicklisp.org/beta/faq.html).
 
 ### Requirements
 
@@ -16,7 +16,7 @@ Sketch should be compatible with all major Common Lisp implementations and all m
 
 Sketch is known to work with:
 
-* CCL 1.10 on Mac OS X
+* CCL 1.11 on Mac OS X
 * CCL SVN 1.12.dev.r16617 on Arch Linux
 * SBCL on Debian Unstable
 * SBCL 1.2.16 on Arch Linux
@@ -28,17 +28,43 @@ Sketch is known to *not* work with:
 
 If you test it on other systems, please send a pull request to include your results.
 
-#### SDL2
+#### Foreign depenedencies
+
+##### SDL2
 
 SDL2 is Sketch's only backend. It is a C library which you will need to download manually from [libsdl webpage](https://www.libsdl.org/download-2.0.php). Select the relase compatible with your operating system, or compile from the source code.
 
-#### OpenGL
+##### SDL2 Image & SDL2 TTF
+For loading image and font files, Sketch relies on SDL2 Image and SDL2 TTF, respectively, both part of the SDL project.
+
+##### libffi
+
+Some users have reported that [libffi](https://sourceware.org/libffi/) needed to be installed to make Sketch work.
+
+##### OpenGL
 
 Sketch requires graphics hardware and drivers with support for GL version 3.3.
 
+#### Common Lisp Systems
+
+Not all CL systems (or system version) that Sketch uses can be found in Quicklisp. These systems will need to be cloned to the local-projects directory in addition to Sketch itself:
+
+https://github.com/vydd/sketch
+https://github.com/vydd/cl-geometry
+https://github.com/lispgames/glkit
+https://github.com/lispgames/mathkit
+https://github.com/lispgames/cl-sdl2-image
+https://github.com/Failproofshark/cl-sdl2-ttf
+https://github.com/lispgames/sdl2kit
+https://github.com/lispgames/cl-sdl2
+
+#### Running Sketch
+
+After fetching all dependencies, fire up your favorite Common Lisp implementation and type `(ql:quickload :sketch)`.
+
 ### Running provided examples
 
-To get a feel for what Sketch can do, you can look at the examples. The code below will run all four currently provided examples at once. Note that on older machines running three sketches at once might result in a small degradation in performance, so you might want to run sketches separately.
+To get a feel for what Sketch can do, and also to make sure that everything has been installed correctly, you can look at the examples. The code below will run all four currently provided examples at once. Note that on older machines running three sketches at once might result in a small degradation in performance, so you might want to run sketches separately.
 
 ```lisp
 CL-USER> (ql:quickload :sketch-examples)
@@ -76,18 +102,18 @@ Defining sketches is done via the `DEFSKETCH` macro, that wraps `DEFCLASS`. Usin
 (make-instance 'hello-world)
 ```
 
-If all goes well, this should give you an unremarkable green window. Green indicates that everything is up and running, but that you haven't done any drawing yet.
+If all goes well, this should give you an unremarkable gray window.
 
 ### Color
 
-What if you like yellow more? Assuming that you're using Emacs + SLIME, or a similarly capable environment, you can just re-evaluate with the following code:
+Let's add some color. Assuming that you're using Emacs + SLIME, or a similarly capable environment, you can just re-evaluate with the following code:
 
 ```lisp
 (defsketch hello-world () ()
-  (background (rgb 1 1 0)))
+  (background +yellow+))
 ```
 
-The screen becomes yellow. There are a couple of things to note. Drawing code doesn't need to go into a special function or method, or be binded to a sketch explicitly. `DEFSKETCH` is defined as `(defsketch sketch-name window-options slot-bindings &body body)`: that body is your drawing code. We will get to `WINDOW-OPTIONS` and `SLOT-BINDINGS` later. The other thing is that Sketch comes with its own color library. Currently, it supports RGBA and HSBA models, multiple convenient ways of defining colors, and basic color mixing. Soon to come are palletes, color harmonies and predefined colors.
+The screen becomes yellow. There are a couple of things to note. Drawing code doesn't need to go into a special function or method, or be binded to a sketch explicitly. `DEFSKETCH` is defined as `(defsketch sketch-name window-options slot-bindings &body body)`: that body is your drawing code. We will get to `WINDOW-OPTIONS` and `SLOT-BINDINGS` later. The other thing is that Sketch comes with its own color library. Currently, it supports RGBA and HSBA models, multiple convenient ways of defining colors, basic color mixing, basic color filters and a small number of predefined colors.
 
 ### Drawing
 
@@ -100,11 +126,13 @@ Let's draw something.
       (ngon 6 (/ width 2) (/ height 2) 30 50 :angle 90)))
 ```
 
-You get a vertically elongated hexagon. _NOTE: Lines will probably look rough. That's expected right now. Soon, line drawing will get revamped and your lines will be much more beautiful._ Let's see what we said here. We used a `WITH-PEN` block to declare the `PEN` - a set of drawing parameters - applied to elements inside. At the time of writing this, only `:FILL` and `:STROKE` colors are supported, and we're making use of both. Notice a couple more ways of declaring colors. Then we draw a shape, an `NGON`, which is an n-sided convex polygon, inscribed in an ellipse.
+You get a vertically elongated hexagon. Let's see what we said here. We used a `WITH-PEN` block to declare the `PEN` - a set of drawing parameters - applied to elements inside. Notice a couple more ways of declaring colors.
+
+Then we draw a shape, an `NGON`, which is an n-sided convex polygon, inscribed in an ellipse.
 
 ### Sketch's usage of CLOS
 
-The sketch is using `WIDTH` and `HEIGHT` to calculate a hexagon's center. These are actually the slots inherited from the `SKETCH` class, made easy to use when drawing by being automatically wrapped inside `WITH-SLOTS` with all slots listed. Other inherited slots are `FRAMERATE`, used for setting hard frame rate limits, useful for debugging, but also as a replacement for more complicated timing code. It defaults to `:AUTO`. Next, there's `COPY-PIXELS`, that defaults to `NIL`. It controls the way the drawing works. If it's enabled, drawing is incremental; it's "copying the pixels" from frame to frame. Finally, there's `TITLE`, defaulting to `"Sketch"`, and being displayed on the titlebar.
+The sketch is using `WIDTH` and `HEIGHT` to calculate a hexagon's center. These are actually the slots inherited from the `SKETCH` class, made easy to use when drawing by being automatically wrapped inside `WITH-SLOTS` with all slots listed. Other inherited slots are `FRAMERATE`, used for setting hard frame rate limits, useful for debugging, but also as a replacement for more complicated timing code. It defaults to `:AUTO`. Finally, there's `TITLE`, defaulting to `"Sketch"`, and being displayed on the titlebar.
 
 All of these slots can be set using `DEFSKETCH` syntax, using `WINDOW-OPTIONS`:
 
@@ -112,7 +140,6 @@ All of these slots can be set using `DEFSKETCH` syntax, using `WINDOW-OPTIONS`:
 (defsketch using-win-opts (:title "Hello, World"
                            :width 300
                            :height 300
-						   :copy-pixels nil
 						   :framerate :auto)
   ())
 ```
@@ -129,7 +156,7 @@ The third argument, `SLOT-BINDINGS`, is reserved for defining slots. It's differ
 
 These user-defined slots are also wrapped inside `WITH-SLOTS`.
 
-### It still is Common Lisp
+#### It's still Common Lisp
 
 You have all the power of CL at your disposal when drawing, and you're not restricted to using only drawing primitives.
 
@@ -142,34 +169,7 @@ You have all the power of CL at your disposal when drawing, and you're not restr
             :angle (- 90 (* i 4))))))
 ```
 
-### Animation
-
-```lisp
-(defsketch hello-world (:title "Hello, World" :height 300 :width 300)
-    ((i 0)
-     (pen (make-pen :stroke (gray 0) :fill (rgb-255 200 200 200))))
-  (background (rgb 1 1 0))
-  (setf i (mod (1+ i) 360))
-  (with-pen pen
-    (ngon 6 (/ width 2)
-	  (/ height 2)
-	  (- 80 (* (sin (radians i)) 33))
-	  (- 80 (* (sin (radians i)) 33))
-	  :angle (- 90 (* (sin (radians i)) 44)))))
-```
 # WORK IN PROGRESS
-
-## TODO
-
-- [ ] Additional shapes
-- [ ] More color utilities (palletes, color harmony...)
-- [ ] Stroke options and better line drawing
-- [ ] Image loading
-- [ ] Typography
-- [ ] Controllers
-- [ ] Simple audio
-- [ ] Basic physics
-- [ ] Basic 3D
 
 ## Outro
 
