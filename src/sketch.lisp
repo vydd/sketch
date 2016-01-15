@@ -157,7 +157,7 @@ all slot names."
 	   (sdl2:set-window-title sdl-win ,sketch-title)
 	   (sdl2:set-window-size sdl-win ,sketch-width ,sketch-height)
 	   (when ,sketch-fullscreen
-	     (sdl2:set-window-fullscreen sdl-win ,sketch-fullscreen))))
+	     (sdl2:set-window-fullscreen sdl-win :desktop))))
 
        (defmethod initialize-instance :before ((sketch-window ,sketch-name)
 					       &key &allow-other-keys)

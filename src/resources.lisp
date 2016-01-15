@@ -82,7 +82,9 @@
 				&key (size 18) &allow-other-keys)
   (make-instance 'typeface
 		 :filename filename
-		 :pointer (sdl2-ttf:open-font filename size)))
+		 :pointer (sdl2-ttf:open-font filename
+					      (coerce (truncate size)
+						      '(signed-byte 32)))))
 
 (defgeneric free-resource (resource))
 
