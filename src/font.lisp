@@ -41,7 +41,7 @@
     (when font
       (destructuring-bind (r g b a) (color-rgba-255 (font-color font))
 	(let ((resource (make-image-from-surface
-			 (sdl2-ttf:render-text-blended
+			 (sdl2-ttf:render-utf8-blended
 			  (typeface-pointer typeface) text-string r g b a))))
 	  (with-pen (make-pen :stroke nil)
 	    (image resource x y width height)
