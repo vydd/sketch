@@ -68,6 +68,7 @@
 	   :color-filter-grayscale
 	   :color-filter-invert
 	   :color-filter-rotate
+	   :color-filter-lighten
 	   :+red+
 	   :+green+
 	   :+blue+

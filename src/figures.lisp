@@ -41,6 +41,6 @@
      (setf *draw-sequence* (nreverse *draw-sequence*))
      (let ((figure (make-instance 'figure :draws *draw-sequence*)))
        (defun ,name (x y)
-	 (ntranslate x y)
+	 (translate x y)
 	 (draw figure)
-	 (ntranslate (- x) (- y))))))
+	 (translate (- x) (- y))))))

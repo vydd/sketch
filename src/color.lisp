@@ -167,6 +167,16 @@
        (color-blue color)
        (color-red color)))
 
+(defun color-filter-lighten (color &optional (amount 0.1))
+  (let ((hue (color-hue color))
+	(saturation (color-saturation color))
+	(brightness (clamp-1 (+ amount (color-brightness color))))
+	(alpha (color-alpha color)))
+    (destructuring-bind (red green blue) (hsb-to-rgb hue saturation brightness)
+      (make-instance 'color
+		     :red red :green green :blue blue :alpha alpha
+		     :hue hue :saturation saturation :brightness brightness))))
+
 ;;; Predefined colors
 
 (defparameter +red+ (rgb 1 0 0))
