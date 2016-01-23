@@ -38,6 +38,9 @@
 	   :radians
 	   :degrees
 
+	   ;; Utils
+	   :relative-path
+
 	   ;; Colors
 	   :color
 	   :make-color
@@ -68,7 +71,7 @@
 	   :color-filter-grayscale
 	   :color-filter-invert
 	   :color-filter-rotate
-	   :color-filter-lighten
+	   :color-filter-hsb
 	   :+red+
 	   :+green+
 	   :+blue+

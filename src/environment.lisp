@@ -71,6 +71,7 @@
     (gl:enable :blend :line-smooth :polygon-smooth)
     (gl:blend-func :src-alpha :one-minus-src-alpha)
     (gl:hint :line-smooth-hint :nicest)
+    (gl:hint :polygon-smooth-hint :nicest)
     (gl:clear-color 0.0 1.0 0.0 1.0)
     (gl:clear :color-buffer :depth-buffer)
     (gl:flush)))
