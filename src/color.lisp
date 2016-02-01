@@ -26,7 +26,8 @@
 	 (hue (* 60 (cond ((= delta 0) 0)
 			  ((= c-max r) (mod (/ (- g b) delta) 6))
 			  ((= c-max g) (+ (/ (- b r) delta) 2))
-			  ((= c-max b) (+ (/ (- r g) delta) 4)))))
+			  ((= c-max b) (+ (/ (- r g) delta) 4))
+			  (t 0))))
 	 (saturation (if (zerop c-max)
 			 0
 			 (/ delta c-max)))
