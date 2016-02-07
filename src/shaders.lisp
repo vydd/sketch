@@ -34,6 +34,12 @@ void main() {
 
 uniform sampler2D texid;
 
-smooth in vec4 f_color;    f_out = texture(texid, f_texcoord) * f_color;
+smooth in vec4 f_color;
+smooth in vec2 f_texcoord;
+
+out vec4 f_out;
+
+void main() {
+    f_out = texture(texid, f_texcoord) * f_color;
 }
 ")))
