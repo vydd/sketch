@@ -1,6 +1,7 @@
 ;;;; drawing.lisp
 
 (in-package #:sketch)
+(declaim (optimize (speed 0) (debug 3)))
 
 ;;;  ____  ____      ___        _____ _   _  ____
 ;;; |  _ \|  _ \    / \ \      / /_ _| \ | |/ ___|
@@ -64,19 +65,19 @@
 
 (defmethod push-vertices (vertices color texture primitive (draw-mode (eql :gpu)))
   (kit.gl.shader:uniform-matrix (env-programs *env*) :model-m 4
-				(vector (env-model-matrix *env*)))
+  				(vector (env-model-matrix *env*)))
   (gl:bind-texture :texture-2d texture)
   (symbol-macrolet ((position (env-buffer-position *env*)))
     (when (> (* *bytes-per-vertex* (+ position (length vertices))) *buffer-size*)
       (start-draw))
     (let ((buffer-pointer (%gl:map-buffer-range :array-buffer
   						(* position *bytes-per-vertex*)
-						(* (length vertices) *bytes-per-vertex*)
+  						(* (length vertices) *bytes-per-vertex*)
   						#x22)))
+      (%gl:unmap-buffer :array-buffer)
       (fill-buffer buffer-pointer vertices color)
       (%gl:draw-arrays primitive position (length vertices))
-      (setf position (+ position (length vertices)))
-      (%gl:unmap-buffer :array-buffer))))
+      (setf position (+ position (length vertices))))))
 
 (defmethod push-vertices (vertices color texture primitive (draw-mode (eql :figure)))
   (let* ((buffer (static-vectors:make-static-vector

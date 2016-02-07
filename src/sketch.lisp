@@ -166,6 +166,7 @@ all slot names."
 
        (defmethod initialize-instance :before ((sketch-window ,sketch-name)
 					       &key &allow-other-keys)
+	 (initialize-sketch)
 	 ,(when sketch-copy-pixels
 	   `(sdl2:gl-set-attr :doublebuffer 0)))
 
