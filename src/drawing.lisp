@@ -1,7 +1,6 @@
 ;;;; drawing.lisp
 
 (in-package #:sketch)
-(declaim (optimize (speed 0) (debug 3)))
 
 ;;;  ____  ____      ___        _____ _   _  ____
 ;;; |  _ \|  _ \    / \ \      / /_ _| \ | |/ ___|
