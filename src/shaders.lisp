@@ -21,13 +21,11 @@ layout (location = 1) in vec2 texcoord;
 layout (location = 2) in vec4 color;
 
 smooth out vec4 f_color;
-smooth out vec4 f_pos;
 smooth out vec2 f_texcoord;
 
 void main() {
     gl_Position = view_m * model_m * vec4(vertex, 0.0, 1.0);
-    f_pos = gl_Position;
-    f_texcoord = texcoord;//vec2(view_m * model_m * vec4(texcoord, 0.0, 1.0));
+    f_texcoord = texcoord;
     f_color = color;
 }
 ")
@@ -36,13 +34,6 @@ void main() {
 
 uniform sampler2D texid;
 
-smooth in vec4 f_color;
-smooth in vec4 f_pos;
-smooth in vec2 f_texcoord;
-
-out vec4 f_out;
-
-void main() {
-    f_out = texture(texid, f_texcoord) * f_color;
+smooth in vec4 f_color;    f_out = texture(texid, f_texcoord) * f_color;
 }
 ")))

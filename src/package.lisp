@@ -78,6 +78,7 @@
 	   :+yellow+
 	   :+magenta+
 	   :+cyan+
+	   :+orange+
 	   :+white+
 	   :+black+
 
@@ -99,6 +100,7 @@
 	   :polyline
 	   :rect
 	   :ngon
+	   :star
 	   :ellipse
 	   :circle
 	   :polygon

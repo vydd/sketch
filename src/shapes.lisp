@@ -67,9 +67,7 @@
      `((,x ,(+ y h)) (,x ,y) (,(+ x w) ,(+ y h)) (,(+ x w) ,y))
      `((,x ,y) (,x ,(+ y h)) (,(+ x w) ,(+ y h)) (,(+ x w) ,y)))))
 
-(defun ngon (n cx cy rx ry &optional (angle 0))
-  (declare (type fixnum n)
-	   (type real cx cy rx ry angle))
+(defun ngon-vertices (n cx cy rx ry &optional (angle 0))
   (let* ((angle (radians angle))
 	 (rx (if (zerop rx) +epsilon+ rx))
 	 (theta (/ +tau+ n))
@@ -83,7 +81,19 @@
       (psetf vertices (cons `(,(+ x cx) ,(+ (* y-mul y) cy)) vertices)
 	     x (* radial (- x (* (- y) tangential)))
 	     y (* radial (- y (* x tangential)))))
-    (setf vertices (nreverse vertices))
+    (nreverse vertices)))
+
+(defun ngon (n cx cy rx ry &optional (angle 0))
+  (declare (type fixnum n)
+	   (type real cx cy rx ry angle))
+  (let ((vertices (ngon-vertices n cx cy rx ry angle)))
+    (draw-shape :triangle-fan vertices vertices)))
+
+(defun star (n cx cy ra rb &optional (angle 0))
+  (declare (type fixnum n)
+	   (type real cx cy ra rb angle))
+  (let ((vertices (mix-lists (ngon-vertices n cx cy ra ra (+ 90 angle))
+			     (ngon-vertices n cx cy rb rb (- (+ 90 angle) (/ 180 n))))))
     (draw-shape :triangle-fan vertices vertices)))
 
 (defun ellipse (cx cy rx ry)

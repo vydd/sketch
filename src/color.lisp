@@ -185,5 +185,6 @@
 (defparameter +yellow+ (rgb 1 1 0))
 (defparameter +magenta+ (rgb 1 0 1))
 (defparameter +cyan+ (rgb 0 1 1))
+(defparameter +orange+ (rgb 1.0 0.5 0.0))
 (defparameter +white+ (gray 1))
 (defparameter +black+ (gray 0))
