@@ -135,7 +135,7 @@ all slot names."
 	 (slots (mapcar #'car slot-bindings))
 	 (initforms (mapcar #'(lambda (binding)
 				`(,(car binding)
-                                  :initarg ,(alexandria:make-keyword (string-upcase (symbol-name (car binding))))
+                                   :initarg ,(alexandria:make-keyword (car binding))
 				   :initform ,(cadr binding)
 				   :accessor ,(car binding)))
 			    slot-bindings)))
