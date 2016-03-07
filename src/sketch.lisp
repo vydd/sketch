@@ -26,7 +26,8 @@
    (title :initform "Sketch")
    (width :initform 400)
    (height :initform 400)
-   (copy-pixels :initform nil)))
+   (copy-pixels :initform nil)
+   (y-axis :initform :down)))
 
 (defmethod initialize-instance :after ((sketch-window sketch)
 				       &key &allow-other-keys)
@@ -115,6 +116,7 @@ all slot names."
 	 (sketch-height (getf window-options :height 400))
 	 (sketch-copy-pixels (getf window-options :copy-pixels nil))
 	 (sketch-fullscreen (getf window-options :fullscreen nil))
+	 (sketch-y-axis (getf window-options :y-axis :down))
 	 ;; We need to append SKETCH-TITLE, SKETCH-WIDTH, SKETCH-HEIGHT
 	 ;; and SKETCH-COPY_PIXELS from WINDOW-OPTIONS to SLOT-BINDINGS.
 	 ;; If SLOT-BINDINGS already contains any of these, we're going
@@ -131,7 +133,8 @@ all slot names."
 		  `((title ,sketch-title)
 		    (width ,sketch-width)
 		    (height ,sketch-height)
-		    (copy-pixels ,sketch-copy-pixels))))
+		    (copy-pixels ,sketch-copy-pixels)
+		    (y-axis ,sketch-y-axis))))
 	 (slots (mapcar #'car slot-bindings))
 	 (initforms (mapcar #'(lambda (binding)
 				`(,(car binding)

@@ -53,9 +53,11 @@
     texture))
 
 (defun initialize-environment (w)
-  (with-slots (env width height) w
+  (with-slots (env width height y-axis) w
     (setf (env-programs env) (kit.gl.shader:compile-shader-dictionary 'sketch-programs)
-	  (env-view-matrix env) (kit.glm:ortho-matrix 0 width height 0 -1 1)
+	  (env-view-matrix env) (if (eq y-axis :down)
+				    (kit.glm:ortho-matrix 0 width height 0 -1 1)
+				    (kit.glm:ortho-matrix 0 width 0 height -1 1))
 	  (env-vao env) (make-instance 'kit.gl.vao:vao :type 'sketch-vao)
 	  (env-white-pixel-texture env) (make-white-pixel-texture)
 	  (env-white-color-vector env) #(255 255 255 255)
