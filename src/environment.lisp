@@ -29,6 +29,7 @@
   (model-matrix (sb-cga:identity-matrix))
   (view-matrix nil)
   (matrix-stack nil)
+  (y-axis-sgn +1)
   (vao nil)
   (buffer-position 0)
   ;; Typography
@@ -58,6 +59,7 @@
 	  (env-view-matrix env) (if (eq y-axis :down)
 				    (kit.glm:ortho-matrix 0 width height 0 -1 1)
 				    (kit.glm:ortho-matrix 0 width 0 height -1 1))
+	  (env-y-axis-sgn env) (if (eq y-axis :down) +1 -1)
 	  (env-vao env) (make-instance 'kit.gl.vao:vao :type 'sketch-vao)
 	  (env-white-pixel-texture env) (make-white-pixel-texture)
 	  (env-white-color-vector env) #(255 255 255 255)

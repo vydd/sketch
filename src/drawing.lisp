@@ -96,7 +96,7 @@
      do (setf (cffi:mem-aref buffer-pointer :float idx) (coerce-float x)
 	      (cffi:mem-aref buffer-pointer :float (+ idx 1)) (coerce-float y)
 	      (cffi:mem-aref buffer-pointer :float (+ idx 2)) (coerce-float tx)
-	      (cffi:mem-aref buffer-pointer :float (+ idx 3)) (coerce-float ty)
+	      (cffi:mem-aref buffer-pointer :float (+ idx 3)) (coerce-float (* ty (env-y-axis-sgn *env*)))
 	      (cffi:mem-aref buffer-pointer :uint8 (* 4 (+ idx 4))) (aref color 0)
 	      (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 1)) (aref color 1)
 	      (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 2)) (aref color 2)
