@@ -45,16 +45,9 @@ Some users have reported that [libffi](https://sourceware.org/libffi/) needed to
 
 Sketch requires graphics hardware and drivers with support for GL version 3.3.
 
-#### Common Lisp Systems
-
-Not all CL systems (or system version) that Sketch uses can be found in Quicklisp. These systems will need to be cloned to the local-projects directory in addition to Sketch itself:
-
-  * https://github.com/vydd/sketch
-  * https://github.com/lispgames/cl-sdl2-image
-
 #### Running Sketch
 
-After fetching all dependencies, fire up your favorite Common Lisp implementation and type `(ql:quickload :sketch)`.
+Because Sketch is not in Quicklisp yet, you're going to need to clone https://github.com/vydd/sketch to your quicklisp/local-projects directory. Fire up your favorite Common Lisp implementation and type `(ql:quickload :sketch)`.
 
 ### Running provided examples
 
