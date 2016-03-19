@@ -1,12 +1,12 @@
 # Sketch
 
-Sketch is a Common Lisp interpretation of [Processing Language](https://processing.org). Saying it is an interpretation is important, because Sketch doesn't strive to implement Processing API in Common Lisp, but rather reimplement the idea behind Processing: to build an easy to use environment for the creation of electronic art, visual design, game prototyping, game making, computer graphics, exploration of human-computer interaction, and more.
+Sketch is a Common Lisp environment for the creation of electronic art, visual design, game prototyping, game making, computer graphics, exploration of human-computer interaction and more. It is inspired by [Processing Language](https://processing.org) and shares some of the API.
 
 ![Examples](http://i.imgur.com/MNZUwz8.png)
 
 ## Installation
 
-Today (January 2016), [Quicklisp](https://www.quicklisp.org/beta/) is Common Lisp's de facto package manager. Sketch is not a part of Quicklisp yet, but it is intended to be used with it, so you will have to clone it to your local-projects directory manually. If you're not sure how to do that, read the [Quicklisp FAQ](https://www.quicklisp.org/beta/faq.html).
+Today (March 2016), [Quicklisp](https://www.quicklisp.org/beta/) is Common Lisp's de facto package manager. Sketch is not a part of Quicklisp yet, but it is intended to be used with it, so you will have to clone it to your local-projects directory manually. If you're not sure how to do that, read the [Quicklisp FAQ](https://www.quicklisp.org/beta/faq.html).
 
 ### Requirements
 
@@ -50,13 +50,7 @@ Sketch requires graphics hardware and drivers with support for GL version 3.3.
 Not all CL systems (or system version) that Sketch uses can be found in Quicklisp. These systems will need to be cloned to the local-projects directory in addition to Sketch itself:
 
   * https://github.com/vydd/sketch
-  * https://github.com/vydd/cl-geometry
-  * https://github.com/lispgames/glkit
-  * https://github.com/lispgames/mathkit
   * https://github.com/lispgames/cl-sdl2-image
-  * https://github.com/Failproofshark/cl-sdl2-ttf
-  * https://github.com/lispgames/sdl2kit
-  * https://github.com/lispgames/cl-sdl2
 
 #### Running Sketch
 
@@ -123,7 +117,7 @@ Let's draw something.
 (defsketch hello-world () ()
   (background (rgb 1 1 0))
     (with-pen (make-pen :stroke (gray 0) :fill (rgb-255 200 200 200))
-      (ngon 6 (/ width 2) (/ height 2) 30 50 :angle 90)))
+      (ngon 6 (/ width 2) (/ height 2) 30 50 90)))
 ```
 
 You get a vertically elongated hexagon. Let's see what we said here. We used a `WITH-PEN` block to declare the `PEN` - a set of drawing parameters - applied to elements inside. Notice a couple more ways of declaring colors.
@@ -132,7 +126,7 @@ Then we draw a shape, an `NGON`, which is an n-sided convex polygon, inscribed i
 
 ### Sketch's usage of CLOS
 
-The sketch is using `WIDTH` and `HEIGHT` to calculate a hexagon's center. These are actually the slots inherited from the `SKETCH` class, made easy to use when drawing by being automatically wrapped inside `WITH-SLOTS` with all slots listed. Other inherited slots are `FRAMERATE`, used for setting hard frame rate limits, useful for debugging, but also as a replacement for more complicated timing code. It defaults to `:AUTO`. Finally, there's `TITLE`, defaulting to `"Sketch"`, and being displayed on the titlebar.
+The sketch is using `WIDTH` and `HEIGHT` to calculate a hexagon's center. These are actually the slots inherited from the `SKETCH` class, made easy to use when drawing by being automatically wrapped inside `WITH-SLOTS` with all slots listed. Other inherited slots are `TITLE`, defaulting to `"Sketch"` and being displayed on the titlebar, `Y-AXIS`, which can be set to `:UP` or `:DOWN` (default), and `COPY-PIXELS` which can be used to switch clearing the screen before drawing frames on or off.
 
 All of these slots can be set using `DEFSKETCH` syntax, using `WINDOW-OPTIONS`:
 
@@ -140,8 +134,9 @@ All of these slots can be set using `DEFSKETCH` syntax, using `WINDOW-OPTIONS`:
 (defsketch using-win-opts (:title "Hello, World"
                            :width 300
                            :height 300
-						   :framerate :auto)
-  ())
+						   :y-axis :down
+						   :copy-pixels nil)
+     ())
 ```
 
 The third argument, `SLOT-BINDINGS`, is reserved for defining slots. It's different from standard slot definition, looking more like a let init-form. Currently, initial values are mandatory and there are no special slot modifiers, but the latter will change soon.
