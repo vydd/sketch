@@ -51,13 +51,13 @@ Because Sketch is not in Quicklisp yet, you're going to need to clone https://gi
 
 ### Running provided examples
 
-To get a feel for what Sketch can do, and also to make sure that everything has been installed correctly, you can look at the examples. The code below will run all four currently provided examples at once. Note that on older machines running three sketches at once might result in a small degradation in performance, so you might want to run sketches separately.
+To get a feel for what Sketch can do, and also to make sure that everything has been installed correctly, you can look at the examples. The code below will run all four currently provided examples at once. Note that on older machines running four sketches at once might result in a small degradation in performance, so you might want to run sketches separately.
 
 ```lisp
 CL-USER> (ql:quickload :sketch-examples)
 CL-USER> (make-instance 'sketch-examples:hello-world)
 CL-USER> (make-instance 'sketch-examples:sinewave)
-CL-USER> (make-instance 'sketch-examples:brownian-turtle)
+CL-USER> (make-instance 'sketch-examples:brownian)
 CL-USER> (make-instance 'sketch-examples:life) ; Click to toggle cells,
 	                                           ; any key to toggle iteration
 ```
