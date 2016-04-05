@@ -18,9 +18,9 @@
 	 (w (/ (or (pen-weight (env-pen *env*)) 1) 2))
 	 (dx (* 2 (sin a) w))
 	 (dy (* 2 (cos a) w))
-	 (dx+ (ceiling dx 2))
+	 (dx+ (floor dx 2))
 	 (dx- (- dx dx+))
-	 (dy+ (ceiling dy 2))
+	 (dy+ (floor dy 2))
 	 (dy- (- dy dy+)))
     (with-pen (flip-pen (env-pen *env*))
       (draw-shape
@@ -56,7 +56,7 @@
 			 (apply #'append rights))
 	      nil))
 	   ;; (with-pen (make-pen :fill (rgb 0 1 0))
-	   ;;   (mapcar (lambda (x) (circle (caar x) (cadar x) 4)) rights))
+	   ;;   (mapcar (lambda (x) (circle (caar x) (cadar x) 0.04)) rights))
 	   )))))
 
 (defun rect (x y w h)

@@ -49,7 +49,7 @@
 (declaim (inline div2-inexact))
 (defun div2-inexact (a)
   (multiple-value-bind (x y)
-      (ceiling a 2)
+      (floor a 2)
     (values x (+ x y))))
 
 (defun abs-or-rel (val src)
