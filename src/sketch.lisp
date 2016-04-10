@@ -21,15 +21,15 @@
 (defclass sketch (kit.sdl2:gl-window)
   (;; Environment
    (%env :initform (make-env))
-   (%restart :initform nil)
-   ;; Window parameters (when modifying, don't forget to
+   (%restart :initform t)
+   ;; Window parameters. When modifying, don't forget to
    ;; do the same for #'WINDOW-PARAMETER-BINDINGS.
-   (title :initform "Sketch" :reader sketch-title)
-   (width :initform 400 :reader sketch-width)
-   (height :initform 400 :reader sketch-height)
-   (fullscreen :initform nil :reader sketch-fullscreen)
-   (copy-pixels :initform nil :accessor sketch-copy-pixels)
-   (y-axis :initform :down :reader sketch-y-axis)))
+   (title :initform "Sketch" :reader sketch-title :initarg :sketch-title)
+   (width :initform 400 :reader sketch-width :initarg :sketch-width)
+   (height :initform 400 :reader sketch-height :initarg :sketch-height)
+   (fullscreen :initform nil :reader sketch-fullscreen :initarg :sketch-fullscreen)
+   (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :sketch-copy-pixels)
+   (y-axis :initform :down :reader sketch-y-axis :initarg :sketch-y-axis)))
 
 ;;; Non trivial sketch writers
 
@@ -37,8 +37,7 @@
   `(defmethod (setf ,(alexandria:symbolicate 'sketch- slot)) (value (instance sketch))
      (setf (slot-value instance ',slot) value)
      (let ((win (kit.sdl2:sdl-window instance)))
-       (sdl2:in-main-thread (:background t)
-	 ,@body))))
+       ,@body)))
 
 (define-sketch-writer title
   (sdl2:set-window-title win (slot-value instance 'title)))
@@ -66,8 +65,7 @@
 ;;; Generic functions
 
 (defgeneric prepare (instance &key &allow-other-keys)
-  (:method-combination progn :most-specific-last)
-  (:method ((instance sketch) &key &allow-other-keys) ()))
+  (:method-combination progn :most-specific-last))
 
 (defgeneric setup (instance &key &allow-other-keys)
   (:documentation "Called before creating the sketch window.")
@@ -80,11 +78,9 @@ used for drawing, 60fps.")
 
 ;;; Initialization
 
-(defmethod kit.sdl2:initialize-window progn ((instance sketch) &key &allow-other-keys)
-  (initialize-sketch))
-
-(defmethod initialize-instance :after ((instance sketch) &key &allow-other-keys)
+(defmethod initialize-instance :after ((instance sketch) &rest initargs &key &allow-other-keys)
   (initialize-environment instance)
+  (apply #'prepare (list* instance initargs))
   (initialize-gl instance))
 
 ;;; Rendering
@@ -120,7 +116,6 @@ used for drawing, 60fps.")
 	    ;; Restart sketch on setup and when recovering from an error.
 	    (when %restart
 	      (gl-catch (rgb 1 1 0)
-		(prepare instance)
 		(setup instance))
 	      (setf (slot-value instance '%restart) nil))
 	    ;; If we're in the debug mode, we exit from it immediately,
@@ -206,12 +201,17 @@ used for drawing, 60fps.")
 (defun make-window-parameter-setf ()
   `(setf ,@(mapcan (lambda (binding)
 		     `((,(car binding) instance) ,(car binding)))
-		   (window-parameter-bindings '()))))
+		   (window-parameter-bindings nil))))
 
 (defun make-custom-slots-setf (sketch bindings)
   `(setf ,@(mapcan (lambda (binding)
 		     `((,(binding-accessor sketch binding) instance) ,(car binding)))
 		   (custom-slots bindings))))
+
+(defun make-reinitialize-setf ()
+  `(setf ,@(mapcan (lambda (binding)
+		     `((,(car binding) instance) (,(car binding) instance)))
+		   (window-parameter-bindings nil))))
 
 ;;; DEFSKETCH macro
 
@@ -222,21 +222,17 @@ used for drawing, 60fps.")
      (defclass ,sketch-name (sketch)
        ,(sketch-bindings-to-slots `,sketch-name bindings))
 
-     (defmethod prepare ((instance ,sketch-name) &key &allow-other-keys)
+     (defmethod prepare progn ((instance ,sketch-name) &rest initargs &key &allow-other-keys)
        (let* (,@(window-parameter-bindings bindings)
 	      ,@(mapcar #'first-two
 			(replace-channels-with-values bindings)))
 	 ,(make-window-parameter-setf)
-	 ,(make-custom-slots-setf sketch-name bindings))
-       (call-next-method))
+	 ,(make-custom-slots-setf sketch-name bindings)
+	 (apply #'reinitialize-instance (list* instance initargs))
+	 ,(make-reinitialize-setf)))
 
      (defmethod draw ((instance ,sketch-name) &key &allow-other-keys)
-       ,@body)))
+       ,@body)
 
-;; (defsketch foo
-;;     ((sketch-title "New style defsketch")
-;;      (scale 15)
-;;      (sketch-width (* 3 scale))
-;;      (mx (in :mouse-x 0) :accessor mx))
-;;   (print "hello"))
-()
+     (defmethod initialize-instance :before ((instance ,sketch-name) &key &allow-other-keys)
+       (initialize-sketch))))

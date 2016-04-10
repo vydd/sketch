@@ -71,7 +71,7 @@
      (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
 
 (defun initialize-gl (w)
-  (with-slots ((env %env) width height copy-pixels) w
+  (with-slots ((env %env) width height) w
     (sdl2:gl-set-swap-interval 1)
     (setf (kit.sdl2:idle-render w) t)
     (gl:viewport 0 0 width height)
