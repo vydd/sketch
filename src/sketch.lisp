@@ -78,6 +78,9 @@ used for drawing, 60fps.")
 
 ;;; Initialization
 
+(defmethod initialize-instance :before ((instance sketch) &key &allow-other-keys)
+  (initialize-sketch))
+
 (defmethod initialize-instance :after ((instance sketch) &rest initargs &key &allow-other-keys)
   (initialize-environment instance)
   (apply #'prepare (list* instance initargs))
@@ -158,10 +161,8 @@ used for drawing, 60fps.")
 	  (alexandria:symbolicate sketch '- (car binding)))))
 
 (defun make-slot-form (sketch binding)
-  (let ((name (car binding))
-	(accessor (binding-accessor sketch binding)))
-    `(,name :initarg ,(alexandria:make-keyword name)
-	    :accessor ,(binding-accessor sketch binding))))
+  `(,(car binding) :initarg ,(alexandria:make-keyword (car binding))
+     :accessor ,(binding-accessor sketch binding)))
 
 ;;; DEFSKETCH channels
 
@@ -225,10 +226,10 @@ used for drawing, 60fps.")
 
 (defmacro defsketch (sketch-name bindings &body body)
   `(progn
-     ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
-
      (defclass ,sketch-name (sketch)
        ,(sketch-bindings-to-slots `,sketch-name bindings))
+
+     ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
 
      (defmethod prepare progn ((instance ,sketch-name) &rest initargs &key &allow-other-keys)
        (let* (,@(window-parameter-bindings bindings)
@@ -243,7 +244,4 @@ used for drawing, 60fps.")
        (with-accessors ,(mapcar (lambda (x) (list (car x) (car x)))
 				(window-parameter-bindings nil)) instance
 	 (with-slots ,(mapcar #'car (custom-slots bindings)) instance
-	   ,@body)))
-
-     (defmethod initialize-instance :before ((instance ,sketch-name) &key &allow-other-keys)
-       (initialize-sketch))))
+	   ,@body)))))
