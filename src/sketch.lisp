@@ -92,7 +92,7 @@ used for drawing, 60fps.")
      (error (e)
        (progn
 	 (background ,error-color)
-	 (with-font (make-default-font)
+	 (with-font (make-error-font)
 	   (with-identity-matrix
 	     (text "ERROR" 20 20)
 	     (text (format nil "~a" e) 20 40)
@@ -106,7 +106,7 @@ used for drawing, 60fps.")
   (end-draw))
 
 (defmethod kit.sdl2:render ((instance sketch))
-  (with-slots (%env width height %restart copy-pixels) instance
+  (with-slots (%env %restart width height copy-pixels) instance
     (with-environment %env
       (with-pen (make-default-pen)
 	(with-font (make-default-font)
@@ -115,7 +115,7 @@ used for drawing, 60fps.")
 	      (background (gray 0.4)))
 	    ;; Restart sketch on setup and when recovering from an error.
 	    (when %restart
-	      (gl-catch (rgb 1 1 0)
+	      (gl-catch (rgb 1 1 0.3)
 		(setup instance))
 	      (setf (slot-value instance '%restart) nil))
 	    ;; If we're in the debug mode, we exit from it immediately,
@@ -126,7 +126,7 @@ used for drawing, 60fps.")
 		(progn
 		  (exit-debug-mode)
 		  (draw-window instance))
-		(gl-catch (rgb 1 0 0)
+		(gl-catch (rgb 0.7 0 0)
 		  (draw-window instance)))))))))
 
 ;;; Default events
@@ -152,8 +152,10 @@ used for drawing, 60fps.")
   (remove-if #'default-sketch-slot-p bindings))
 
 (defun binding-accessor (sketch binding)
-  (or (cadr (member :accessor (cddr binding)))
-      (alexandria:symbolicate sketch '- (car binding))))
+  (if (default-sketch-slot-p binding)
+      (car binding)
+      (or (cadr (member :accessor (cddr binding)))
+	  (alexandria:symbolicate sketch '- (car binding)))))
 
 (defun make-slot-form (sketch binding)
   (let ((name (car binding))
@@ -161,20 +163,22 @@ used for drawing, 60fps.")
     `(,name :initarg ,(alexandria:make-keyword name)
 	    :accessor ,(binding-accessor sketch binding))))
 
+;;; DEFSKETCH channels
+
 (defun channel-binding-p (binding)
   (and (consp (cadr binding)) (eql 'in (caadr binding))))
 
-(defun make-channel-observer (binding)
-  `(define-channel-observer nil
+(defun make-channel-observer (sketch binding)
+  `(define-channel-observer
      (let ((win (kit.sdl2:last-window)))
        (when win
-	 (setf (slot-value win ',(car binding)) ,(cadr binding))))))
+	 (setf (,(binding-accessor sketch binding) win) ,(cadr binding))))))
 
-(defun make-channel-observers (bindings)
-  (mapcan (lambda (binding)
+(defun make-channel-observers (sketch bindings)
+  (mapcar (lambda (binding)
 	    (when (channel-binding-p binding)
-	      (make-channel-observer binding)))
-       bindings))
+	      (make-channel-observer sketch binding)))
+	  bindings))
 
 (defun replace-channels-with-values (bindings)
   (loop for binding in bindings
@@ -182,6 +186,8 @@ used for drawing, 60fps.")
 		   (if (channel-binding-p binding)
 		       (caddr (cadr binding))
 		       (cadr binding)))))
+
+;;; DEFSKETCH bindings
 
 (defun sketch-bindings-to-slots (sketch bindings)
   (mapcar (lambda (x) (make-slot-form sketch x))
@@ -197,6 +203,8 @@ used for drawing, 60fps.")
 		 (sketch-fullscreen nil)
 		 (sketch-copy-pixels nil)
 		 (sketch-y-axis :down)))))
+
+;;; DEFSKETCH setf instructions
 
 (defun make-window-parameter-setf ()
   `(setf ,@(mapcan (lambda (binding)
@@ -217,7 +225,7 @@ used for drawing, 60fps.")
 
 (defmacro defsketch (sketch-name bindings &body body)
   `(progn
-     ,(make-channel-observers bindings)
+     ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
 
      (defclass ,sketch-name (sketch)
        ,(sketch-bindings-to-slots `,sketch-name bindings))

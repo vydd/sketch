@@ -15,11 +15,13 @@
 	   :draw
 
 	   :defsketch
-	   :define-sketch-setup
 
-	   ::width
-	   ::height
-	   ::title
+	   :sketch-title
+	   :sketch-width
+	   :sketch-height
+	   :sketch-fullscreen
+	   :sketch-copy-pixels
+	   :sketch-y-axis
 
 	   ;; Math
 	   :clamp-1
@@ -122,6 +124,7 @@
 	   :in
 	   :out
 	   :define-channel-observer
+	   :define-named-channel-observer
 	   :reset-all-channels
 
 	   ;; Figures

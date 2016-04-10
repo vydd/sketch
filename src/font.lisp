@@ -56,3 +56,13 @@
 						     :pointer (sdl2-ttf:open-font filename 18))
 				:color +black+
 				:size 18))))))
+
+(let ((font))
+  (defun make-error-font ()
+    (setf font (or font
+		   (let ((filename (relative-path "res/sourcesans/SourceSansPro-Regular.otf")))
+		     (make-font :face (make-instance 'typeface
+						     :filename filename
+						     :pointer (sdl2-ttf:open-font filename 16))
+				:color +white+
+				:size 16))))))

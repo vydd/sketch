@@ -99,8 +99,13 @@
       (when outputs
 	(mapcar #'propagate inputs)))))
 
-(defmacro define-channel-observer (name &body body)
-  (%define-channel-observer name body))
+(defmacro define-named-channel-observer (name &body body)
+  (%define-channel-observer name body)
+  nil)
+
+(defmacro define-channel-observer (&body body)
+  (%define-channel-observer nil body)
+  nil)
 
 ;;; Utility functions
 
