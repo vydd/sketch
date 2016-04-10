@@ -121,8 +121,8 @@
 	   :register-input
 	   :in
 	   :out
+	   :define-channel-observer
 	   :reset-all-channels
-	   :deflink
 
 	   ;; Figures
 	   :deffigure

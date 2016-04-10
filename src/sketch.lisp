@@ -16,57 +16,92 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; Sketch definition
+;;; Sketch class
 
 (defclass sketch (kit.sdl2:gl-window)
   (;; Environment
-   (env :initform (make-env))
-   (restart-sketch :initform t)
-   ;; Window parameters
-   (title :initform "Sketch")
-   (width :initform 400)
-   (height :initform 400)
-   (copy-pixels :initform nil)
-   (y-axis :initform :down)))
+   (%env :initform (make-env))
+   (%restart :initform nil)
+   ;; Window parameters (when modifying, don't forget to
+   ;; do the same for #'WINDOW-PARAMETER-BINDINGS.
+   (title :initform "Sketch" :reader sketch-title)
+   (width :initform 400 :reader sketch-width)
+   (height :initform 400 :reader sketch-height)
+   (fullscreen :initform nil :reader sketch-fullscreen)
+   (copy-pixels :initform nil :accessor sketch-copy-pixels)
+   (y-axis :initform :down :reader sketch-y-axis)))
 
-(defmethod initialize-instance :after ((sketch-window sketch)
-				       &key &allow-other-keys)
-  (initialize-environment sketch-window)
-  (initialize-gl sketch-window))
+;;; Non trivial sketch writers
 
-(defmethod close-window :before ((sketch-window sketch))
-  (with-environment (slot-value sketch-window 'env)
-    (loop for resource being the hash-values of (env-resources *env*)
-       do (free-resource resource))))
+(defmacro define-sketch-writer (slot &body body)
+  `(defmethod (setf ,(alexandria:symbolicate 'sketch- slot)) (value (instance sketch))
+     (setf (slot-value instance ',slot) value)
+     (let ((win (kit.sdl2:sdl-window instance)))
+       (sdl2:in-main-thread (:background t)
+	 ,@body))))
 
-(defgeneric setup (sketch)
+(define-sketch-writer title
+  (sdl2:set-window-title win (slot-value instance 'title)))
+
+(define-sketch-writer width
+  (sdl2:set-window-size win (slot-value instance 'width)
+			(slot-value instance 'height)))
+
+(define-sketch-writer height
+  (sdl2:set-window-size win (slot-value instance 'width)
+			(slot-value instance 'height)))
+
+(define-sketch-writer fullscreen
+  (sdl2:set-window-fullscreen win (slot-value instance 'fullscreen)))
+
+(define-sketch-writer y-axis
+  (with-slots ((env %env) width height y-axis) instance
+    (setf (env-view-matrix env)
+	  (if (eq y-axis :down)
+	      (kit.glm:ortho-matrix 0 width height 0 -1 1)
+	      (kit.glm:ortho-matrix 0 width 0 height -1 1)))
+    (kit.gl.shader:uniform-matrix
+     (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
+
+;;; Generic functions
+
+(defgeneric prepare (instance &key &allow-other-keys)
+  (:method-combination progn :most-specific-last)
+  (:method ((instance sketch) &key &allow-other-keys) ()))
+
+(defgeneric setup (instance &key &allow-other-keys)
   (:documentation "Called before creating the sketch window.")
-  (:method ((sketch-window sketch)) ()))
+  (:method ((instance sketch) &key &allow-other-keys) ()))
 
-(defgeneric draw (object)
+(defgeneric draw (instance &key &allow-other-keys)
   (:documentation "Called repeatedly after creating the sketch window,
-used for drawing.")
-  (:method ((sketch-window sketch)) ()))
+used for drawing, 60fps.")
+  (:method ((instance sketch) &key &allow-other-keys) ()))
 
-(defgeneric handle-sketch-event (sketch event)
-  (:documentation "Hooks into sketch to handle internal events, like
-:FRAME-DRAW and :TRIANGLES-DRAW.")
-  (:method ((sketch-window sketch) event) (declare (ignore event))))
+;;; Initialization
 
-;;; Rendering
+(defmethod kit.sdl2:initialize-window progn ((instance sketch) &key &allow-other-keys)
+  (initialize-sketch))
+
+(defmethod initialize-instance :after ((instance sketch) &key &allow-other-keys)
+  (initialize-environment instance)
+  (initialize-gl instance))
+
+;;; Rendering
 
 (defmacro gl-catch (error-color &body body)
   `(handler-case
        (progn
 	 ,@body)
-     (error ()
+     (error (e)
        (progn
 	 (background ,error-color)
 	 (with-font (make-default-font)
 	   (with-identity-matrix
 	     (text "ERROR" 20 20)
-	     (text "For restarts, press the debug key." 20 40)))
-	 (setf restart-sketch t
+	     (text (format nil "~a" e) 20 40)
+	     (text "Click for restarts." 20 60)))
+	 (setf %restart t
 	       (env-red-screen *env*) t)))))
 
 (defun draw-window (window)
@@ -74,19 +109,20 @@ used for drawing.")
   (draw window)
   (end-draw))
 
-(defmethod kit.sdl2:render ((sketch-window sketch))
-  (with-slots (env width height restart-sketch copy-pixels) sketch-window
-    (with-environment env
+(defmethod kit.sdl2:render ((instance sketch))
+  (with-slots (%env width height %restart copy-pixels) instance
+    (with-environment %env
       (with-pen (make-default-pen)
 	(with-font (make-default-font)
 	  (with-identity-matrix
 	    (unless copy-pixels
 	      (background (gray 0.4)))
 	    ;; Restart sketch on setup and when recovering from an error.
-	    (when restart-sketch
+	    (when %restart
 	      (gl-catch (rgb 1 1 0)
-		(setup sketch-window))
-	      (setf (slot-value sketch-window 'restart-sketch) nil))
+		(prepare instance)
+		(setup instance))
+	      (setf (slot-value instance '%restart) nil))
 	    ;; If we're in the debug mode, we exit from it immediately,
 	    ;; so that the restarts are shown only once. Afterwards, we
 	    ;; continue presenting the user with the red screen, waiting for
@@ -94,99 +130,113 @@ used for drawing.")
 	    (if (debug-mode-p)
 		(progn
 		  (exit-debug-mode)
-		  (draw-window sketch-window))
+		  (draw-window instance))
 		(gl-catch (rgb 1 0 0)
-		  (draw-window sketch-window))))))))
-  (handle-sketch-event sketch-window :frame-draw))
+		  (draw-window instance)))))))))
 
-;;; Macros
+;;; Default events
 
-(defparameter *sketch-slot-hash-table* (make-hash-table))
+(defmethod close-window :before ((instance sketch))
+  (with-environment (slot-value instance '%env)
+    (loop for resource being the hash-values of (env-resources *env*)
+       do (free-resource resource))))
 
-(defmacro defsketch (sketch-name window-options slot-bindings &body body)
-  "Defines a class, inheriting from SKETCH:SKETCH. It is used for convenience
-instead of defclass because it provides a compact syntax for declaring window
-options, let-like init-form for providing slots and inline draw body. It also
-takes care of communicating new title, sketch and height values to SDL backend.
-Additionaly, defining a class using defsketch enables selected Sketch methods,
-like DRAW and SETUP to automatically wrap their bodies inside WITH-SLOTS, using
-all slot names."
-  (let* ((sketch-title (getf window-options :title "Sketch"))
-	 (sketch-width (getf window-options :width 400))
-	 (sketch-height (getf window-options :height 400))
-	 (sketch-copy-pixels (getf window-options :copy-pixels nil))
-	 (sketch-fullscreen (getf window-options :fullscreen nil))
-	 (sketch-y-axis (getf window-options :y-axis :down))
-	 ;; We need to append SKETCH-TITLE, SKETCH-WIDTH, SKETCH-HEIGHT
-	 ;; and SKETCH-COPY_PIXELS from WINDOW-OPTIONS to SLOT-BINDINGS.
-	 ;; If SLOT-BINDINGS already contains any of these, we're going
-	 ;; to replace them - declaring title, width, height or copy-pixels
-	 ;; along with other slots is technically illegal in Sketch, but
-	 ;; currently, we're just going to use the values provided inside
-	 ;; WINDOW-OPTIONS, or fallback to defaults silently.
-	 (slot-bindings
-	  (append (remove-if
-		   #'(lambda (x)
-		       (member (car x)
-			       '(title width height copy-pixels)))
-		   slot-bindings)
-		  `((title ,sketch-title)
-		    (width ,sketch-width)
-		    (height ,sketch-height)
-		    (copy-pixels ,sketch-copy-pixels)
-		    (y-axis ,sketch-y-axis))))
-	 (slots (mapcar #'car slot-bindings))
-	 (initforms (mapcar #'(lambda (binding)
-				`(,(car binding)
-                                   :initarg ,(alexandria:make-keyword (car binding))
-				   :initform ,(cadr binding)
-				   :accessor ,(car binding)))
-			    slot-bindings)))
-    ;; We are going to need slot names available during macroexpansion, so that
-    ;; our enhanced methods can know what slots should be provided to WITH-SLOTS.
-    ;; This is accomplished by saving slot names provided via SLOT-BINDINGS and
-    ;; WINDOW-OPTIONS into *SKETCH-SLOT-HASH-TABLE*.
-    (setf (gethash sketch-name *sketch-slot-hash-table*) slots)
+;;; DEFSKETCH helpers
 
-    ;; Sketch Initialization
-    `(progn
-       (defclass ,sketch-name (sketch)
-	 ,initforms)
+(defun first-two (list)
+  (list (car list) (cadr list)))
 
-       (defmethod draw ((sketch-window ,sketch-name))
-	 (with-slots ,(gethash sketch-name *sketch-slot-hash-table*) sketch-window
-	   ,@body))
+(defun default-sketch-slot-p (binding)
+  (alexandria:starts-with-subseq
+   "sketch-" (symbol-name (car binding)) :test #'string-equal))
 
-       (defmethod setup :before ((sketch-window ,sketch-name))
-	 (background (gray 0.4)))
+(defun default-slots (bindings)
+  (remove-if-not #'default-sketch-slot-p bindings))
 
-       (defmethod initialize-instance :after ((sketch-window ,sketch-name)
-					      &key &allow-other-keys)
-	 (let ((sdl-win (kit.sdl2:sdl-window sketch-window)))
-	   (sdl2:set-window-title sdl-win ,sketch-title)
-	   (sdl2:set-window-size sdl-win ,sketch-width ,sketch-height)
-	   (when ,sketch-fullscreen
-	     (sdl2:set-window-fullscreen sdl-win :desktop))))
+(defun custom-slots (bindings)
+  (remove-if #'default-sketch-slot-p bindings))
 
-       (defmethod initialize-instance :before ((sketch-window ,sketch-name)
-					       &key &allow-other-keys)
-	 (initialize-sketch)
-	 ,(when sketch-copy-pixels
-	   `(sdl2:gl-set-attr :doublebuffer 0)))
+(defun binding-accessor (sketch binding)
+  (or (cadr (member :accessor (cddr binding)))
+      (alexandria:symbolicate sketch '- (car binding))))
 
-       (defmethod kit.sdl2:keyboard-event :before ((sketch-window ,sketch-name)
-						   state timestamp repeatp keysym)
-	  (declare (ignore state timestamp repeatp))
-	  (with-slots (env) sketch-window
-	    ,(alexandria:when-let ((debug-scancode (getf window-options :debug nil)))
-	       `(when (and (env-red-screen env)
-			   (sdl2:scancode= (sdl2:scancode-value keysym) ,debug-scancode))
-		  (setf (env-debug-key-pressed env) t)))
-	    (when (sdl2:scancode= (sdl2:scancode-value keysym) :scancode-escape)
-	      (kit.sdl2:close-window sketch-window)))))))
+(defun make-slot-form (sketch binding)
+  (let ((name (car binding))
+	(accessor (binding-accessor sketch binding)))
+    `(,name :initarg ,(alexandria:make-keyword name)
+	    :accessor ,(binding-accessor sketch binding))))
 
-(defmacro define-sketch-setup (sketch-name &body body)
-  "Defines a sketch SETUP method. Body is wrapped with WITH-SLOTS for all slots defined."
-  `(defmethod setup ((sketch-window ,sketch-name))
-     (with-slots ,(gethash sketch-name *sketch-slot-hash-table*) sketch-window
+(defun channel-binding-p (binding)
+  (and (consp (cadr binding)) (eql 'in (caadr binding))))
+
+(defun make-channel-observer (binding)
+  `(define-channel-observer ,(gensym (symbol-name (car binding)))
+     (let ((win (kit.sdl2:last-window)))
+       (when win
+	 (setf (slot-value win ',(car binding)) ,(cadr binding))))))
+
+(defun make-channel-observers (bindings)
+  (mapcan (lambda (binding)
+	    (when (channel-binding-p binding)
+	      (make-channel-observer binding)))
+       bindings))
+
+(defun replace-channels-with-values (bindings)
+  (loop for binding in bindings
+     collect (list (car binding)
+		   (if (channel-binding-p binding)
+		       (caddr (cadr binding))
+		       (cadr binding)))))
+
+(defun sketch-bindings-to-slots (sketch bindings)
+  (mapcar (lambda (x) (make-slot-form sketch x))
+	  (custom-slots bindings)))
+
+(defun window-parameter-bindings (bindings)
+  (let ((slots (mapcar #'car (default-slots bindings))))
+    (remove-if (lambda (binding)
+		 (member (car binding) slots))
+	       '((sketch-title "Sketch")
+		 (sketch-width 400)
+		 (sketch-height 400)
+		 (sketch-fullscreen nil)
+		 (sketch-copy-pixels nil)
+		 (sketch-y-axis :down)))))
+
+(defun make-window-parameter-setf ()
+  `(setf ,@(mapcan (lambda (binding)
+		     `((,(car binding) instance) ,(car binding)))
+		   (window-parameter-bindings '()))))
+
+(defun make-custom-slots-setf (sketch bindings)
+  `(setf ,@(mapcan (lambda (binding)
+		     `((,(binding-accessor sketch binding) instance) ,(car binding)))
+		   (custom-slots bindings))))
+
+;;; DEFSKETCH macro
+
+(defmacro defsketch (sketch-name bindings &body body)
+  `(progn
+     ,(make-channel-observers bindings)
+
+     (defclass ,sketch-name (sketch)
+       ,(sketch-bindings-to-slots `,sketch-name bindings))
+
+     (defmethod prepare ((instance ,sketch-name) &key &allow-other-keys)
+       (let* (,@(window-parameter-bindings bindings)
+	      ,@(mapcar #'first-two
+			(replace-channels-with-values bindings)))
+	 ,(make-window-parameter-setf)
+	 ,(make-custom-slots-setf sketch-name bindings))
+       (call-next-method))
+
+     (defmethod draw ((instance ,sketch-name) &key &allow-other-keys)
        ,@body)))
+
+;; (defsketch foo
+;;     ((sketch-title "New style defsketch")
+;;      (scale 15)
+;;      (sketch-width (* 3 scale))
+;;      (mx (in :mouse-x 0) :accessor mx))
+;;   (print "hello"))
+()

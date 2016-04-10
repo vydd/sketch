@@ -12,18 +12,18 @@
 
 (defparameter *channels* (make-hash-table))
 
-(defun register-input (channel &key (initial nil) (adapter #'identity))
+(defun register-input (channel &optional initial (adapter #'identity))
   (unless (assoc adapter (gethash channel *channels*))
     (push (cons adapter initial) (gethash channel *channels*)))
   t)
 
-(defun in (channel &key (initial nil) (adapter #'identity))
-  (register-input channel :initial initial :adapter adapter)
+(defun in (channel &optional initial (adapter #'identity))
+  (register-input channel initial adapter)
   (let ((a (cdr (assoc adapter (gethash channel *channels*)))))
     (or a initial)))
 
 (defun out-1 (channel message)
-  (register-input channel :initial message :adapter #'identity)
+  (register-input channel message #'identity)
   (mapcar (lambda (adapter-value-cons)
 	    (setf (cdr adapter-value-cons)
 		  (funcall (car adapter-value-cons) message)))
@@ -52,9 +52,6 @@
 
 (defun find-inputs-and-outputs (body)
   (let ((flat-body (alexandria:flatten body))
-	;; If inputs-and-outputs were assigned as '((in) (out))
-	;; this would use the same list, so we need to be explicit
-	;; at creating a new list each time this function is called.
 	(inputs-and-outputs (list (list 'in) (list 'out)))
 	(push-into nil))
     (dolist (token flat-body)
@@ -89,7 +86,7 @@
 	      (push propagation (gethash channel *channel-propagations*)))
 	    inputs)))
 
-(defmacro deflink (name &body body)
+(defmacro define-channel-observer (name &body body)
   (let* ((inputs-and-outputs (find-inputs-and-outputs body))
 	 (inputs (cdr (assoc 'in inputs-and-outputs)))
 	 (outputs (cdr (assoc 'out inputs-and-outputs)))
@@ -114,10 +111,10 @@
 		   (remove-if (lambda (x) (eql x channel))
 			      (propagation-outputs propagation))))
 	   *propagations*)
-  nil)
+  (values))
 
 (defun reset-all-channels ()
   (setf *channels* (make-hash-table)
 	*propagations* (make-hash-table)
 	*channel-propagations* (make-hash-table))
-  nil)
+  (values))

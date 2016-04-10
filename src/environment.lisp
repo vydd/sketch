@@ -12,6 +12,7 @@
 
 (defun initialize-sketch ()
   (unless *sketch-initialized*
+    (setf *sketch-initialized* t)
     (kit.sdl2:start)
     (sdl2-ttf:init)
     (sdl2:in-main-thread ()
@@ -54,9 +55,9 @@
     texture))
 
 (defun initialize-environment (w)
-  (with-slots (env width height y-axis) w
+  (with-slots ((env %env) width height y-axis) w
     (setf (env-programs env) (kit.gl.shader:compile-shader-dictionary 'sketch-programs)
-	  (env-view-matrix env) (if (eq y-axis :down)
+  	  (env-view-matrix env) (if (eq y-axis :down)
 				    (kit.glm:ortho-matrix 0 width height 0 -1 1)
 				    (kit.glm:ortho-matrix 0 width 0 height -1 1))
 	  (env-y-axis-sgn env) (if (eq y-axis :down) +1 -1)
@@ -70,7 +71,7 @@
      (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
 
 (defun initialize-gl (w)
-  (with-slots (env width height copy-pixels) w
+  (with-slots ((env %env) width height copy-pixels) w
     (sdl2:gl-set-swap-interval 1)
     (setf (kit.sdl2:idle-render w) t)
     (gl:viewport 0 0 width height)
@@ -91,10 +92,5 @@
 	(env-debug-key-pressed *env*) nil))
 
 (defmacro with-environment (env &body body)
-  (alexandria:once-only (env)
-    `(alexandria:with-gensyms (previous-env)
-       (progn
-	 (setf previous-env *env*
-	       *env* ,env)
-	 ,@body
-	 (setf *env* previous-env)))))
+  `(let ((*env* ,env))
+     ,@body))

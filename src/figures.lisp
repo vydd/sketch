@@ -11,7 +11,7 @@
 (defclass figure ()
   ((draws :initarg :draws)))
 
-(defmethod draw ((figure figure))
+(defmethod draw ((figure figure) &key &allow-other-keys)
   (symbol-macrolet ((position (env-buffer-position *env*)))
     (with-slots (draws) figure
       (kit.gl.shader:uniform-matrix (env-programs *env*) :model-m 4
