@@ -165,7 +165,7 @@ used for drawing, 60fps.")
   (and (consp (cadr binding)) (eql 'in (caadr binding))))
 
 (defun make-channel-observer (binding)
-  `(define-channel-observer ,(gensym (symbol-name (car binding)))
+  `(define-channel-observer nil
      (let ((win (kit.sdl2:last-window)))
        (when win
 	 (setf (slot-value win ',(car binding)) ,(cadr binding))))))
@@ -232,7 +232,10 @@ used for drawing, 60fps.")
 	 ,(make-reinitialize-setf)))
 
      (defmethod draw ((instance ,sketch-name) &key &allow-other-keys)
-       ,@body)
+       (with-accessors ,(mapcar (lambda (x) (list (car x) (car x)))
+				(window-parameter-bindings nil)) instance
+	 (with-slots ,(mapcar #'car (custom-slots bindings)) instance
+	   ,@body)))
 
      (defmethod initialize-instance :before ((instance ,sketch-name) &key &allow-other-keys)
        (initialize-sketch))))

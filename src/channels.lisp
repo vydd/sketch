@@ -8,7 +8,7 @@
 ;;; | |___|  _  |/ ___ \| |\  | |\  | |___| |___ ___) |
 ;;;  \____|_| |_/_/   \_\_| \_|_| \_|_____|_____|____/
 
-;;; Channel interface
+;;; Channel interface
 
 (defparameter *channels* (make-hash-table))
 
@@ -35,7 +35,7 @@
 	  (group channel-message))
   (values))
 
-;;; Channel propagation
+;;; Channel propagation
 
 (defstruct propagation
   name
@@ -64,7 +64,7 @@
     inputs-and-outputs))
 
 (defun extract-input-registration (body)
-  (mapcar (lambda (in-form) (list 'register-input (cadr in-form)))
+  (mapcar (lambda (in-form) (cadr in-form))
 	  (remove-if #'atom (flatten body (lambda (x) (eql (car x) 'in))))))
 
 (defun delete-channel-propagation (channel propagation)
@@ -86,19 +86,23 @@
 	      (push propagation (gethash channel *channel-propagations*)))
 	    inputs)))
 
-(defmacro define-channel-observer (name &body body)
-  (let* ((inputs-and-outputs (find-inputs-and-outputs body))
-	 (inputs (cdr (assoc 'in inputs-and-outputs)))
-	 (outputs (cdr (assoc 'out inputs-and-outputs)))
-	 (input-registrations (extract-input-registration body)))
-    (update-propagation-data name inputs outputs)
-    `(progn
-       ,@input-registrations
-       (setf (propagation-function (gethash ',name *propagations*))
-	      (lambda () ,@body))
-       (mapcar #'propagate ',inputs))))
+(defun %define-channel-observer (name body)
+  (let ((name (or name (gensym))))
+    (let* ((inputs-and-outputs (find-inputs-and-outputs body))
+	   (inputs (cdr (assoc 'in inputs-and-outputs)))
+	   (outputs (cdr (assoc 'out inputs-and-outputs)))
+	   (input-registrations (extract-input-registration body)))
+      (update-propagation-data name inputs outputs)
+      (mapcar #'register-input input-registrations)
+      (setf (propagation-function (gethash name *propagations*))
+	    (eval `(lambda () ,@body)))
+      (when outputs
+	(mapcar #'propagate inputs)))))
 
-;;; Utility functions
+(defmacro define-channel-observer (name &body body)
+  (%define-channel-observer name body))
+
+;;; Utility functions
 
 (defun reset-channel (channel)
   (remhash channel *channels*)
