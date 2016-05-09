@@ -34,7 +34,4 @@
 ;;; Keyboard
 
 (defmethod keyboard-event :after ((instance sketch)
-				  state timestamp repeatp keysym)
-  (when repeatp
-    (print "repeat!")
-    (finish-output)))
+				  state timestamp repeatp keysym))

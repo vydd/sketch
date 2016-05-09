@@ -99,7 +99,7 @@ used for drawing, 60fps.")
       (sdl2:gl-set-attr :context-minor-version 3)
       (sdl2:gl-set-attr :context-profile-mask 1))))
 
-(defmethod initialize-instance :before ((instance sketch) &rest initargs &key &allow-other-keys)
+(defmethod initialize-instance :before ((instance sketch) &key &allow-other-keys)
   (initialize-sketch))
 
 (defmethod initialize-instance :after ((instance sketch) &rest initargs &key &allow-other-keys)
@@ -154,6 +154,10 @@ used for drawing, 60fps.")
 		  (draw-window instance)))))))))
 
 ;;; Default events
+
+(defmethod kit.sdl2:keyboard-event ((instance sketch) state timestamp repeatp keysym)
+  (when (sdl2:scancode= (sdl2:scancode-value keysym) :scancode-escape)
+    (kit.sdl2:close-window instance)))
 
 (defmethod close-window :before ((instance sketch))
   (with-environment (slot-value instance '%env)
