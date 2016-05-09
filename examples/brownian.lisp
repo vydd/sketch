@@ -9,7 +9,7 @@
 ;; |____/|_| \_\\___/  \_/\_/  |_| \_|___/_/   \_\_| \_|
 
 (defsketch brownian
-    (:title "Brownian" :width 800 :height 600 :copy-pixels t :debug :scancode-f1)
+    (:title "Brownian" :width 800 :height 600 :copy-pixels t)
     ((pos '(400 . 300)) (dir '(1 . 0))
      (pen (make-pen :stroke (gray 0.5) :fill (gray 0.5) :weight 1))
      (line-length 3)
@@ -31,5 +31,5 @@
     (setf (car pos) (alexandria:clamp (car pos) -10 810)
 	  (cdr pos) (alexandria:clamp (cdr pos) -10 610))))
 
-(define-sketch-setup brownian
+(defmethod setup ((instance brownian) &key &allow-other-keys)
   (background (gray 1)))

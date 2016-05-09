@@ -8,21 +8,6 @@
 ;;; | |___| |\  | \ V /  | ||  _ <| |_| | |\  | |  | | |___| |\  | | |
 ;;; |_____|_| \_|  \_/  |___|_| \_\\___/|_| \_|_|  |_|_____|_| \_| |_|
 
-(defparameter *sketch-initialized* nil)
-
-(defun initialize-sketch ()
-  (unless *sketch-initialized*
-    (setf *sketch-initialized* t)
-    (kit.sdl2:start)
-    (sdl2-ttf:init)
-    (sdl2:in-main-thread ()
-      (sdl2:gl-set-attr :multisamplebuffers 1)
-      (sdl2:gl-set-attr :multisamplesamples 4)
-
-      (sdl2:gl-set-attr :context-major-version 3)
-      (sdl2:gl-set-attr :context-minor-version 3)
-      (sdl2:gl-set-attr :context-profile-mask 1))))
-
 (defstruct env
   ;; Drawing
   (pen nil)

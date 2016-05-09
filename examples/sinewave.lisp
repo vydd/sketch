@@ -9,7 +9,7 @@
 ;;; |____/___|_| \_|_____|  \_/\_/_/   \_\_/  |_____|
 
 (defsketch sinewave
-    (:title "Sinewave" :width 400 :height 400 :debug :scancode-f1)
+    (:title "Sinewave" :width 400 :height 400)
     ((steps 0)
      (xs 80)
      (r 3))

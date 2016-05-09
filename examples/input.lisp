@@ -8,6 +8,6 @@
 ;;  | || |\  |  __/| |_| | | |
 ;; |___|_| \_|_|    \___/  |_|
 
-(defsketch input (:title "Input" :debug :scancode-f1)
+(defsketch input (:title "Input")
     ()
   (background (rgb 1 1 0)))

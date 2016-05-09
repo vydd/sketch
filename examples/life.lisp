@@ -18,8 +18,7 @@
 (defsketch life
     (:title "Conway's Game of Life"
 	    :width (* *columns* *cell-size*)
-	    :height (* *rows* *cell-size*)
-	    :framerate :auto)
+	    :height (* *rows* *cell-size*))
     ((cells (make-array `(,(+ 2 *rows*) ,(+ 2 *columns*) 2)
 			:initial-element 0
 			:element-type '(mod 2)))
