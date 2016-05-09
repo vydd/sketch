@@ -176,9 +176,12 @@ used for drawing, 60fps.")
 	       (member (car binding) (mapcar #'car *default-slots*)))
 	     bindings))
 
+(defun intern-accessor (name)
+  (intern (string (alexandria:symbolicate 'sketch- name)) :sketch))
+
 (defun binding-accessor (sketch binding)
   (if (default-slot-p binding)
-      (alexandria:symbolicate 'sketch- (car binding))
+      (intern-accessor (car binding))
       (or (cadr (member :accessor (cddr binding)))
 	  (alexandria:symbolicate sketch '- (car binding)))))
 
@@ -223,7 +226,7 @@ used for drawing, 60fps.")
 
 (defun make-window-parameter-setf ()
   `(setf ,@(mapcan (lambda (slot)
-		     `((,(alexandria:symbolicate 'sketch- (car slot)) instance) ,(car slot)))
+		     `((,(intern-accessor (car slot)) instance) ,(car slot)))
 		   *default-slots*)))
 
 (defun make-custom-slots-setf (sketch bindings)
@@ -233,8 +236,8 @@ used for drawing, 60fps.")
 
 (defun make-reinitialize-setf ()
   `(setf ,@(mapcan (lambda (slot)
-		     `((,(alexandria:symbolicate 'sketch- (car slot)) instance)
-		       (,(alexandria:symbolicate 'sketch- (car slot)) instance)))
+		     `((,(intern-accessor (car slot)) instance)
+		       (,(intern-accessor (car slot)) instance)))
 		   *default-slots*)))
 
 ;;; DEFSKETCH macro
@@ -247,6 +250,7 @@ used for drawing, 60fps.")
      ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
 
      (defmethod prepare progn ((instance ,sketch-name) &rest initargs &key &allow-other-keys)
+       (declare (ignorable initargs))
        (let* (,@(loop for (slot . nil) in *default-slots*
 		   collect (list slot `(slot-value instance ',slot)))
 	      ,@(mapcar (lambda (binding)
@@ -264,7 +268,7 @@ used for drawing, 60fps.")
 	 ,(make-custom-slots-setf sketch-name (custom-bindings bindings))))
 
      (defmethod draw ((instance ,sketch-name) &key &allow-other-keys)
-       (with-accessors ,(mapcar (lambda (x) (list (car x) (alexandria:symbolicate 'sketch- (car x))))
+       (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
 				*default-slots*) instance
 	 (with-slots ,(mapcar #'car bindings) instance
 	   ,@body)))))

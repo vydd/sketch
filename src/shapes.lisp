@@ -76,7 +76,7 @@
 	 (x (* (cos angle) rx))
 	 (y (* (sin angle) ry))
 	 (y-mul (/ ry rx))
-	 (vertices '()))
+	 (vertices (list)))
     (dotimes (i n)
       (psetf vertices (cons `(,(+ x cx) ,(+ (* y-mul y) cy)) vertices)
 	     x (* radial (- x (* (- y) tangential)))
