@@ -9,7 +9,7 @@
 ;;; |_| |_|_____|_____|_____\___/     \_/\_/  \___/|_| \_\_____|____/
 
 (defsketch hello-world
-    ((title "hello, world!")
+    ((title "Hello, world!")
      (unit (/ width 10))
      (height width))
   (background (gray 0.6))
