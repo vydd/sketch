@@ -20,12 +20,12 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *default-sketch-slots*
-    '((title :initform "Sketch" :reader sketch-title :initarg :sketch-title)
-      (width :initform 400 :reader sketch-width :initarg :sketch-width)
-      (height :initform 400 :reader sketch-height :initarg :sketch-height)
-      (fullscreen :initform nil :reader sketch-fullscreen :initarg :sketch-fullscreen)
-      (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :sketch-copy-pixels)
-      (y-axis :initform :down :reader sketch-y-axis :initarg :sketch-y-axis))))
+    '((title :initform "Sketch" :reader sketch-title :initarg :title)
+      (width :initform 400 :reader sketch-width :initarg :width)
+      (height :initform 400 :reader sketch-height :initarg :height)
+      (fullscreen :initform nil :reader sketch-fullscreen :initarg :fullscreen)
+      (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :copy-pixels)
+      (y-axis :initform :down :reader sketch-y-axis :initarg :y-axis))))
 
 (defmacro define-sketch-class ()
   `(defclass sketch (kit.sdl2:gl-window)
@@ -216,29 +216,11 @@ used for drawing, 60fps.")
 
 ;;; DEFSKETCH bindings
 
-(defun window-parameter-bindings (window-parameters)
-  (loop for (param . value) in (alexandria:plist-alist window-parameters)
-     when (or (atom value) (> (length value) 1))
-     collect (list (alexandria:symbolicate param)
-		   (if (atom value) value (second value)))
-     unless (atom value)
-     collect (list (first value) (alexandria:symbolicate param))))
-
-(defun window-parameter-aliases (window-parameters)
-  (loop for (param . value) in (alexandria:plist-alist window-parameters)
-     when (listp value)
-     collect (list (first value) (alexandria:symbolicate param))))
-
-(defun bindings-without-aliases (bindings window-parameters)
-  (let ((aliases (mapcar #'first (window-parameter-aliases window-parameters))))
-    (remove-if (lambda (binding)
-		 (member (first binding) aliases))
-	       bindings)))
-
-(defun sketch-bindings-to-slots (sketch window-parameters bindings)
-  (let* ((aliases (window-parameter-aliases window-parameters))
-	 (bindings (bindings-without-aliases bindings window-parameters)))
-    (mapcar (lambda (x) (make-slot-form sketch x)) bindings)))
+(defun sketch-bindings-to-slots (sketch bindings)
+  (mapcar (lambda (x) (make-slot-form sketch x))
+	  (remove-if (lambda (x)
+		       (member (car x) (mapcar #'car (default-bindings))))
+		     bindings)))
 
 ;;; DEFSKETCH setf instructions
 
@@ -260,28 +242,24 @@ used for drawing, 60fps.")
 
 ;;; DEFSKETCH macro
 
-(defmacro defsketch (sketch-name window-parameters bindings &body body)
+(defmacro defsketch (sketch-name bindings &body body)
   `(progn
      (defclass ,sketch-name (sketch)
-       ,(sketch-bindings-to-slots `,sketch-name window-parameters bindings))
+       ,(sketch-bindings-to-slots `,sketch-name bindings))
 
      ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
 
      (defmethod prepare progn ((instance ,sketch-name) &rest initargs &key &allow-other-keys)
        (let* (,@(default-bindings)
-	      ,@(window-parameter-bindings window-parameters)
-	      ,@(mapcar #'first-two (replace-channels-with-values bindings))
-	      ,@(mapcar (lambda (x) (list (second x) (first x)))
-			(window-parameter-aliases window-parameters)))
+	      ,@(mapcar #'first-two (replace-channels-with-values bindings)))
 	 (declare (ignorable ,@(mapcar #'interned-binding *default-sketch-slots*)))
 	 ,(make-window-parameter-setf)
-	 ,(make-custom-slots-setf sketch-name
-				  (bindings-without-aliases bindings window-parameters))
+	 ,(make-custom-slots-setf sketch-name bindings)
 	 (apply #'reinitialize-instance (list* instance initargs))
 	 ,(make-reinitialize-setf)))
 
      (defmethod draw ((instance ,sketch-name) &key &allow-other-keys)
        (with-accessors ,(mapcar (lambda (x) (list (interned-binding x) (alexandria:symbolicate 'sketch- (car x))))
 				*default-sketch-slots*) instance
-	 (with-slots ,(mapcar #'car (bindings-without-aliases bindings window-parameters)) instance
+	 (with-slots ,(mapcar #'car bindings) instance
 	   ,@body)))))
