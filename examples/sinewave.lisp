@@ -9,10 +9,8 @@
 ;;; |____/___|_| \_|_____|  \_/\_/_/   \_\_/  |_____|
 
 (defsketch sinewave
-    (:title "Sinewave" :width 400 :height 400)
-    ((steps 0)
-     (xs 80)
-     (r 3))
+    ((title "Sinewave") (width 400) (height 400)
+     (steps 0) (xs (/ width 5)) (r 3))
   (incf steps)
   (background (rgb 0.2 0.2 0.2))
   (let ((w width) (h height))

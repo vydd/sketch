@@ -23,6 +23,13 @@
 	   :sketch-copy-pixels
 	   :sketch-y-axis
 
+	   :title
+	   :width
+	   :height
+	   :fullscreen
+	   :copy-pixels
+	   :y-axis
+
 	   ;; Math
 	   :clamp-1
 	   :normalize

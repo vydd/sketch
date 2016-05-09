@@ -8,8 +8,11 @@
 ;;; |  _  | |___| |___| |__| |_| |   \ V  V /| |_| |  _ <| |___| |_| |
 ;;; |_| |_|_____|_____|_____\___/     \_/\_/  \___/|_| \_\_____|____/
 
-(defsketch hello-world (:title "Hello, World!") ()
+(defsketch hello-world
+    ((title "hello, world!")
+     (unit (/ width 10))
+     (height width))
   (background (gray 0.6))
   (with-pen (make-pen :fill (rgb 0.380 0.695 0.086) :stroke (rgb 1 1 0) :weight 4)
-    (polygon 200 40 40 360 360 360)
+    (polygon (* 5 unit) unit unit (* 9 unit) (* 9 unit) (* 9 unit))
     (text title 20 20)))

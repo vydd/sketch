@@ -9,8 +9,11 @@
 ;; |____/|_| \_\\___/  \_/\_/  |_| \_|___/_/   \_\_| \_|
 
 (defsketch brownian
-    (:title "Brownian" :width 800 :height 600 :copy-pixels t)
-    ((pos '(400 . 300)) (dir '(1 . 0))
+    ((title "Brownian")
+     (width 800)
+     (height 600)
+     (copy-pixels t)
+     (pos (cons (/ width 2) (/ height 2))) (dir '(1 . 0))
      (pen (make-pen :stroke (gray 0.5) :fill (gray 0.5) :weight 1))
      (line-length 3)
      (points (make-array 256 :initial-element (cons 400 300)))
