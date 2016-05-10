@@ -107,6 +107,11 @@ used for drawing, 60fps.")
   (apply #'prepare (list* instance initargs))
   (initialize-gl instance))
 
+(defmethod update-instance-for-redefined-class :after
+    ((instance sketch) added-slots discarded-slots property-list &rest initargs)
+  (declare (ignore added-slots discarded-slots property-list))
+  (apply #'prepare (list* instance initargs)))
+
 ;;; Rendering
 
 (defmacro gl-catch (error-color &body body)
