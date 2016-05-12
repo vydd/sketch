@@ -8,6 +8,8 @@
 ;;; | |_| | | |  | || |___ ___) |
 ;;;  \___/  |_| |___|_____|____/
 
+(defparameter *build* nil)
+
 (defun pad-list (list pad length)
   (if (>= (length list) length)
       list
@@ -95,4 +97,6 @@ but may be considered unique for all practical purposes."
 	      (cffi:mem-aref src :uint8 (+ i dst-offset)))))
 
 (defun relative-path (path &optional (system 'sketch))
-  (format nil "~a" (asdf:system-relative-pathname system path)))
+  (if *build*
+      path
+      (format nil "~a" (asdf:system-relative-pathname system path))))
