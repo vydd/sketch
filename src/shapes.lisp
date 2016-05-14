@@ -21,7 +21,6 @@
   (rect x y 1 1))
 
 (define-cached-shape make-line (x1 y1 x2 y2)
-  (declare (type real x1 y1 x2 y2))
   (let* ((a (atan (- y2 y1) (- x2 x1)))
 	 (w (/ (or (pen-weight (env-pen *env*)) 1) 2))
 	 (dx (* 2 (sin a) w))
@@ -40,6 +39,7 @@
        nil))))
 
 (defun line (x1 y1 x2 y2)
+  (declare (type real x1 y1 x2 y2))
   (with-pen (flip-pen (env-pen *env*))
     (funcall (make-line x1 y1 x2 y2))))
 
@@ -73,7 +73,6 @@
 	 (funcall (apply #'make-polyline coordinates))))))
 
 (define-cached-shape make-rect (x y w h)
-  (declare (type real x y w h))
   (if (and (plusp w) (plusp h))
       (lambda ()
 	(draw-shape
@@ -83,6 +82,7 @@
       (lambda ())))
 
 (defun rect (x y w h)
+  (declare (type real x y w h))
   (funcall (make-rect x y w h)))
 
 (defun ngon-vertices (n cx cy rx ry &optional (angle 0))
@@ -102,24 +102,24 @@
     (nreverse vertices)))
 
 (define-cached-shape make-ngon (n cx cy rx ry &optional (angle 0))
-  (declare (type fixnum n)
-	   (type real cx cy rx ry angle))
   (let ((vertices (ngon-vertices n cx cy rx ry angle)))
     (lambda ()
       (draw-shape :triangle-fan vertices vertices))))
 
 (defun ngon (n cx cy rx ry &optional (angle 0))
+  (declare (type fixnum n)
+	   (type real cx cy rx ry angle))
   (funcall (make-ngon n cx cy rx ry angle)))
 
 (define-cached-shape make-star (n cx cy ra rb &optional (angle 0))
-  (declare (type fixnum n)
-	   (type real cx cy ra rb angle))
   (let ((vertices (mix-lists (ngon-vertices n cx cy ra ra (+ 90 angle))
 			     (ngon-vertices n cx cy rb rb (- (+ 90 angle) (/ 180 n))))))
     (lambda ()
       (draw-shape :triangle-fan vertices vertices))))
 
 (defun star (n cx cy ra rb &optional (angle 0))
+  (declare (type fixnum n)
+	   (type real cx cy ra rb angle))
   (funcall (make-star n cx cy ra rb angle)))
 
 (defun ellipse (cx cy rx ry)

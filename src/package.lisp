@@ -10,6 +10,8 @@
 		:keyboard-event
 		:other-event
 		:close-window)
+  (:import-from :function-cache
+		*bypass-cache*)
   (:export :sketch
 	   :setup
 	   :draw
@@ -145,4 +147,8 @@
 	   :make-font
 	   :with-font
 	   :set-font
-	   :text))
+	   :text
+
+	   ;; Cache
+	   :*bypass-cache*
+	   ))
