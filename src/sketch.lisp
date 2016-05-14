@@ -261,32 +261,38 @@ used for drawing, 60fps.")
 ;;; DEFSKETCH macro
 
 (defmacro defsketch (sketch-name bindings &body body)
-  `(progn
-     (defclass ,sketch-name (sketch)
-       ,(sketch-bindings-to-slots `,sketch-name bindings))
+  (let ((redefines-sketch-p (gensym)))
+    `(let ((,redefines-sketch-p (find-class ',sketch-name nil)))
 
-     ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
+       (unless ,redefines-sketch-p
+	 (defclass ,sketch-name (sketch)
+	   ,(sketch-bindings-to-slots `,sketch-name bindings)))
 
-     (defmethod prepare progn ((instance ,sketch-name) &rest initargs &key &allow-other-keys)
-       (declare (ignorable initargs))
-       (let* (,@(loop for (slot . nil) in *default-slots*
-		   collect (list slot `(slot-value instance ',slot)))
-	      ,@(mapcar (lambda (binding)
-			  (let* ((tuple (first-two binding))
-				 (name (first tuple))
-				 (value (second tuple)))
-			    (list name (if (default-slot-p name)
-					   `(if (getf initargs ,(alexandria:make-keyword name))
-					       (slot-value instance ',name)
-					       ,value)
-					   `(or (getf initargs ,(alexandria:make-keyword name)) ,value)))))
-			(replace-channels-with-values bindings)))
-	 (declare (ignorable ,@(mapcar #'car *default-slots*)))
-	 ,(make-window-parameter-setf)
-	 ,(make-custom-slots-setf sketch-name (custom-bindings bindings))))
+       ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
 
-     (defmethod draw ((instance ,sketch-name) &key &allow-other-keys)
-       (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
-				*default-slots*) instance
-	 (with-slots ,(mapcar #'car bindings) instance
-	   ,@body)))))
+       (defmethod prepare progn ((instance ,sketch-name) &rest initargs &key &allow-other-keys)
+		  (declare (ignorable initargs))
+		  (let* (,@(loop for (slot . nil) in *default-slots*
+			      collect (list slot `(slot-value instance ',slot)))
+			 ,@(mapcar (lambda (binding)
+				     (destructuring-bind (name value)
+					 (first-two binding)
+				       (list name (if (default-slot-p name)
+						      `(if (getf initargs ,(alexandria:make-keyword name))
+							   (slot-value instance ',name)
+							   ,value)
+						      `(or (getf initargs ,(alexandria:make-keyword name)) ,value)))))
+				   (replace-channels-with-values bindings)))
+		    (declare (ignorable ,@(mapcar #'car *default-slots*)))
+		    ,(make-window-parameter-setf)
+		    ,(make-custom-slots-setf sketch-name (custom-bindings bindings))))
+
+       (when ,redefines-sketch-p
+	 (defclass ,sketch-name (sketch)
+	   ,(sketch-bindings-to-slots `,sketch-name bindings)))
+
+       (defmethod draw ((instance ,sketch-name) &key &allow-other-keys)
+	 (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
+				  *default-slots*) instance
+	   (with-slots ,(mapcar #'car bindings) instance
+	     ,@body))))))
