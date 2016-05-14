@@ -8,11 +8,19 @@
 ;;;  ___) |  _  |/ ___ \|  __/| |___ ___) |
 ;;; |____/|_| |_/_/   \_\_|   |_____|____/
 
+(defparameter *shape-cache-capacity* 128)
+
+(defmacro define-cached-shape (name arglist &body body)
+  `(function-cache:defcached (,name :cache-class 'function-cache:lru-cache
+				    :capacity *shape-cache-capacity*)
+       ,arglist
+     ,@body))
+
 (defun point (x y)
   (declare (type real x y))
   (rect x y 1 1))
 
-(fmemo:define-memo-function make-line (x1 y1 x2 y2)
+(define-cached-shape make-line (x1 y1 x2 y2)
   (declare (type real x1 y1 x2 y2))
   (let* ((a (atan (- y2 y1) (- x2 x1)))
 	 (w (/ (or (pen-weight (env-pen *env*)) 1) 2))
@@ -43,7 +51,7 @@
 		   (cdar (last lines)))
 	   nil)))
 
-(fmemo:define-memo-function make-polyline (&rest coordinates)
+(define-cached-shape make-polyline (&rest coordinates)
   (multiple-value-bind (d+ d-)
       (div2-inexact (pen-weight (env-pen *env*)))
     (let* ((lines (edges (group coordinates) nil))
@@ -64,7 +72,7 @@
     (t (with-pen (flip-pen (env-pen *env*))
 	 (funcall (apply #'make-polyline coordinates))))))
 
-(fmemo:define-memo-function make-rect (x y w h)
+(define-cached-shape make-rect (x y w h)
   (declare (type real x y w h))
   (if (and (plusp w) (plusp h))
       (lambda ()
@@ -93,7 +101,7 @@
 	     y (* radial (- y (* x tangential)))))
     (nreverse vertices)))
 
-(fmemo:define-memo-function make-ngon (n cx cy rx ry &optional (angle 0))
+(define-cached-shape make-ngon (n cx cy rx ry &optional (angle 0))
   (declare (type fixnum n)
 	   (type real cx cy rx ry angle))
   (let ((vertices (ngon-vertices n cx cy rx ry angle)))
@@ -103,7 +111,7 @@
 (defun ngon (n cx cy rx ry &optional (angle 0))
   (funcall (make-ngon n cx cy rx ry angle)))
 
-(fmemo:define-memo-function make-star (n cx cy ra rb &optional (angle 0))
+(define-cached-shape make-star (n cx cy ra rb &optional (angle 0))
   (declare (type fixnum n)
 	   (type real cx cy ra rb angle))
   (let ((vertices (mix-lists (ngon-vertices n cx cy ra ra (+ 90 angle))
@@ -124,7 +132,7 @@
   (when (not (zerop r))
     (ellipse x y (abs r) (abs r))))
 
-(fmemo:define-memo-function make-polygon (&rest coordinates)
+(define-cached-shape make-polygon (&rest coordinates)
   (list
    :triangles
    (triangulate coordinates)

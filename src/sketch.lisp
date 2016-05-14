@@ -84,12 +84,12 @@ used for drawing, 60fps.")
 
 ;;; Initialization
 
-(defparameter *sketch-initialized* nil)
+(defparameter *initialized* nil)
 
 (defun initialize-sketch ()
-  (unless *sketch-initialized*
-    (setf *sketch-initialized* t)
-    (kit.sdl2:start)
+  (unless *initialized*
+    (setf *initialized* t)
+    (kit.sdl2:init)
     (sdl2-ttf:init)
     (sdl2:in-main-thread ()
       (sdl2:gl-set-attr :multisamplebuffers 1)
@@ -99,8 +99,10 @@ used for drawing, 60fps.")
       (sdl2:gl-set-attr :context-minor-version 3)
       (sdl2:gl-set-attr :context-profile-mask 1))))
 
-(defmethod initialize-instance :before ((instance sketch) &key &allow-other-keys)
-  (initialize-sketch))
+(defmethod initialize-instance :around ((instance sketch) &key &allow-other-keys)
+  (initialize-sketch)
+  (call-next-method)
+  (kit.sdl2:start))
 
 (defmethod initialize-instance :after ((instance sketch) &rest initargs &key &allow-other-keys)
   (initialize-environment instance)
@@ -170,6 +172,11 @@ used for drawing, 60fps.")
   (with-environment (slot-value instance '%env)
     (loop for resource being the hash-values of (env-resources *env*)
        do (free-resource resource))))
+
+(defmethod close-window :after ((instance sketch))
+  (when (and *build* (not (kit.sdl2:all-windows)))
+    (sdl2-ttf:quit)
+    (kit.sdl2:quit)))
 
 ;;; DEFSKETCH helpers
 
