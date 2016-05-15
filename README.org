@@ -106,6 +106,8 @@ If you want to be more specific about the colors you want, you are welcome to us
 
 This will give you a lighter yellow.
 
+All functions have an additional, =ALPHA= parameter. It determines the amount of transparency that the color should have.
+
 **** RGB-255, HSB-360, GRAY-255
 Sometimes it's easier to think about color values in non-normalized ranges. That's why Sketch offers =RGB-255=, =HSB-360=, and =GRAY-255=.
 
@@ -118,12 +120,46 @@ This is how these functions map to their normalized variants.
 =HSB-360= is using different ranges, because hue is represented in degrees (0-360), and saturation and brightness are represented as percentages (0-100).
 
 **** HEX-TO-COLOR
-If you are used to working with colors in hex, like in CSS, you can use =(hex-to-color string)=, where =STRING= is the color in one of the following formats: ="4bc"=, ="#4bc"=, ="4bcdef"=, and ="#4bcdef"=.
+If you are used to working with colors in hex, like in CSS, you can use =(hex-to-color string)=, where =STRING= is the color in one of the following formats: "4bc", "#4bc", "4bcdef", and "#4bcdef".
 
 **** Generating colors
-If you don't care about fiddling with the exact values, but still need different colors,
+If you don't care about fiddling with the exact values, but still need different colors, you can use one of the following functions.
+
+***** =(lerp-color (start-color end-color amount &key (mode :hsb)))=
+Lerping is a fancy way of saying [[https://en.wikipedia.org/wiki/Linear_interpolation][linear interpolation]]. This function takes the starting color and the ending color, and returns the color between them, which is an =AMOUNT= away from the starting color. When =AMOUNT= equals zero, the returned color equals the starting color, and when =AMOUNT= equals one, the ending color is returned. Amounts between zero and one give colors that are "in-between". These colors are calculated according to the specified =MODE=, which is =:HSB= by default, meaning that the resulting color's hue is between the starting and ending hue, as is the case with its saturation and brightness.
+
+#+BEGIN_SRC lisp
+  (defsketch lerp-test ((title "LERP TEST") (width 400) (height 100))
+    (dotimes (i 4)
+      (with-pen (make-pen :fill (lerp-color +red+ +yellow+ (/ i 4)))
+        (rect (* i 100) 0 100 100))))
+#+END_SRC
+[[http://imgur.com/p9eaPGX]]
+
+***** =(random-color (&optional (alpha 1.0)))=
+Returns a random color. You probably don't want to use this, because much of the returned colors are either too dark, or too light. You do get to choose the =ALPHA= value, though.
+
+***** =(hash-color (n &optional (alpha 1.0)))=
+This is probably the function you're looking for, if you just want to create a non-repeating set of colors quickly. It maps all numbers to "interesting" (not too dark, not too light) colors. You can use this for coloring procedurally generated objects, when prototyping and just trying to make things look different quickly, when making palettes, looking for "the right" color, and many other things.
+
+#+BEGIN_SRC lisp
+  (defsketch hash-color-test ((title "HASH COLOR TEST") (width 400) (height 100))
+    (dotimes (i 16)
+      (with-pen (make-pen :fill (hash-color i))
+        (rect (* i (/ 400 16)) 0 (/ 400 16) 100))))
+#+END_SRC
+[[http://imgur.com/ffTgY5o]]
 
 **** Color filters
+Sometimes you have a color, and would like to transform it in some way. That's what color filters are for.
+
+***** Grayscale
+
+***** Invert
+
+***** Rotate
+
+***** HSB
 
 *** Shapes
 
