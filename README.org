@@ -141,7 +141,31 @@ If you don't care about fiddling with the exact values, but still need different
 
 *** Input
 
+** Made with Sketch
+- [[https://vydd.itch.io/qelt][QELT]]
+- [[https://bitbucket.org/sjl/coding-math][sjl's implementation of coding math videos]]
+
 ** FAQ
+*** I'm trying to compile my defsketch definition, but it keeps telling me that :TITLE (or :WIDTH, :HEIGHT, etc.) is not of the expected type LIST. Why is this happening?
+You're probably trying to use the old way of defining sketches - =(defsketch name window-parameters slot-bindings &body body)=. =DEFSKETCH= has been changed to =(defsketch name bindings &body body)=. It's still possible to define the title and other window parameters, though.
+
+Example:
+
+#+BEGIN_SRC lisp
+  (defsketch foo (:title "Foo" :width 400)
+      ((a 3))
+    (rect 100 100 200 200))
+
+  ;;; Becomes
+
+  (defsketch foo
+      ((title "Foo")
+       (width 400)
+       (a 3))
+    (rect 100 100 200 200))
+#+END_SRC
+
+For more, read about "Bindings" in the tutorial above.
 
 ** Outro
 For everything else, read the code or ask vydd at #lispgames.
