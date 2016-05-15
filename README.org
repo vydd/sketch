@@ -1,0 +1,105 @@
+* Sketch
+
+Sketch is a Common Lisp environment for the creation of electronic art, visual design, game prototyping, game making, computer graphics, exploration of human-computer interaction and more. It is inspired by [Processing Language](https://processing.org) and shares some of the API.
+
+[[http://i.imgur.com/MNZUwz8.png]]
+
+** Installation
+
+Since April 2016, Sketch is available in [[https://www.quicklisp.org/beta/][Quicklisp]], Common Lisp's de facto package manager. This makes getting and running Sketch as easy as
+
+#+BEGIN_SRC lisp
+(ql:quickload :sketch)
+#+END_SRC
+
+To make Sketch run correctly, a few requirements must be met, though.
+
+*** Requirements
+
+**** Common Lisp Implementation
+
+Sketch should be compatible with all major Common Lisp implementations and all major operating systems - more specifically, all CL implementations and operating systems that [[https://github.com/lispgames/cl-sdl2][cl-sdl2]] runs on. Incompatibility with any of those is considered a bug.
+
+Sketch is known to work with:
+
+- CCL 1.11 on Mac OS X El Capitan
+- CCL SVN 1.12.dev.r16617 on Arch Linux
+- SBCL on Debian Unstable
+- SBCL 1.2.16 on Arch Linux
+- SBCL 1.3.1 on Linux Mint 17
+
+Sketch is known to *not* work with:
+
+- SBCL 1.2.15 on Mac OS X
+/Sketch can't handle input and the window's titlebar is black. These kinds of issues are a known problem with Mac OS X, because it needs its GUI threads to be main, and CCL is the only lisp that accounts for that out of the box. There are ways to counter this, but until a solution finds its way into this repository, SBCL on Mac OS X will stay on this list. In the meantime, use CCL./
+
+If you test Sketch on other systems, please send a pull request to include your results.
+
+**** Foreign dependencies
+
+***** SDL2
+
+SDL2 is currently Sketch's only backend. It is a C library which you will need to download manually from [[https://www.libsdl.org][libsdl webpage]]. Select the release compatible with your operating system, or compile from the source code.
+
+***** SDL2 Image & SDL2 TTF
+
+For loading image and font files, Sketch relies on SDL2 Image and SDL2 TTF, respectively, both part of the SDL project.
+
+***** libffi
+
+Some users have reported that [[https://sourceware.org/libffi/][libffi]] needed to be installed to make Sketch work.
+
+***** OpenGL
+
+Sketch requires graphics hardware and drivers with support for GL version 3.3.
+
+*** Running provided examples
+
+To get a feel for what Sketch can do, and also to make sure that everything has been installed correctly, you can look at the examples. The code below will run all four currently provided examples at once. Note that on older machines running four sketches at once might result in a small degradation in performance, so you might want to run sketches separately.
+
+#+BEGIN_SRC lisp
+CL-USER> (ql:quickload :sketch-examples)
+CL-USER> (make-instance 'sketch-examples:hello-world)
+CL-USER> (make-instance 'sketch-examples:sinewave)
+CL-USER> (make-instance 'sketch-examples:brownian)
+CL-USER> (make-instance 'sketch-examples:life) ; Click to toggle cells,
+	                                           ; any key to toggle iteration
+#+END_SRC
+
+*** Running example code from this page
+
+In all the following examples, we're going to assume that Sketch is loaded with =(ql:quickload :sketch)=, and that we're in package =:SKETCH=, either after explicitly doing that via REPL:
+
+#+BEGIN_SRC lisp
+CL-USER> (ql:quickload :sketch)
+...
+CL-USER> (in-package :sketch)
+...
+#+END_SRC
+
+or by depending on =:SKETCH= and =:USE=ing it in a system and package definition, like it's done for =:SKETCH-EXAMPLES=.
+
+** Hello, World
+
+Defining sketches is done with the =DEFSKETCH= macro, that wraps =DEFCLASS=. Using =DEFCLASS= is still possible, but =DEFSKETCH= makes everything so much easier, and in these examples, we're going to pretend that's the only way.
+
+#+BEGIN_SRC lisp
+(defsketch hello-world ())
+(make-instance 'hello-world)
+#+END_SRC
+
+If all goes well, this should give you an unremarkable gray window.
+
+*** Colors
+
+Let's add some color. Assuming that you're using Emacs + SLIME, or a similarly capable environment, you can just re-evaluate with the following code:
+
+#+BEGIN_SRC lisp
+  (defsketch hello-world ()
+    (background +yellow+))
+#+END_SRC
+
+The window becomes yellow. There are a couple of things to note. Drawing code doesn't need to go into a special function or method, or be binded to a sketch explicitly. =DEFSKETCH= is defined as =(defsketch sketch-name bindings &body body)=: that body is your drawing code. We will get to =BINDINGS= later. The other thing is that Sketch comes with its own color library.
+
+**** Predefined colors
+There are constants for commonly used colors; =+RED+=, =+GREEN+=, =+BLUE+=, =+YELLOW+=, =+MAGENTA+=, =+CYAN+=, =+ORANGE+= =+WHITE+=, AND =+BLACK+=.

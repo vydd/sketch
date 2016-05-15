@@ -6,6 +6,13 @@ Sketch is a Common Lisp environment for the creation of electronic art, visual d
 
 ## Installation
 
+Since April 2016, Sketch is available in [Quicklisp](https://www.quicklisp.org/beta/), Common Lisp's de facto package manager. This makes getting Sketch as easy as
+
+```
+(ql:quickload :sketch)
+```
+
+so you can get the current, hopefully stable
 Today (March 2016), [Quicklisp](https://www.quicklisp.org/beta/) is Common Lisp's de facto package manager. Sketch is not a part of Quicklisp yet, but it is intended to be used with it, so you will have to clone it to your local-projects directory manually. If you're not sure how to do that, read the [Quicklisp FAQ](https://www.quicklisp.org/beta/faq.html).
 
 ### Requirements
@@ -20,6 +27,7 @@ Sketch is known to work with:
 * CCL SVN 1.12.dev.r16617 on Arch Linux
 * SBCL on Debian Unstable
 * SBCL 1.2.16 on Arch Linux
+* SBCL 1.3.1 on Linux Mint 17
 
 Sketch is known to *not* work with:
 
