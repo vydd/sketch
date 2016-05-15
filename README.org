@@ -17,7 +17,6 @@ To make Sketch run correctly, a few requirements must be met, though.
 *** Requirements
 
 **** Common Lisp Implementation
-
 Sketch should be compatible with all major Common Lisp implementations and all major operating systems - more specifically, all CL implementations and operating systems that [[https://github.com/lispgames/cl-sdl2][cl-sdl2]] runs on. Incompatibility with any of those is considered a bug.
 
 Sketch is known to work with:
@@ -36,25 +35,19 @@ Sketch is known to *not* work with:
 If you test Sketch on other systems, please send a pull request to include your results.
 
 **** Foreign dependencies
-
 ***** SDL2
-
 SDL2 is currently Sketch's only backend. It is a C library which you will need to download manually from [[https://www.libsdl.org][libsdl webpage]]. Select the release compatible with your operating system, or compile from the source code.
 
 ***** SDL2 Image & SDL2 TTF
-
 For loading image and font files, Sketch relies on SDL2 Image and SDL2 TTF, respectively, both part of the SDL project.
 
 ***** libffi
-
 Some users have reported that [[https://sourceware.org/libffi/][libffi]] needed to be installed to make Sketch work.
 
 ***** OpenGL
-
 Sketch requires graphics hardware and drivers with support for GL version 3.3.
 
 *** Running provided examples
-
 To get a feel for what Sketch can do, and also to make sure that everything has been installed correctly, you can look at the examples. The code below will run all four currently provided examples at once. Note that on older machines running four sketches at once might result in a small degradation in performance, so you might want to run sketches separately.
 
 #+BEGIN_SRC lisp
@@ -67,7 +60,6 @@ CL-USER> (make-instance 'sketch-examples:life) ; Click to toggle cells,
 #+END_SRC
 
 *** Running example code from this page
-
 In all the following examples, we're going to assume that Sketch is loaded with =(ql:quickload :sketch)=, and that we're in package =:SKETCH=, either after explicitly doing that via REPL:
 
 #+BEGIN_SRC lisp
@@ -79,27 +71,100 @@ CL-USER> (in-package :sketch)
 
 or by depending on =:SKETCH= and =:USE=ing it in a system and package definition, like it's done for =:SKETCH-EXAMPLES=.
 
-** Hello, World
-
+** Tutorial
 Defining sketches is done with the =DEFSKETCH= macro, that wraps =DEFCLASS=. Using =DEFCLASS= is still possible, but =DEFSKETCH= makes everything so much easier, and in these examples, we're going to pretend that's the only way.
 
 #+BEGIN_SRC lisp
-(defsketch hello-world ())
-(make-instance 'hello-world)
+  (defsketch tutorial ())
+  (make-instance 'tutorial)
 #+END_SRC
 
 If all goes well, this should give you an unremarkable gray window.
 
 *** Colors
-
 Let's add some color. Assuming that you're using Emacs + SLIME, or a similarly capable environment, you can just re-evaluate with the following code:
 
 #+BEGIN_SRC lisp
-  (defsketch hello-world ()
+  (defsketch tutorial ()
     (background +yellow+))
 #+END_SRC
 
 The window becomes yellow. There are a couple of things to note. Drawing code doesn't need to go into a special function or method, or be binded to a sketch explicitly. =DEFSKETCH= is defined as =(defsketch sketch-name bindings &body body)=: that body is your drawing code. We will get to =BINDINGS= later. The other thing is that Sketch comes with its own color library.
 
 **** Predefined colors
-There are constants for commonly used colors; =+RED+=, =+GREEN+=, =+BLUE+=, =+YELLOW+=, =+MAGENTA+=, =+CYAN+=, =+ORANGE+= =+WHITE+=, AND =+BLACK+=.
+There are constants for commonly used colors: =+RED+=, =+GREEN+=, =+BLUE+=, =+YELLOW+=, =+MAGENTA+=, =+CYAN+=, =+ORANGE+= =+WHITE+=, and =+BLACK+=.
+
+**** RGB, HSB, GRAY
+If you want to be more specific about the colors you want, you are welcome to use =(rgb red green blue &optional (alpha 1.0))=, =(hsb hue saturation brightness &optional (alpha 1.0))= or =(gray amount &optional (alpha 1.0))=. The arguments to these functions are values from 0 to 1. You can use these functions in the same way you just used =+YELLOW+=. Hopefully the function names and their arguments are self-explanatory, but if not, you can learn about the RGB color model [[https://en.wikipedia.org/wiki/RGB_color_model][here]] and about HSB (also called HSV) [[https://en.wikipedia.org/wiki/HSL_and_HSV][here]]. =(gray amount &optional (alpha 1.0))= is really just a convenient alias for =(rgb amount amount amount &optional (alpha 1.0))=, and can be used for brevity when a shade of gray needs to be defined.
+
+/This might be a good place to note that function names in Sketch use the American English spellings, like "gray" and "color". It's just a choice that needed to be made, in pursue of uniformity and good style./
+
+#+BEGIN_SRC lisp
+  (defsketch tutorial ()
+    (background (rgb 1 1 0.5)))
+#+END_SRC
+
+This will give you a lighter yellow.
+
+**** RGB-255, HSB-360, GRAY-255
+Sometimes it's easier to think about color values in non-normalized ranges. That's why Sketch offers =RGB-255=, =HSB-360=, and =GRAY-255=.
+
+This is how these functions map to their normalized variants.
+
+| (rgb-255 r g b a) | (rgb (/ r 255) (/ g 255) (/ b 255) (/ a 255)) |
+| (hsb-360 h s b a) | (hsb (/ h 360) (/ s 100) (/ b 100) (/ a 255)) |
+| (gray-255 g a)    | (gray (/ g 255) (/ a 255))                    |
+
+=HSB-360= is using different ranges, because hue is represented in degrees (0-360), and saturation and brightness are represented as percentages (0-100).
+
+**** HEX-TO-COLOR
+If you are used to working with colors in hex, like in CSS, you can use =(hex-to-color string)=, where =STRING= is the color in one of the following formats: ="4bc"=, ="#4bc"=, ="4bcdef"=, and ="#4bcdef"=.
+
+**** Generating colors
+If you don't care about fiddling with the exact values, but still need different colors,
+
+**** Color filters
+
+*** Shapes
+
+*** Pens
+
+*** Transforms
+
+*** Resources
+
+**** Text
+
+**** Images
+
+*** Bindings
+
+*** Input
+
+** FAQ
+
+** Outro
+For everything else, read the code or ask vydd at #lispgames.
+
+Go make something pretty!
+
+** License
+
+Copyright (c) 2015, 2016 Danilo Vidovic (vydd)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is furnished
+to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
