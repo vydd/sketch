@@ -15,7 +15,6 @@ Since April 2016, Sketch is available in [[https://www.quicklisp.org/beta/][Quic
 To make Sketch run correctly, though, a few requirements must be met.
 
 *** Requirements
-
 **** Common Lisp Implementation
 Sketch should be compatible with all major Common Lisp implementations and all major operating systems - more specifically, all CL implementations and operating systems that [[https://github.com/lispgames/cl-sdl2][cl-sdl2]] runs on. Incompatibility with any of those is considered a bug.
 
@@ -46,6 +45,12 @@ Some users have reported that [[https://sourceware.org/libffi/][libffi]] needed 
 
 ***** OpenGL
 Sketch requires graphics hardware and drivers with support for GL version 3.3.
+
+**** If you are obtaining Sketch from this repository, instead of using Quicklisp releases
+Please make sure to also get the following libraries to your =local-projects= directory. This is not necessary otherwise.
+
+- [[https://github.com/lispgames/cl-sdl2]]
+- [[https://github.com/lispgames/sdl2kit]]
 
 *** Running provided examples
 To get a feel for what Sketch can do, and also to make sure that everything has been installed correctly, you can look at the examples. The code below will run all four currently provided examples at once. Note that on older machines running four sketches at once might result in a small degradation in performance, so you might want to run sketches separately.
