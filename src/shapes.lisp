@@ -8,7 +8,7 @@
 ;;;  ___) |  _  |/ ___ \|  __/| |___ ___) |
 ;;; |____/|_| |_/_/   \_\_|   |_____|____/
 
-(defparameter *shape-cache-capacity* 128)
+(defparameter *shape-cache-capacity* 1024)
 
 (defmacro define-cached-shape (name arglist &body body)
   `(function-cache:defcached (,name :cache-class 'function-cache:lru-cache
