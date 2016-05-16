@@ -12,7 +12,7 @@ Since April 2016, Sketch is available in [[https://www.quicklisp.org/beta/][Quic
 (ql:quickload :sketch)
 #+END_SRC
 
-To make Sketch run correctly, a few requirements must be met, though.
+To make Sketch run correctly, though, a few requirements must be met.
 
 *** Requirements
 
@@ -81,8 +81,18 @@ Defining sketches is done with the =DEFSKETCH= macro, that wraps =DEFCLASS=. Usi
 
 If all goes well, this should give you an unremarkable gray window.
 
+*** Shapes
+Let's draw something!
+
+#+BEGIN_SRC lisp
+  (defsketch tutorial ()
+    (rect 100 100 200 200))
+#+END_SRC
+
+TODO
+
 *** Colors
-Let's add some color. Assuming that you're using Emacs + SLIME, or a similarly capable environment, you can just re-evaluate with the following code:
+Gray is kind of dull. Assuming that you're using Emacs + SLIME, or a similarly capable environment, you can just re-evaluate with the following code:
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
@@ -154,28 +164,34 @@ This is probably the function you're looking for, if you just want to create a n
 Sometimes you have a color, and would like to transform it in some way. That's what color filters are for.
 
 ***** Grayscale
+TODO
 
 ***** Invert
+TODO
 
 ***** Rotate
+TODO
 
 ***** HSB
-
-*** Shapes
+TODO
 
 *** Pens
+TODO
 
 *** Transforms
+TODO
 
-*** Resources
+*** Text
+TODO
 
-**** Text
-
-**** Images
+*** Images
+TODO
 
 *** Bindings
+TODO
 
 *** Input
+TODO
 
 ** Made with Sketch
 - [[https://vydd.itch.io/qelt][QELT]]
