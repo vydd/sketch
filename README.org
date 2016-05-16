@@ -92,7 +92,7 @@ Let's draw something!
 TODO
 
 *** Colors
-Gray is kind of dull. Assuming that you're using Emacs + SLIME, or a similarly capable environment, you can just re-evaluate with the following code:
+Grayscale imagery is nice, but let's add color and make our sketch more vibrant. Assuming that you're using Emacs + SLIME, or a similarly capable environment, you can just re-evaluate with the following code:
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
