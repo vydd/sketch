@@ -77,6 +77,9 @@ CL-USER> (in-package :sketch)
 or by depending on =:SKETCH= and =:USE=ing it in a system and package definition, like it's done for =:SKETCH-EXAMPLES=.
 
 ** Tutorial
+/NOTE: This tutorial is using the revised =DEFSKETCH= macro, introduced in May 2016. Until this release hits Quicklisp, you'll have to install Sketch manually to your =local-projects= directory, along with https://github.com/lispgames/cl-sdl2 and
+https://github.com/lispgames/sdl2kit. More about this [[https://github.com/vydd/sketch/issues/12][here]]./
+
 Defining sketches is done with the =DEFSKETCH= macro, that wraps =DEFCLASS=. Using =DEFCLASS= is still possible, but =DEFSKETCH= makes everything so much easier, and in these examples, we're going to pretend that's the only way.
 
 #+BEGIN_SRC lisp
