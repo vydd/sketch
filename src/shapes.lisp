@@ -18,7 +18,8 @@
 
 (defun point (x y)
   (declare (type real x y))
-  (rect x y 1 1))
+  (with-pen (make-pen :fill (pen-stroke (env-pen *env*)))
+    (rect x y 1 1)))
 
 (define-cached-shape make-line (x1 y1 x2 y2)
   (let* ((a (atan (- y2 y1) (- x2 x1)))

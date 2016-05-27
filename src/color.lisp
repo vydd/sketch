@@ -135,9 +135,9 @@
 			  :initial-contents grp))
 	 (seq (md5:md5sum-sequence arr))
 	 (hash (loop for i across seq sum i)))
-    (hsb-360 (mod hash 359)
-	     (alexandria:clamp (expt (mod (* n hash) 13) 3) 50 100)
-	     (alexandria:clamp (expt (mod (* n hash) 17) 3) 50 100)
+    (hsb-360 (mod (+ (* 144 (mod n 20)) (mod hash 60)) 360)
+	     (alexandria:clamp (+ 25 (* 25 (mod hash 4)) (mod hash 25)) 0 100)
+	     (alexandria:clamp (+ 25 (* 25 (mod n 4)) (mod hash 20)) 0 100)
 	     (* 255 alpha))))
 
 ;;; Filters

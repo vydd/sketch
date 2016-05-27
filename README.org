@@ -53,7 +53,7 @@ Please make sure to also get the following libraries to your =local-projects= di
 - [[https://github.com/lispgames/sdl2kit]]
 
 *** Running provided examples
-To get a feel for what Sketch can do, and also to make sure that everything has been installed correctly, you can look at the examples. The code below will run all four currently provided examples at once. Note that on older machines running four sketches at once might result in a small degradation in performance, so you might want to run sketches separately.
+ To get a feel for what Sketch can do, and also to make sure that everything has been installed correctly, you can look at the examples. The code below will run all four currently provided examples at once. Note that on older machines running four sketches at once might result in a small degradation in performance, so you might want to run sketches separately.
 
 #+BEGIN_SRC lisp
 CL-USER> (ql:quickload :sketch-examples)
@@ -65,16 +65,14 @@ CL-USER> (make-instance 'sketch-examples:life) ; Click to toggle cells,
 #+END_SRC
 
 *** Running example code from this page
-In all the following examples, we're going to assume that Sketch is loaded with =(ql:quickload :sketch)=, and that we're in package =:SKETCH=, either after explicitly doing that via REPL:
+In all the following examples, we're going to assume that Sketch is loaded with =(ql:quickload :sketch)=, and that we're in package =:TUTORIAL=, which is set to use =:SKETCH=.
 
 #+BEGIN_SRC lisp
 CL-USER> (ql:quickload :sketch)
-...
-CL-USER> (in-package :sketch)
-...
+CL-USER> (defpackage :tutorial (:use :cl :sketch))
+CL-USER> (in-package :tutorial)
+TUTORIAL> ;; ready
 #+END_SRC
-
-or by depending on =:SKETCH= and =:USE=ing it in a system and package definition, like it's done for =:SKETCH-EXAMPLES=.
 
 ** Tutorial
 /NOTE: This tutorial is using the revised/ =DEFSKETCH= /macro, introduced in May 2016. Until this release hits Quicklisp, you'll have to install Sketch manually to your/ =local-projects= /directory, along with https://github.com/lispgames/cl-sdl2 and
@@ -97,7 +95,52 @@ Let's draw something!
     (rect 100 100 200 200))
 #+END_SRC
 
-TODO
+#+BEGIN_SRC lisp
+  (defsketch tutorial ()
+    (dotimes (i 10)
+      (rect (* i 40) (* i 40) 40 40)))
+#+END_SRC
+
+#+BEGIN_SRC lisp
+  (defsketch tutorial ()
+    (dotimes (i 10)
+      (rect 0 (* i 40) (* (+ i 1) 40) 40)))
+#+END_SRC
+
+#+BEGIN_SRC lisp
+  (defsketch tutorial ()
+    (dotimes (i 10)
+      (rect 0 (* i 40) (* (+ i 1) 40) 40))
+    (circle 300 100 50))
+#+END_SRC
+
+#+BEGIN_SRC lisp
+  (defsketch tutorial ()
+    (line 0 0 400 400)
+    (line 400 0 0 400))
+#+END_SRC
+
+#+BEGIN_SRC lisp
+  (defsketch tutorial ()
+    (polyline 100 100 200 150 300 100
+              200 200 100 100))
+#+END_SRC
+
+#+BEGIN_SRC lisp
+  (defsketch tutorial ()
+    (polygon 100 100 200 150 300 100 200 200))
+#+END_SRC
+
+#+BEGIN_SRC lisp
+  (defsketch tutorial ()
+    (dotimes (i 4)
+      (ngon (+ i 3) (+ 50 (* i 100)) 200 20 20 (* i 20))))
+#+END_SRC
+
+#+BEGIN_SRC lisp
+  (defsketch tutorial ()
+    (bezier 0 400 100 100 300 100 400 400))
+#+END_SRC
 
 *** Colors
 Grayscale imagery is nice, but let's add color and make our sketch more vibrant. Assuming that you're using Emacs + SLIME, or a similarly capable environment, you can just re-evaluate with the following code:
@@ -146,9 +189,8 @@ If you don't care about fiddling with the exact values, but still need different
 ***** =(lerp-color (start-color end-color amount &key (mode :hsb)))=
 Lerping is a fancy way of saying [[https://en.wikipedia.org/wiki/Linear_interpolation][linear interpolation]]. This function takes the starting color and the ending color, and returns the color between them, which is an =AMOUNT= away from the starting color. When =AMOUNT= equals zero, the returned color equals the starting color, and when =AMOUNT= equals one, the ending color is returned. Amounts between zero and one give colors that are "in-between". These colors are calculated according to the specified =MODE=, which is =:HSB= by default, meaning that the resulting color's hue is between the starting and ending hue, as is the case with its saturation and brightness.
 
-[[http://i.imgur.com/p9eaPGX.png]]
 #+BEGIN_SRC lisp
-  (defsketch lerp-test ((title "LERP TEST") (width 400) (height 100))
+  (defsketch lerp-test ((title "lerp-color") (width 400) (height 100))
     (dotimes (i 4)
       (with-pen (make-pen :fill (lerp-color +red+ +yellow+ (/ i 4)))
         (rect (* i 100) 0 100 100))))
@@ -157,15 +199,24 @@ Lerping is a fancy way of saying [[https://en.wikipedia.org/wiki/Linear_interpol
 ***** =(random-color (&optional (alpha 1.0)))=
 Returns a random color. You probably don't want to use this, because much of the returned colors are either too dark, or too light. You do get to choose the =ALPHA= value, though.
 
+#+BEGIN_SRC lisp
+  (defparameter *colors* (loop for i below 16 collect (random-color)))
+
+  (defsketch random-color-test ((title "random-color") (width 400) (height 100))
+    (dotimes (x 8)
+      (dotimes (y 2)
+        (with-pen (make-pen :fill (elt *colors* (+ x (* y 8))))
+          (rect (* x 50) (* y 50) 50 50)))))
+#+END_SRC
+
 ***** =(hash-color (n &optional (alpha 1.0)))=
 This is probably the function you're looking for, if you just want to create a non-repeating set of colors quickly. It maps all numbers to "interesting" (not too dark, not too light) colors. You can use this for coloring procedurally generated objects, when prototyping and just trying to make things look different quickly, when making palettes, looking for "the right" color, and many other things.
 
-[[http://i.imgur.com/ffTgY5o.png]]
 #+BEGIN_SRC lisp
-  (defsketch hash-color-test ((title "HASH COLOR TEST") (width 400) (height 100))
-    (dotimes (i 16)
+  (defsketch hash-color-test ((title "hash-color") (width 400) (height 100))
+    (dotimes (i 128)
       (with-pen (make-pen :fill (hash-color i))
-        (rect (* i (/ 400 16)) 0 (/ 400 16) 100))))
+        (rect (* i (/ 400 128)) 0 (/ 400 128) 100))))
 #+END_SRC
 
 **** Color filters
