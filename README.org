@@ -48,6 +48,31 @@ Some users have reported that [[https://sourceware.org/libffi/][libffi]] needed 
 ***** OpenGL
 Sketch requires graphics hardware and drivers with support for GL version 3.3.
 
+**** Installing and running Sketch on Windows
+Sketch works on both CCL and SBCL, but installing all prerequisites might not be as straightforward as it is on the other platforms.
+
+***** Libraries
+Download SDL2, SDL2_IMAGE and SDL2_TTF dlls from [[https://www.libsdl.org][libsdl webpage]] and copy them somewhere Windows can find them - =\Windows\System32= will work. When copying SDL2_TTF, make sure to copy all of the dlls provided in the archive, and not just the TTF one.
+
+Now you will need to get a libffi dll. One of the ways of doing this is compiling from the source, but for a quick and easy solution, you can just find a trusted source and use their version. For example, if you are using Emacs on Windows, you can find =libffi-6.dll= in =emacs\bin=. Copy it to the same directory you copied sdl2 dlls to earlier.
+
+***** GCC
+To bootstrap cffi-libffi, you are going to need a C compiler, more specifically the one from the GNU Compiler Collection. Also, libffi headers and pkg-config are needed. Luckily, you can get all these things (and more) with MSYS2. Go to [[https://msys2.github.io]] and follow the instructions for installing the 64bit version.
+
+From its console, install gcc, libffi headers and pkg-config by running =pacman -S gcc libffi libffi-devel pkg-config=.
+
+***** Environment variables
+From the Control Panel, open System properties, go to the Advanced tab, and click "Environment Variables..." - or click the Start button, start typing "environment" and select "Edit the system environment variables".
+
+Double click "Path" from the list of System variables and make sure that both your lisp implementation's path (something like =C:\Program Files\Steel Bank Common Lisp\1.3.6\=) and MSYS path (probably =C:\msys64\usr\bin=) are listed. If not, click "New" and add them now.
+
+If you needed to change anything here, restart the computer now.
+
+***** SLIME
+If you are using SLIME, you won't be able to load or run Sketch if you start SWANK from emacs (by running =M-x slime=). Instead, you should open the Command Prompt (the regular one, not MSYS), start your lisp and eval =(ql:quickload :swank)= =(swank:create-server)=. From Emacs, type =M-x slime-connect=, and finally, press enter twice (for localhost and port 4005).
+
+If you did everything correctly, you should be able to =(ql:quickload :sketch)= and move on to the tutorial.
+
 **** If you are obtaining Sketch from this repository, instead of using Quicklisp releases
 Please make sure to also get the following libraries to your =local-projects= directory. This is not necessary otherwise.
 
