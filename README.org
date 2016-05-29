@@ -1,6 +1,7 @@
 * Sketch
 
-[[http://quickdocs.org/sketch/][[[http://quickdocs.org/badge/sketch.svg]]]]
+#+CAPTION: http://quickdocs.org/sketch/
+[[http://quickdocs.org/badge/sketch.svg]]
 
 Sketch is a Common Lisp environment for the creation of electronic art, visual design, game prototyping, game making, computer graphics, exploration of human-computer interaction and more. It is inspired by [Processing Language](https://processing.org) and shares some of the API.
 
