@@ -10,10 +10,14 @@
 
 (defparameter *shape-cache-capacity* 1024)
 
+;; (defmacro define-cached-shape (name arglist &body body)
+;;   `(function-cache:defcached (,name :cache-class 'function-cache:lru-cache
+;; 				    :capacity *shape-cache-capacity*)
+;;        ,arglist
+;;      ,@body))
+
 (defmacro define-cached-shape (name arglist &body body)
-  `(function-cache:defcached (,name :cache-class 'function-cache:lru-cache
-				    :capacity *shape-cache-capacity*)
-       ,arglist
+  `(defun ,name ,arglist
      ,@body))
 
 (defun point (x y)
