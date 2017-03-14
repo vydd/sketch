@@ -8,24 +8,12 @@
 ;;;  ___) |  _  |/ ___ \|  __/| |___ ___) |
 ;;; |____/|_| |_/_/   \_\_|   |_____|____/
 
-(defparameter *shape-cache-capacity* 1024)
-
-;; (defmacro define-cached-shape (name arglist &body body)
-;;   `(function-cache:defcached (,name :cache-class 'function-cache:lru-cache
-;; 				    :capacity *shape-cache-capacity*)
-;;        ,arglist
-;;      ,@body))
-
-(defmacro define-cached-shape (name arglist &body body)
-  `(defun ,name ,arglist
-     ,@body))
-
 (defun point (x y)
   (declare (type real x y))
   (with-pen (make-pen :fill (pen-stroke (env-pen *env*)))
     (rect x y 1 1)))
 
-(define-cached-shape make-line (x1 y1 x2 y2)
+(defun make-line (x1 y1 x2 y2)
   (let* ((a (atan (- y2 y1) (- x2 x1)))
 	 (w (/ (or (pen-weight (env-pen *env*)) 1) 2))
 	 (dx (* 2 (sin a) w))
@@ -56,7 +44,7 @@
 		   (cdar (last lines)))
 	   nil)))
 
-(define-cached-shape make-polyline (&rest coordinates)
+(defun make-polyline (&rest coordinates)
   (multiple-value-bind (d+ d-)
       (div2-inexact (pen-weight (env-pen *env*)))
     (let* ((lines (edges (group coordinates) nil))
@@ -77,7 +65,7 @@
     (t (with-pen (flip-pen (env-pen *env*))
 	 (funcall (apply #'make-polyline coordinates))))))
 
-(define-cached-shape make-rect (x y w h)
+(defun make-rect (x y w h)
   (if (and (plusp w) (plusp h))
       (lambda ()
 	(draw-shape
@@ -106,7 +94,7 @@
 	     y (* radial (- y (* x tangential)))))
     (nreverse vertices)))
 
-(define-cached-shape make-ngon (n cx cy rx ry &optional (angle 0))
+(defun make-ngon (n cx cy rx ry &optional (angle 0))
   (let ((vertices (ngon-vertices n cx cy rx ry angle)))
     (lambda ()
       (draw-shape :triangle-fan vertices vertices))))
@@ -116,7 +104,7 @@
 	   (type real cx cy rx ry angle))
   (funcall (make-ngon n cx cy rx ry angle)))
 
-(define-cached-shape make-star (n cx cy ra rb &optional (angle 0))
+(defun make-star (n cx cy ra rb &optional (angle 0))
   (let ((vertices (mix-lists (ngon-vertices n cx cy ra ra (+ 90 angle))
 			     (ngon-vertices n cx cy rb rb (- (+ 90 angle) (/ 180 n))))))
     (lambda ()
@@ -137,7 +125,7 @@
   (when (not (zerop r))
     (ellipse x y (abs r) (abs r))))
 
-(define-cached-shape make-polygon (&rest coordinates)
+(defun make-polygon (&rest coordinates)
   (list
    :triangles
    (triangulate coordinates)
