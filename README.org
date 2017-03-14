@@ -252,10 +252,37 @@ This is probably the function you're looking for, if you just want to create a n
 Sometimes you have a color, and would like to transform it in some way. That's what color filters are for.
 
 ***** Grayscale
-TODO
+To convert colors to grayscale, you can use =color-filter-grayscale=. Two modes of grayscale conversion are implemented:
+
+- =:luminosity=, the default, which is [[https://en.wikipedia.org/wiki/Grayscale#Colorimetric_.28luminance-preserving.29_conversion_to_grayscale][luminance-preserving]]
+- =:average=, which sets all color channels to their average
+
+#+BEGIN_SRC lisp
+  (defsketch grayscale-test ((title "grayscale") (width 400) (height 300))
+    (dotimes (i 10)
+      (let ((color (hash-color i)))
+        (with-pen (make-pen :fill (color-filter-grayscale color))
+          (rect (* i 40) 0 40 100))
+        (with-pen (make-pen :fill color)
+          (rect (* i 40) 100 40 100))
+        (with-pen (make-pen :fill (color-filter-grayscale color :average))
+          (rect (* i 40) 200 40 100)))))
+#+END_SRC
 
 ***** Invert
-TODO
+To invert a color, use =color-filter-invert=:
+
+#+BEGIN_SRC lisp
+  (defsketch invert-test
+      ((title "invert") (width 300) (height 300) (i 0))
+    (background +white+)
+    (incf i 0.01)
+    (let ((color (rgb (abs (sin i)) (abs (cos i)) 0)))
+      (with-pen (make-pen :fill color)
+        (circle 100 150 50))
+      (with-pen (make-pen :fill (color-filter-invert color))
+        (circle 200 150 50))))
+#+END_SRC
 
 ***** Rotate
 TODO
