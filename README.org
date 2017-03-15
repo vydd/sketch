@@ -303,9 +303,8 @@ because the rotated colors usually work pretty well together.
 #+END_SRC
 
 ***** HSB
-[HSB](https://en.wikipedia.org/wiki/HSL_and_HSV) stands for
-Hue/Saturation/Brightness. You can use =color-filter-hsb= to adjust
-hue, saturation and brightness of an existing color.
+[[https://en.wikipedia.org/wiki/HSL_and_HSV][HSB]] stands for Hue/Saturation/Brightness. You can use
+=color-filter-hsb= to adjust hue, saturation and brightness of an existing color.
 
 #+BEGIN_SRC lisp
   (defsketch hsb-test
