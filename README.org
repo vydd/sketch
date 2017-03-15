@@ -285,10 +285,39 @@ To invert a color, use =color-filter-invert=:
 #+END_SRC
 
 ***** Rotate
-TODO
+Rotating a color in Sketch using =color-filter-rotate= sets the value of its red channel to the
+previous value of the green channel; green to blue, and blue to
+red. The operation is intended to be used in palette generation,
+because the rotated colors usually work pretty well together.
+
+#+BEGIN_SRC lisp
+  (defsketch rotate-test
+      ((title "rotate") (width 300) (height 300)
+       (i 0) (color (rgb 0.2 0.8 1.0)))
+    (background +white+)
+    (incf i 1)
+    (when (zerop (mod i 60))
+      (setf color (color-filter-rotate color)))
+    (with-pen (make-pen :fill color)
+      (rect 100 100 100 100)))
+#+END_SRC
 
 ***** HSB
-TODO
+[HSB](https://en.wikipedia.org/wiki/HSL_and_HSV) stands for
+Hue/Saturation/Brightness. You can use =color-filter-hsb= to adjust
+hue, saturation and brightness of an existing color.
+
+#+BEGIN_SRC lisp
+  (defsketch hsb-test
+      ((title "hsb") (width 400) (height 300) (color (rgb 0.2 0.5 0.6)))
+    (dotimes (i 4)
+      (with-pen (make-pen :fill (color-filter-hsb color :hue (* 0.1 (+ i 1))))
+        (rect (* i 100) 0 100 100))
+      (with-pen (make-pen :fill (color-filter-hsb color :saturation (* 0.1 (+ i 1))))
+        (rect (* i 100) 100 100 100))
+      (with-pen (make-pen :fill (color-filter-hsb color :brightness (* 0.1 (+ i 1))))
+        (rect (* i 100) 200 100 100))))
+#+END_SRC
 
 *** Pens
 TODO
