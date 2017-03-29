@@ -13,10 +13,12 @@
 	       #:sdl2-image
 	       #:sdl2-ttf
 	       #:sdl2kit
-	       #:static-vectors)
+	       #:static-vectors
+               #:cepl.sdl2)
   :pathname "src"
   :serial t
   :components ((:file "package")
+               (:file "monkey-patching")
 	       (:file "math")
 	       (:file "utils")
 	       (:file "channels")
