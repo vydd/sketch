@@ -10,7 +10,7 @@
 
 (kit.gl.shader:defdict sketch-programs ()
   (kit.gl.shader:program :fill-shader (:view-m :model-m :texid)
-			 (:vertex-shader "
+                         (:vertex-shader "
 #version 330 core
 
 uniform mat4 model_m;
@@ -29,7 +29,7 @@ void main() {
     f_color = color;
 }
 ")
-			 (:fragment-shader "
+                         (:fragment-shader "
 #version 330 core
 
 uniform sampler2D texid;
@@ -43,3 +43,22 @@ void main() {
     f_out = texture(texid, f_texcoord) * f_color;
 }
 ")))
+
+
+(defstruct-g sketch-vertex
+  (pos :vec2 :accessor pos)
+  (uv :vec2 :accessor uv)
+  (color :vec4 :accessor color))
+
+(defun-g fill-verts ((vert sketch-vertex)
+                     &uniform (model-m :mat4) (view-m :mat4))
+  (values (* view-m model-m (v! (pos vert) 0 1))
+          (uv vert)
+          (color vert)))
+
+(defun-g fill-verts-frag ((uv :vec2) (color :vec4) &uniform (tex :sampler-2d))
+  (* (texture tex uv) color))
+
+(def-g-> fill-vertices ()
+  (fill-verts sketch-vertex)
+  (fill-verts-frag :vec2 :vec4))

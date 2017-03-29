@@ -33,22 +33,22 @@
   (let ((*env* (or *env* (make-env)))) ;; try faking env if we still don't have one
     (symbol-macrolet ((resource (gethash key (env-resources *env*))))
       (let* ((key (alexandria:make-keyword
-		   (alexandria:symbolicate filename (format nil "~a" all-keys)))))
-	(when force-reload-p
-	  (free-resource resource)
-	  (remhash key (env-resources *env*)))
-	(when (not resource)
-	  (setf resource
-		(apply #'load-typed-resource
-		       (list*  filename
-			       (or type
-				   (case (alexandria:make-keyword
-					  (alexandria:symbolicate
-					   (string-upcase (file-name-extension filename))))
-				     ((:png :jpg :jpeg :tga :gif :bmp) :image)
-				     ((:ttf :otf) :typeface)))
-			       all-keys))))
-	resource))))
+                   (alexandria:symbolicate filename (format nil "~a" all-keys)))))
+        (when force-reload-p
+          (free-resource resource)
+          (remhash key (env-resources *env*)))
+        (when (not resource)
+          (setf resource
+                (apply #'load-typed-resource
+                       (list*  filename
+                               (or type
+                                   (case (alexandria:make-keyword
+                                          (alexandria:symbolicate
+                                           (string-upcase (file-name-extension filename))))
+                                     ((:png :jpg :jpeg :tga :gif :bmp) :image)
+                                     ((:ttf :otf) :typeface)))
+                               all-keys))))
+        resource))))
 
 (defgeneric load-typed-resource (filename type &key &allow-other-keys))
 
@@ -62,16 +62,16 @@
     (gl:bind-texture :texture-2d texture)
     (gl:tex-parameter :texture-2d :texture-min-filter :linear)
     (gl:tex-image-2d :texture-2d 0 :rgba
-		     (sdl2:surface-width surface)
-		     (sdl2:surface-height surface)
-		     0
-		     :bgra
-		     :unsigned-byte (sdl2:surface-pixels surface))
+                     (sdl2:surface-width surface)
+                     (sdl2:surface-height surface)
+                     0
+                     :bgra
+                     :unsigned-byte (sdl2:surface-pixels surface))
     (gl:bind-texture :texture-2d 0)
     (let ((image (make-instance 'image
-				:width (sdl2:surface-width surface)
-				:height (sdl2:surface-height surface)
-				:texture texture)))
+                                :width (sdl2:surface-width surface)
+                                :height (sdl2:surface-height surface)
+                                :texture texture)))
       (sdl2:free-surface surface)
       image)))
 
@@ -79,12 +79,12 @@
   (make-image-from-surface (sdl2-image:load-image filename)))
 
 (defmethod load-typed-resource (filename (type (eql :typeface))
-				&key (size 18) &allow-other-keys)
+                                &key (size 18) &allow-other-keys)
   (make-instance 'typeface
-		 :filename filename
-		 :pointer (sdl2-ttf:open-font filename
-					      (coerce (truncate size)
-						      '(signed-byte 32)))))
+                 :filename filename
+                 :pointer (sdl2-ttf:open-font filename
+                                              (coerce (truncate size)
+                                                      '(signed-byte 32)))))
 
 (defgeneric free-resource (resource))
 
@@ -101,9 +101,9 @@
 
 (defun image (image-resource x y &optional width height)
   (with-pen (make-pen :fill image-resource
-		      :stroke (pen-stroke (env-pen *env*))
-		      :weight (pen-weight (env-pen *env*)))
+                      :stroke (pen-stroke (env-pen *env*))
+                      :weight (pen-weight (env-pen *env*)))
     (rect x
-	  y
-	  (or (abs-or-rel width (image-width image-resource)))
-	  (or (abs-or-rel height (image-height image-resource))))))
+          y
+          (or (abs-or-rel width (image-width image-resource)))
+          (or (abs-or-rel height (image-height image-resource))))))

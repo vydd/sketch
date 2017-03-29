@@ -48,11 +48,11 @@
 
 (define-sketch-writer width
   (sdl2:set-window-size win (slot-value instance 'width)
-			(slot-value instance 'height)))
+                        (slot-value instance 'height)))
 
 (define-sketch-writer height
   (sdl2:set-window-size win (slot-value instance 'width)
-			(slot-value instance 'height)))
+                        (slot-value instance 'height)))
 
 (define-sketch-writer fullscreen
   (sdl2:set-window-fullscreen win (slot-value instance 'fullscreen)))
@@ -61,9 +61,9 @@
   (declare (ignore win))
   (with-slots ((env %env) width height y-axis) instance
     (setf (env-view-matrix env)
-	  (if (eq y-axis :down)
-	      (kit.glm:ortho-matrix 0 width height 0 -1 1)
-	      (kit.glm:ortho-matrix 0 width 0 height -1 1)))
+          (if (eq y-axis :down)
+              (kit.glm:ortho-matrix 0 width height 0 -1 1)
+              (kit.glm:ortho-matrix 0 width 0 height -1 1)))
     (kit.gl.shader:uniform-matrix
      (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
 
@@ -119,17 +119,17 @@ used for drawing, 60fps.")
 (defmacro gl-catch (error-color &body body)
   `(handler-case
        (progn
-	 ,@body)
+         ,@body)
      (error (e)
        (progn
-	 (background ,error-color)
-	 (with-font (make-error-font)
-	   (with-identity-matrix
-	     (text "ERROR" 20 20)
-	     (text (format nil "~a" e) 20 40)
-	     (text "Click for restarts." 20 60)))
-	 (setf %restart t
-	       (env-red-screen *env*) t)))))
+         (background ,error-color)
+         (with-font (make-error-font)
+           (with-identity-matrix
+             (text "ERROR" 20 20)
+             (text (format nil "~a" e) 20 40)
+             (text "Click for restarts." 20 60)))
+         (setf %restart t
+               (env-red-screen *env*) t)))))
 
 (defun draw-window (window)
   (start-draw)
@@ -140,32 +140,32 @@ used for drawing, 60fps.")
   (with-slots (%env %restart width height copy-pixels) instance
     (with-environment %env
       (with-pen (make-default-pen)
-	(with-font (make-default-font)
-	  (with-identity-matrix
-	    (unless copy-pixels
-	      (background (gray 0.4)))
-	    ;; Restart sketch on setup and when recovering from an error.
-	    (when %restart
-	      (gl-catch (rgb 1 1 0.3)
-		(setup instance))
-	      (setf (slot-value instance '%restart) nil))
-	    ;; If we're in the debug mode, we exit from it immediately,
-	    ;; so that the restarts are shown only once. Afterwards, we
-	    ;; continue presenting the user with the red screen, waiting for
-	    ;; the error to be fixed, or for the debug key to be pressed again.
-	    (if (debug-mode-p)
-		(progn
-		  (exit-debug-mode)
-		  (draw-window instance))
-		(gl-catch (rgb 0.7 0 0)
-		  (draw-window instance)))))))))
+        (with-font (make-default-font)
+          (with-identity-matrix
+            (unless copy-pixels
+              (background (gray 0.4)))
+            ;; Restart sketch on setup and when recovering from an error.
+            (when %restart
+              (gl-catch (rgb 1 1 0.3)
+                (setup instance))
+              (setf (slot-value instance '%restart) nil))
+            ;; If we're in the debug mode, we exit from it immediately,
+            ;; so that the restarts are shown only once. Afterwards, we
+            ;; continue presenting the user with the red screen, waiting for
+            ;; the error to be fixed, or for the debug key to be pressed again.
+            (if (debug-mode-p)
+                (progn
+                  (exit-debug-mode)
+                  (draw-window instance))
+                (gl-catch (rgb 0.7 0 0)
+                  (draw-window instance)))))))))
 
 ;;; Default events
 
 (defmethod kit.sdl2:keyboard-event :before ((instance sketch) state timestamp repeatp keysym)
   (declare (ignorable timestamp repeatp))
   (when (and (eql state :keydown)
-	     (sdl2:scancode= (sdl2:scancode-value keysym) :scancode-escape))
+             (sdl2:scancode= (sdl2:scancode-value keysym) :scancode-escape))
     (kit.sdl2:close-window instance)))
 
 (defmethod close-window :before ((instance sketch))
@@ -191,8 +191,8 @@ used for drawing, 60fps.")
 
 (defun custom-bindings (&optional bindings)
   (remove-if (lambda (binding)
-	       (member (car binding) (mapcar #'car *default-slots*)))
-	     bindings))
+               (member (car binding) (mapcar #'car *default-slots*)))
+             bindings))
 
 (defun intern-accessor (name)
   (intern (string (alexandria:symbolicate 'sketch- name)) :sketch))
@@ -201,7 +201,7 @@ used for drawing, 60fps.")
   (if (default-slot-p binding)
       (intern-accessor (car binding))
       (or (cadr (member :accessor (cddr binding)))
-	  (alexandria:symbolicate sketch '- (car binding)))))
+          (alexandria:symbolicate sketch '- (car binding)))))
 
 (defun make-slot-form (sketch binding)
   `(,(car binding)
@@ -217,46 +217,46 @@ used for drawing, 60fps.")
   `(define-channel-observer
      (let ((win (kit.sdl2:last-window)))
        (when win
-	 (setf (,(binding-accessor sketch binding) win) ,(cadr binding))))))
+         (setf (,(binding-accessor sketch binding) win) ,(cadr binding))))))
 
 (defun make-channel-observers (sketch bindings)
   (mapcar (lambda (binding)
-	    (when (channel-binding-p binding)
-	      (make-channel-observer sketch binding)))
-	  bindings))
+            (when (channel-binding-p binding)
+              (make-channel-observer sketch binding)))
+          bindings))
 
 (defun replace-channels-with-values (bindings)
   (loop for binding in bindings
      collect (list (car binding)
-		   (if (channel-binding-p binding)
-		       (caddr (cadr binding))
-		       (cadr binding)))))
+                   (if (channel-binding-p binding)
+                       (caddr (cadr binding))
+                       (cadr binding)))))
 
 ;;; DEFSKETCH bindings
 
 (defun sketch-bindings-to-slots (sketch bindings)
   (mapcar (lambda (x) (make-slot-form sketch x))
-	  (remove-if (lambda (x)
-		       (member (car x) (mapcar #'car *default-slots*)))
-		     bindings)))
+          (remove-if (lambda (x)
+                       (member (car x) (mapcar #'car *default-slots*)))
+                     bindings)))
 
 ;;; DEFSKETCH setf instructions
 
 (defun make-window-parameter-setf ()
   `(setf ,@(mapcan (lambda (slot)
-		     `((,(intern-accessor (car slot)) instance) ,(car slot)))
-		   *default-slots*)))
+                     `((,(intern-accessor (car slot)) instance) ,(car slot)))
+                   *default-slots*)))
 
 (defun make-custom-slots-setf (sketch bindings)
   `(setf ,@(mapcan (lambda (binding)
-		     `((,(binding-accessor sketch binding) instance) ,(car binding)))
-		   bindings)))
+                     `((,(binding-accessor sketch binding) instance) ,(car binding)))
+                   bindings)))
 
 (defun make-reinitialize-setf ()
   `(setf ,@(mapcan (lambda (slot)
-		     `((,(intern-accessor (car slot)) instance)
-		       (,(intern-accessor (car slot)) instance)))
-		   *default-slots*)))
+                     `((,(intern-accessor (car slot)) instance)
+                       (,(intern-accessor (car slot)) instance)))
+                   *default-slots*)))
 
 ;;; DEFSKETCH macro
 
@@ -265,38 +265,38 @@ used for drawing, 60fps.")
     `(let ((,redefines-sketch-p (find-class ',sketch-name nil)))
 
        (unless ,redefines-sketch-p
-	 (defclass ,sketch-name (sketch)
-	   ,(sketch-bindings-to-slots `,sketch-name bindings)))
+         (defclass ,sketch-name (sketch)
+           ,(sketch-bindings-to-slots `,sketch-name bindings)))
 
        ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
 
        (defmethod prepare progn ((instance ,sketch-name) &rest initargs &key &allow-other-keys)
-         (declare (ignorable initargs))
-	 (let* (,@(loop for (slot . nil) in *default-slots*
-		     collect (list slot `(slot-value instance ',slot)))
-		,@(mapcar (lambda (binding)
-			    (destructuring-bind (name value)
-				(first-two binding)
-			      (list name (if (default-slot-p name)
-					     `(if (getf initargs ,(alexandria:make-keyword name))
-						  (slot-value instance ',name)
-						  ,value)
-					     `(or (getf initargs ,(alexandria:make-keyword name)) ,value)))))
-			  (replace-channels-with-values bindings)))
-	   (declare (ignorable ,@(mapcar #'car *default-slots*)))
-	   ,(make-window-parameter-setf)
-	   ,(make-custom-slots-setf sketch-name (custom-bindings bindings)))
-	 (setf (env-y-axis-sgn (slot-value instance '%env))
-	       (if (eq (slot-value instance 'y-axis) :down) +1 -1)))
+                  (declare (ignorable initargs))
+                  (let* (,@(loop for (slot . nil) in *default-slots*
+                              collect (list slot `(slot-value instance ',slot)))
+                         ,@(mapcar (lambda (binding)
+                                     (destructuring-bind (name value)
+                                         (first-two binding)
+                                       (list name (if (default-slot-p name)
+                                                      `(if (getf initargs ,(alexandria:make-keyword name))
+                                                           (slot-value instance ',name)
+                                                           ,value)
+                                                      `(or (getf initargs ,(alexandria:make-keyword name)) ,value)))))
+                                   (replace-channels-with-values bindings)))
+                    (declare (ignorable ,@(mapcar #'car *default-slots*)))
+                    ,(make-window-parameter-setf)
+                    ,(make-custom-slots-setf sketch-name (custom-bindings bindings)))
+                  (setf (env-y-axis-sgn (slot-value instance '%env))
+                        (if (eq (slot-value instance 'y-axis) :down) +1 -1)))
 
        (when ,redefines-sketch-p
-	 (defclass ,sketch-name (sketch)
-	   ,(sketch-bindings-to-slots `,sketch-name bindings)))
+         (defclass ,sketch-name (sketch)
+           ,(sketch-bindings-to-slots `,sketch-name bindings)))
 
        (defmethod draw ((instance ,sketch-name) &key &allow-other-keys)
-	 (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
-				  *default-slots*) instance
-	   (with-slots ,(mapcar #'car bindings) instance
-	     ,@body)))
+         (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
+                                  *default-slots*) instance
+           (with-slots ,(mapcar #'car bindings) instance
+             ,@body)))
 
        (find-class ',sketch-name))))

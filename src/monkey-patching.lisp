@@ -45,13 +45,13 @@
     (cl-glut:init)
     (handler-case
         (unless (sdl2:was-init :everything)
-          (cepl:init))
-    (error () (setf sdl2.kit::*started* nil)))))
+          (init))
+      (error () (setf sdl2.kit::*started* nil)))))
 
 (defun sdl2.kit::quit ()
   (sdl2:in-main-thread ()
     (setf sdl2.kit::*main-loop-quit* t))
-  (cepl:quit))
+  (quit))
 
 ;;------------------------------------------------------------
 ;; Window
@@ -70,24 +70,24 @@
     ;;    (pushnew :fullscreen-desktop flags))
     ;;   (t (pushnew :fullscreen flags)))
     (with-slots (sdl2.kit::sdl-window sdl2.kit::gl-context) window
-      (cepl:add-surface cepl:*cepl-context*
-                        :title title
-                        :width (truncate w)
-                        :height (truncate h)
-                        :fullscreen (not (null fullscreen))
-                        :resizable resizable
-                        :hidden (not shown)
-                        :make-current t)
+      (add-surface *cepl-context*
+                   :title title
+                   :width (truncate w)
+                   :height (truncate h)
+                   :fullscreen (not (null fullscreen))
+                   :resizable resizable
+                   :hidden (not shown)
+                   :make-current t)
       (setf sdl2.kit::sdl-window
-            (cepl:current-surface cepl:*cepl-context*))
+            (current-surface *cepl-context*))
       (setf sdl2.kit::gl-context
             (cepl.context::handle
-             (slot-value cepl:*cepl-context*
+             (slot-value *cepl-context*
                          'cepl.context::gl-context)))
       ;;
       ;; Setup GL defaults
-      (setf (cepl:cull-face cepl:*cepl-context*) nil)
-      (setf (cepl:depth-test-function cepl:*cepl-context*) nil)
+      (setf (cull-face *cepl-context*) nil)
+      (setf (depth-test-function *cepl-context*) nil)
       ;;
       (setf (gethash (sdl2:get-window-id sdl2.kit::sdl-window)
                      sdl2.kit::*all-windows*)
@@ -99,16 +99,16 @@
   )
 
 (defmethod sdl2.kit::render :before ((window sdl2.kit::gl-window))
-  ;;(cepl:cls)
+  ;;(cls)
   (with-slots (sdl2.kit::sdl-window) window
-    (cepl:make-surface-current cepl:*cepl-context* sdl2.kit::sdl-window)))
+    (make-surface-current *cepl-context* sdl2.kit::sdl-window)))
 
 (defmethod sdl2.kit::render :after ((window sdl2.kit::gl-window))
   (when (autowrap:valid-p (sdl2.kit::sdl-window window))
     (gl:flush)
     ;;(print (get-internal-real-time))
-    (cepl:swap)))
+    (swap)))
 
 (defmethod sdl2.kit::window-event :before ((window sdl2.kit::gl-window) type ts d1 d2)
   (with-slots (sdl2.kit::sdl-window) window
-    (cepl:make-surface-current cepl:*cepl-context* sdl2.kit::sdl-window)))
+    (make-surface-current *cepl-context* sdl2.kit::sdl-window)))
