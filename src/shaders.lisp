@@ -10,7 +10,7 @@
 
 (kit.gl.shader:defdict sketch-programs ()
   (kit.gl.shader:program :fill-shader (:view-m :model-m :texid)
-			 (:vertex-shader "
+                         (:vertex-shader "
 #version 330 core
 
 uniform mat4 model_m;
@@ -29,7 +29,7 @@ void main() {
     f_color = color;
 }
 ")
-			 (:fragment-shader "
+                         (:fragment-shader "
 #version 330 core
 
 uniform sampler2D texid;
