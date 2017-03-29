@@ -15,12 +15,12 @@
 
 (defun normalize (x low high &key (clamp t) (out-low 0.0) (out-high 1.0))
   (let ((low (min low high))
-	(high (max low high))
-	(min-out-low (min out-low out-high))
-	(min-out-high (max out-low out-high)))
+        (high (max low high))
+        (min-out-low (min out-low out-high))
+        (min-out-high (max out-low out-high)))
     (let ((norm (+ out-low
-		   (* (- out-high out-low)
-		      (/ (- x low) (- high low))))))
+                   (* (- out-high out-low)
+                      (/ (- x low) (- high low))))))
       (if clamp (alexandria:clamp norm min-out-low min-out-high) norm))))
 
 ;; Trigonometry
