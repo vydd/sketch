@@ -1,7 +1,7 @@
 ;;;; package.lisp
 
-(defpackage #:sketch
-  (:use #:cl)
+(uiop:define-package #:sketch
+  (:use #:cl #:cepl)
   (:import-from :kit.sdl2
 		:mousebutton-event
 		:mousemotion-event
