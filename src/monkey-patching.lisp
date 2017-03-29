@@ -13,6 +13,9 @@
 ;;; drive CEPL. Hopefully we can move to a better solution in future, but this
 ;;; works for now.
 
+;;------------------------------------------------------------
+;; Main
+
 (defun sdl2.kit::init ()
   (unless sdl2::*wakeup-event*
     (setf sdl2::*wakeup-event* (sdl2::alloc 'sdl2-ffi:sdl-event)))
@@ -41,11 +44,71 @@
     #+(and ccl darwin)
     (cl-glut:init)
     (handler-case
-      (unless (sdl2:was-init :everything)
-        (cepl:init))
+        (unless (sdl2:was-init :everything)
+          (cepl:init))
     (error () (setf sdl2.kit::*started* nil)))))
 
 (defun sdl2.kit::quit ()
   (sdl2:in-main-thread ()
     (setf sdl2.kit::*main-loop-quit* t))
   (cepl:quit))
+
+;;------------------------------------------------------------
+;; Window
+
+(defmethod sdl2.kit::initialize-window progn
+    ((window sdl2.kit::gl-window)
+     &key (title "SDL2 Window") (x :centered) (y :centered) (w 800) (h 600)
+       (shown t) resizable fullscreen flags &allow-other-keys)
+  ;; {TODO} suppor these
+  (declare (ignore x y))
+  (format t "~%~%FLAGS: ~s~%~%" flags)
+  (sdl2:in-main-thread ()
+    ;; (case fullscreen
+    ;;   ((nil))
+    ;;   ((:windowed :desktop)
+    ;;    (pushnew :fullscreen-desktop flags))
+    ;;   (t (pushnew :fullscreen flags)))
+    (with-slots (sdl2.kit::sdl-window sdl2.kit::gl-context) window
+      (cepl:add-surface cepl:*cepl-context*
+                        :title title
+                        :width (truncate w)
+                        :height (truncate h)
+                        :fullscreen (not (null fullscreen))
+                        :resizable resizable
+                        :hidden (not shown)
+                        :make-current t)
+      (setf sdl2.kit::sdl-window
+            (cepl:current-surface cepl:*cepl-context*))
+      (setf sdl2.kit::gl-context
+            (cepl.context::handle
+             (slot-value cepl:*cepl-context*
+                         'cepl.context::gl-context)))
+      ;;
+      ;; Setup GL defaults
+      (setf (cepl:cull-face cepl:*cepl-context*) nil)
+      (setf (cepl:depth-test-function cepl:*cepl-context*) nil)
+      ;;
+      (setf (gethash (sdl2:get-window-id sdl2.kit::sdl-window)
+                     sdl2.kit::*all-windows*)
+            window))))
+
+(defmethod sdl2.kit::initialize-window progn
+    ((window sdl2.kit::window) &key &allow-other-keys)
+  ;; .silence.
+  )
+
+(defmethod sdl2.kit::render :before ((window sdl2.kit::gl-window))
+  ;;(cepl:cls)
+  (with-slots (sdl2.kit::sdl-window) window
+    (cepl:make-surface-current cepl:*cepl-context* sdl2.kit::sdl-window)))
+
+(defmethod sdl2.kit::render :after ((window sdl2.kit::gl-window))
+  (when (autowrap:valid-p (sdl2.kit::sdl-window window))
+    (gl:flush)
+    ;;(print (get-internal-real-time))
+    (cepl:swap)))
+
+(defmethod sdl2.kit::window-event :before ((window sdl2.kit::gl-window) type ts d1 d2)
+  (with-slots (sdl2.kit::sdl-window) window
+    (cepl:make-surface-current cepl:*cepl-context* sdl2.kit::sdl-window)))
