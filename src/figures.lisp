@@ -16,7 +16,7 @@
     (with-slots (draws) figure
       (kit.gl.shader:uniform-matrix (env-programs *env*) :model-m 4
                                     (vector (env-model-matrix *env*)))
-      (gl:bind-texture :texture-2d (env-white-pixel-texture *env*))
+      (gl:bind-texture :texture-2d (texture-id (env-white-pixel-texture *env*)))
       (dolist (draw draws)
         (let ((primitive (getf draw :primitive))
               (pointer (getf draw :pointer))

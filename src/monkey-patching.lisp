@@ -99,7 +99,6 @@
   )
 
 (defmethod sdl2.kit::render :before ((window sdl2.kit::gl-window))
-  ;;(cls)
   (with-slots (sdl2.kit::sdl-window) window
     (make-surface-current *cepl-context* sdl2.kit::sdl-window)))
 

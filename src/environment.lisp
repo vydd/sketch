@@ -33,11 +33,9 @@
 
 (defun make-white-pixel-texture ()
   "Sent to shaders when no image is active."
-  (let ((texture (car (gl:gen-textures 1))))
-    (gl:bind-texture :texture-2d texture)
-    (gl:tex-parameter :texture-2d :texture-min-filter :linear)
-    (gl:tex-image-2d :texture-2d 0 :rgba 1 1 0 :bgra :unsigned-byte #(255 255 255 255))
-    texture))
+  (make-texture (list (list (v!ubyte 255 255 255 255)))
+                :dimensions '(1 1)
+                :element-type :uint8-vec4))
 
 (defun initialize-environment (w)
   (with-slots ((env %env) width height y-axis) w

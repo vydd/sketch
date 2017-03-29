@@ -58,22 +58,15 @@
       (error (format nil "Unsupported resource type ~a" type))))
 
 (defun make-image-from-surface (surface)
-  (let ((texture (car (gl:gen-textures 1))))
-    (gl:bind-texture :texture-2d texture)
-    (gl:tex-parameter :texture-2d :texture-min-filter :linear)
-    (gl:tex-image-2d :texture-2d 0 :rgba
-                     (sdl2:surface-width surface)
-                     (sdl2:surface-height surface)
-                     0
-                     :bgra
-                     :unsigned-byte (sdl2:surface-pixels surface))
-    (gl:bind-texture :texture-2d 0)
-    (let ((image (make-instance 'image
-                                :width (sdl2:surface-width surface)
-                                :height (sdl2:surface-height surface)
-                                :texture texture)))
-      (sdl2:free-surface surface)
-      image)))
+  (let* ((width (sdl2:surface-width surface))
+         (height (sdl2:surface-height surface))
+         (texture (prog1 (let ((carr (make-c-array-from-pointer
+                                      (list width height)
+                                      :uint8-vec4
+                                      (sdl2:surface-pixels surface))))
+                           (make-texture carr))
+                    (sdl2:free-surface surface))))
+    (make-instance 'image :width width :height height :texture texture)))
 
 (defmethod load-typed-resource (filename (type (eql :image)) &key &allow-other-keys)
   (make-image-from-surface (sdl2-image:load-image filename)))
@@ -93,7 +86,7 @@
     (call-next-method)))
 
 (defmethod free-resource ((image image))
-  (gl:delete-textures (list (image-texture image))))
+  (free (image-texture image)))
 
 (defmethod free-resource ((typeface typeface)))
 

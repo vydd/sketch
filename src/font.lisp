@@ -45,7 +45,7 @@
                           (typeface-pointer typeface) text-string r g b a))))
           (with-pen (make-pen :stroke nil)
             (image resource x y width height)
-            (gl:delete-textures (list (image-texture resource)))))))))
+            (free (image-texture resource))))))))
 
 (let ((font))
   (defun make-default-font ()
