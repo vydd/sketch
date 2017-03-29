@@ -25,18 +25,18 @@
 
 ;; Trigonometry
 
-(defconstant +pi+ PI)
-(defconstant +two-pi+ (* PI 2))
+(defconstant +pi+ rtg-math.base-maths:+pi+)
+(defconstant +two-pi+ (* +pi+ 2))
 (defconstant +tau+ +two-pi+)
-(defconstant +half-pi+(/ PI 2))
-(defconstant +quarter-pi+ (/ PI 4))
+(defconstant +half-pi+(/ +pi+ 2))
+(defconstant +quarter-pi+ (/ +pi+ 4))
 (defconstant +epsilon+ single-float-epsilon)
-(defconstant +phi+ 1.61803398875)
+(defconstant +phi+ 1.61803398875f0)
 (defconstant +golden-ratio+ +phi+)
 (defconstant +e+ (exp 1))
 
 (defun radians (deg)
-  (* PI (/ deg 180)))
+  (* +pi+ (/ deg 180f0)))
 
 (defun degrees (rad)
-  (* 180 (/ rad PI)))
+  (* 180 (/ rad +pi+)))
