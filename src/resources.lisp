@@ -14,6 +14,7 @@
 
 (defclass image (resource)
   ((texture :accessor image-texture :initarg :texture)
+   (sampler :accessor image-sampler :initarg :sampler)
    (width :accessor image-width :initarg :width)
    (height :accessor image-height :initarg :height)))
 
@@ -65,8 +66,10 @@
                                       :uint8-vec4
                                       (sdl2:surface-pixels surface))))
                            (make-texture carr))
-                    (sdl2:free-surface surface))))
-    (make-instance 'image :width width :height height :texture texture)))
+                    (sdl2:free-surface surface)))
+         (sampler (sample texture)))
+    (make-instance 'image :width width :height height :texture texture
+                   :sampler sampler)))
 
 (defmethod load-typed-resource (filename (type (eql :image)) &key &allow-other-keys)
   (make-image-from-surface (sdl2-image:load-image filename)))

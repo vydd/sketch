@@ -12,26 +12,19 @@
   ((draws :initarg :draws)))
 
 (defmethod draw ((figure figure) &key &allow-other-keys)
-  (symbol-macrolet ((position (env-buffer-position *env*)))
-    (with-slots (draws) figure
-      (kit.gl.shader:uniform-matrix (env-programs *env*) :model-m 4
-                                    (vector (env-model-matrix *env*)))
-      (gl:bind-texture :texture-2d (texture-id (env-white-pixel-texture *env*)))
+  (with-slots (draws) figure
+    (let* ((env *env*)
+           (arr (env-vert-array env))
+           (stream (env-vert-stream env)))
       (dolist (draw draws)
         (let ((primitive (getf draw :primitive))
               (pointer (getf draw :pointer))
-              (length (getf draw :length)))
-          (when (> (* *bytes-per-vertex* (+ position length)) *buffer-size*)
-            (start-draw))
-          (let ((buffer-pointer
-                 (%gl:map-buffer-range :array-buffer
-                                       (* position *bytes-per-vertex*)
-                                       (* length *bytes-per-vertex*)
-                                       #x22)))
-            (copy-buffer pointer buffer-pointer (* length *bytes-per-vertex*))
-            (%gl:draw-arrays primitive position length)
-            (setf position (+ position length))
-            (%gl:unmap-buffer :array-buffer)))))))
+              (len (getf draw :length)))
+          (adjust-gpu-array arr len)
+          (setf (buffer-stream-length stream) len)
+          (with-gpu-array-as-pointer (gpu-arr-ptr arr :access-type :write-only)
+            (copy-buffer pointer gpu-arr-ptr (* len +bytes-per-vertex+)))
+          (fill-primitive primitive (env-white-pixel-sampler *env*)))))))
 
 (defmacro deffigure (name &body body)
   `(let ((*draw-sequence* nil))

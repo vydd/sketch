@@ -8,47 +8,10 @@
 ;;;  ___) |  _  |/ ___ \| |_| | |___|  _ < ___) |
 ;;; |____/|_| |_/_/   \_\____/|_____|_| \_\____/
 
-(kit.gl.shader:defdict sketch-programs ()
-  (kit.gl.shader:program :fill-shader (:view-m :model-m :texid)
-                         (:vertex-shader "
-#version 330 core
-
-uniform mat4 model_m;
-uniform mat4 view_m;
-
-layout (location = 0) in vec2 vertex;
-layout (location = 1) in vec2 texcoord;
-layout (location = 2) in vec4 color;
-
-smooth out vec4 f_color;
-smooth out vec2 f_texcoord;
-
-void main() {
-    gl_Position = view_m * model_m * vec4(vertex, 0.0, 1.0);
-    f_texcoord = texcoord;
-    f_color = color;
-}
-")
-                         (:fragment-shader "
-#version 330 core
-
-uniform sampler2D texid;
-
-smooth in vec4 f_color;
-smooth in vec2 f_texcoord;
-
-out vec4 f_out;
-
-void main() {
-    f_out = texture(texid, f_texcoord) * f_color;
-}
-")))
-
-
 (defstruct-g sketch-vertex
   (pos :vec2 :accessor pos)
   (uv :vec2 :accessor uv)
-  (color :vec4 :accessor color))
+  (color :uint8-vec4 :accessor color))
 
 (defun-g fill-verts ((vert sketch-vertex)
                      &uniform (model-m :mat4) (view-m :mat4))
@@ -59,6 +22,34 @@ void main() {
 (defun-g fill-verts-frag ((uv :vec2) (color :vec4) &uniform (tex :sampler-2d))
   (* (texture tex uv) color))
 
-(def-g-> fill-vertices ()
+(def-g-> fill-vertices-fan (:triangle-fan)
   (fill-verts sketch-vertex)
   (fill-verts-frag :vec2 :vec4))
+
+(def-g-> fill-vertices-strip (:triangle-strip)
+  (fill-verts sketch-vertex)
+  (fill-verts-frag :vec2 :vec4))
+
+(def-g-> fill-vertices-tri (:triangle)
+  (fill-verts sketch-vertex)
+  (fill-verts-frag :vec2 :vec4))
+
+(defun fill-primitive (kind sampler)
+  (let* ((env *env*)
+         (stream (env-vert-stream env)))
+    (ecase kind
+      (:triangle-strip
+       (map-g #'fill-vertices-strip stream
+              :model-m (env-model-matrix env)
+              :view-m (env-view-matrix env)
+              :tex sampler))
+      (:triangle-fan
+       (map-g #'fill-vertices-fan stream
+              :model-m (env-model-matrix env)
+              :view-m (env-view-matrix env)
+              :tex sampler))
+      (:triangles
+       (map-g #'fill-vertices-tri stream
+              :model-m (env-model-matrix env)
+              :view-m (env-view-matrix env)
+              :tex sampler)))))

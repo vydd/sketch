@@ -63,9 +63,7 @@
     (setf (env-view-matrix env)
           (if (eq y-axis :down)
               (kit.glm:ortho-matrix 0 width height 0 -1 1)
-              (kit.glm:ortho-matrix 0 width 0 height -1 1)))
-    (kit.gl.shader:uniform-matrix
-     (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
+              (kit.glm:ortho-matrix 0 width 0 height -1 1)))))
 
 ;;; Generic functions
 
@@ -132,9 +130,7 @@ used for drawing, 60fps.")
                (env-red-screen *env*) t)))))
 
 (defun draw-window (window)
-  (start-draw)
-  (draw window)
-  (end-draw))
+  (draw window))
 
 (defmethod kit.sdl2:render ((instance sketch))
   (with-slots (%env %restart width height copy-pixels) instance

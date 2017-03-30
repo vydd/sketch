@@ -16,12 +16,15 @@
   (view-matrix nil)
   (matrix-stack nil)
   (y-axis-sgn +1)
-  (vao nil)
-  (buffer-position 0)
+  ;; Buffers
+  (vert-array nil)
+  ;; Streams
+  (vert-stream nil)
   ;; Typography
   (font nil)
   ;; Textures
   (white-pixel-texture nil)
+  (white-pixel-sampler nil)
   (white-color-vector nil)
   ;; Resources
   (resources (make-hash-table))
@@ -38,20 +41,23 @@
                 :element-type :uint8-vec4))
 
 (defun initialize-environment (w)
-  (with-slots ((env %env) width height y-axis) w
-    (setf (env-programs env) (kit.gl.shader:compile-shader-dictionary 'sketch-programs)
-          (env-view-matrix env) (if (eq y-axis :down)
-                                    (kit.glm:ortho-matrix 0 width height 0 -1 1)
-                                    (kit.glm:ortho-matrix 0 width 0 height -1 1))
-          (env-y-axis-sgn env) (if (eq y-axis :down) +1 -1)
-          (env-vao env) (make-instance 'kit.gl.vao:vao :type 'sketch-vao)
-          (env-white-pixel-texture env) (make-white-pixel-texture)
-          (env-white-color-vector env) #(255 255 255 255)
-          (env-pen env) (make-default-pen)
-          (env-font env) (make-default-font))
-    (kit.gl.shader:use-program (env-programs env) :fill-shader)
-    (kit.gl.shader:uniform-matrix
-     (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
+  (let* ((vert-array (make-gpu-array nil :dimensions 3
+                                     :element-type 'sketch-vertex))
+         (vert-stream (make-buffer-stream vert-array :retain-arrays t))
+         (white-tex (make-white-pixel-texture))
+         (white-sampler (sample white-tex)))
+    (with-slots ((env %env) width height y-axis) w
+      (setf (env-view-matrix env) (if (eq y-axis :down)
+                                      (kit.glm:ortho-matrix 0 width height 0 -1 1)
+                                      (kit.glm:ortho-matrix 0 width 0 height -1 1))
+            (env-y-axis-sgn env) (if (eq y-axis :down) +1 -1)
+            (env-vert-array env) vert-array
+            (env-vert-stream env) vert-stream
+            (env-white-pixel-texture env) white-tex
+            (env-white-pixel-sampler env) white-sampler
+            (env-white-color-vector env) #(255 255 255 255)
+            (env-pen env) (make-default-pen)
+            (env-font env) (make-default-font)))))
 
 (defun initialize-gl (w)
   (with-slots ((env %env) width height) w
