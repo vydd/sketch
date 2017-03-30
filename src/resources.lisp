@@ -59,17 +59,16 @@
       (error (format nil "Unsupported resource type ~a" type))))
 
 (defun make-image-from-surface (surface)
-  (let* ((width (sdl2:surface-width surface))
-         (height (sdl2:surface-height surface))
-         (texture (prog1 (let ((carr (make-c-array-from-pointer
-                                      (list width height)
-                                      :uint8-vec4
-                                      (sdl2:surface-pixels surface))))
-                           (make-texture carr))
-                    (sdl2:free-surface surface)))
-         (sampler (sample texture)))
-    (make-instance 'image :width width :height height :texture texture
-                   :sampler sampler)))
+  (destructuring-bind (width height) (surface-dimensions surface)
+    (let* ((texture (prog1 (let ((carr (make-c-array-from-pointer
+                                        (list width height)
+                                        :uint8-vec4
+                                        (sdl2:surface-pixels surface))))
+                             (make-texture carr))
+                      (sdl2:free-surface surface)))
+           (sampler (sample texture)))
+      (make-instance 'image :width width :height height :texture texture
+                     :sampler sampler))))
 
 (defmethod load-typed-resource (filename (type (eql :image)) &key &allow-other-keys)
   (make-image-from-surface (sdl2-image:load-image filename)))

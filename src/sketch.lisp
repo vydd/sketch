@@ -44,20 +44,22 @@
        ,@body)))
 
 (define-sketch-writer title
-  (sdl2:set-window-title win (slot-value instance 'title)))
+  (setf (surface-title win) (slot-value instance 'title)))
 
 (define-sketch-writer width
   (with-slots (width height) instance
-    (setf (viewport-dimensions (current-viewport)) (list width height))
-    (sdl2:set-window-size win width height)))
+    (let ((dimensions (list width height)))
+      (setf (viewport-dimensions (current-viewport)) dimensions)
+      (setf (surface-dimensions win) dimensions))))
 
 (define-sketch-writer height
   (with-slots (width height) instance
-    (setf (viewport-dimensions (current-viewport)) (list width height))
-    (sdl2:set-window-size win width height)))
+    (let ((dimensions (list width height)))
+      (setf (viewport-dimensions (current-viewport)) dimensions)
+      (setf (surface-dimensions win) dimensions))))
 
 (define-sketch-writer fullscreen
-  (sdl2:set-window-fullscreen win (slot-value instance 'fullscreen)))
+  (setf (surface-fullscreen-p win) (slot-value instance 'fullscreen)))
 
 (define-sketch-writer y-axis
   (declare (ignore win))
