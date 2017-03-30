@@ -36,20 +36,22 @@
 
 (defun fill-primitive (kind sampler)
   (let* ((env *env*)
-         (stream (env-vert-stream env)))
+         (stream (env-vert-stream env))
+         (model-m (env-model-matrix env))
+         (view-m (env-view-matrix env)))
     (ecase kind
       (:triangle-strip
        (map-g #'fill-vertices-strip stream
-              :model-m (env-model-matrix env)
-              :view-m (env-view-matrix env)
+              :model-m model-m
+              :view-m view-m
               :tex sampler))
       (:triangle-fan
        (map-g #'fill-vertices-fan stream
-              :model-m (env-model-matrix env)
-              :view-m (env-view-matrix env)
+              :model-m model-m
+              :view-m view-m
               :tex sampler))
       (:triangles
        (map-g #'fill-vertices-tri stream
-              :model-m (env-model-matrix env)
-              :view-m (env-view-matrix env)
+              :model-m model-m
+              :view-m view-m
               :tex sampler)))))

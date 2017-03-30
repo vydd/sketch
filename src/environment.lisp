@@ -47,6 +47,7 @@
          (white-tex (make-white-pixel-texture))
          (white-sampler (sample white-tex)))
     (with-slots ((env %env) width height y-axis) w
+      (setf (viewport-dimensions (current-viewport)) (list width height))
       (setf (env-view-matrix env) (if (eq y-axis :down)
                                       (kit.glm:ortho-matrix 0 width height 0 -1 1)
                                       (kit.glm:ortho-matrix 0 width 0 height -1 1))
