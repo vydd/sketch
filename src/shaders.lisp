@@ -20,7 +20,7 @@
           (color vert)))
 
 (defun-g fill-verts-frag ((uv :vec2) (color :vec4) &uniform (tex :sampler-2d))
-  (* (texture tex uv) color))
+  (* (texture tex uv) (/ color 255)))
 
 (def-g-> fill-vertices-fan (:triangle-fan)
   (fill-verts sketch-vertex)
