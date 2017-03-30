@@ -131,9 +131,6 @@ used for drawing, 60fps.")
          (setf %restart t
                (env-red-screen *env*) t)))))
 
-(defun draw-window (window)
-  (draw window))
-
 (defmethod kit.sdl2:render ((instance sketch))
   (with-slots (%env %restart width height copy-pixels) instance
     (with-environment %env
@@ -154,9 +151,9 @@ used for drawing, 60fps.")
             (if (debug-mode-p)
                 (progn
                   (exit-debug-mode)
-                  (draw-window instance))
+                  (draw instance))
                 (gl-catch (rgb 0.7 0 0)
-                  (draw-window instance)))))))))
+                  (draw instance)))))))))
 
 ;;; Default events
 
