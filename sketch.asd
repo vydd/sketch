@@ -13,6 +13,7 @@
 	       #:sdl2-image
 	       #:sdl2-ttf
 	       #:sdl2kit
+	       #:split-sequence
 	       #:static-vectors)
   :pathname "src"
   :serial t

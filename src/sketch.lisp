@@ -125,9 +125,7 @@ used for drawing, 60fps.")
          (background ,error-color)
          (with-font (make-error-font)
            (with-identity-matrix
-             (text "ERROR" 20 20)
-             (text (format nil "~a" e) 20 40)
-             (text "Click for restarts." 20 60)))
+             (text (format nil "ERROR~%---~%~a~%---~%Click for restarts." e) 20 20)))
          (setf %restart t
                (env-red-screen *env*) t)))))
 

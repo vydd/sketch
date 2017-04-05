@@ -40,12 +40,15 @@
                                             :size (font-size font)))))
     (when font
       (destructuring-bind (r g b a) (color-rgba-255 (font-color font))
-        (let ((resource (make-image-from-surface
-                         (sdl2-ttf:render-utf8-blended
-                          (typeface-pointer typeface) text-string r g b a))))
-          (with-pen (make-pen :stroke nil)
-            (image resource x y width height)
-            (gl:delete-textures (list (image-texture resource)))))))))
+	(let ((top 0))
+	  (dolist (line (split-sequence:split-sequence #\newline text-string))
+	    (let ((resource (make-image-from-surface
+			     (sdl2-ttf:render-utf8-blended
+			      (typeface-pointer typeface) line r g b a))))
+	      (with-pen (make-pen :stroke nil)
+		(image resource x (+ y top) width height)
+		(incf top (image-height resource))
+		(gl:delete-textures (list (image-texture resource)))))))))))
 
 (let ((font))
   (defun make-default-font ()
