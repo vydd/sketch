@@ -1,6 +1,7 @@
 *.fasl
 *.falsl
 *.dx64fsl
+*.lx64fsl
 .\#*
 \#*
 *~
