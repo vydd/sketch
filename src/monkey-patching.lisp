@@ -45,7 +45,7 @@
     (cl-glut:init)
     (handler-case
         (unless (sdl2:was-init :everything)
-          (init))
+          (initialize-cepl))
       (error () (setf sdl2.kit::*started* nil)))))
 
 (defun sdl2.kit::quit ()
