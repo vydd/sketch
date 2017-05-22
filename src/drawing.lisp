@@ -47,14 +47,14 @@
 
 (defmethod push-vertices (vertices color texture primitive (draw-mode (eql :gpu)))
   (let* ((env *env*)
-         (arr (env-vert-array env))
-         (stream (env-vert-stream env))
+         (streamer (env-vert-streamer env))
+         (scratch-arr (env-vert-scratch-array env))
          (len (length vertices)))
-    (adjust-gpu-array arr len)
-    (setf (buffer-stream-length stream) len)
-    (with-gpu-array-as-pointer (ptr arr :access-type :write-only)
+    (let ((ptr (c-array-pointer scratch-arr)))
       (fill-buffer ptr vertices color))
-    (fill-primitive primitive texture)))
+    (buffer-streamer-push (subseq-c scratch-arr 0 len) streamer
+                          primitive)
+    (fill-primitive texture)))
 
 (defmethod push-vertices (vertices color texture primitive (draw-mode (eql :figure)))
   (let* ((buffer (static-vectors:make-static-vector
@@ -67,6 +67,7 @@
                 :length (length vertices)) *draw-sequence*)))
 
 (defun fill-buffer (buffer-pointer vertices color)
+  (declare (optimize speed))
   (loop
      for idx from 0 by +vertex-attributes+
      for (x y) in vertices

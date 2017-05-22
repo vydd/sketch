@@ -93,13 +93,14 @@ used for drawing, 60fps.")
     (setf *initialized* t)
     (kit.sdl2:init)
     (sdl2-ttf:init)
-    (sdl2:in-main-thread ()
-      (sdl2:gl-set-attr :multisamplebuffers 1)
-      (sdl2:gl-set-attr :multisamplesamples 4)
+    ;; (sdl2:in-main-thread ()
+    ;;   (sdl2:gl-set-attr :multisamplebuffers 1)
+    ;;   (sdl2:gl-set-attr :multisamplesamples 4)
 
-      (sdl2:gl-set-attr :context-major-version 3)
-      (sdl2:gl-set-attr :context-minor-version 3)
-      (sdl2:gl-set-attr :context-profile-mask 1))))
+    ;;   (sdl2:gl-set-attr :context-major-version 3)
+    ;;   (sdl2:gl-set-attr :context-minor-version 3)
+    ;;   (sdl2:gl-set-attr :context-profile-mask 1))
+    ))
 
 (defmethod initialize-instance :around ((instance sketch) &key &allow-other-keys)
   (initialize-sketch)
@@ -133,7 +134,16 @@ used for drawing, 60fps.")
          (setf %restart t
                (env-red-screen *env*) t)))))
 
+(defvar *stepper*
+  (temporal-functions:make-stepper (temporal-functions:seconds 1)))
+(defvar *frames* 0)
+(defvar *fps* 0)
+
 (defmethod kit.sdl2:render ((instance sketch))
+  (incf *frames*)
+  (when (funcall *stepper*)
+    (setf *fps* *frames*)
+    (setf *frames* 0))
   (with-slots (%env %restart width height copy-pixels) instance
     (with-environment %env
       (with-pen (make-default-pen)

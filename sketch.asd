@@ -14,7 +14,9 @@
                #:sdl2-ttf
                #:sdl2kit
                #:static-vectors
-               #:cepl.sdl2)
+               #:cepl.sdl2
+               #:nineveh
+               :temporal-functions)
   :pathname "src"
   :serial t
   :components ((:file "package")

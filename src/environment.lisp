@@ -16,10 +16,14 @@
   (view-matrix nil)
   (matrix-stack nil)
   (y-axis-sgn +1)
-  ;; Buffers
-  (vert-array nil)
-  ;; Streams
-  (vert-stream nil)
+  ;; ;; Buffer-Backed Arrays
+  ;; (vert-array nil)
+  ;; ;; Streams
+  ;; (vert-stream nil)
+  ;; Streamers
+  (vert-streamer nil)
+  ;; Scratch C-Array
+  (vert-scratch-array nil)
   ;; Typography
   (font nil)
   ;; Textures
@@ -41,9 +45,9 @@
                 :element-type :uint8-vec4))
 
 (defun initialize-environment (w)
-  (let* ((vert-array (make-gpu-array nil :dimensions 3
-                                     :element-type 'sketch-vertex))
-         (vert-stream (make-buffer-stream vert-array :retain-arrays t))
+  (let* ((vert-streamer (make-buffer-streamer 10000 'sketch-vertex))
+         (scratch-arr (make-c-array nil :dimensions 1000
+                                    :element-type 'sketch-vertex))
          (white-tex (make-white-pixel-texture))
          (white-sampler (sample white-tex)))
     (with-slots ((env %env) width height y-axis) w
@@ -52,8 +56,8 @@
                                       (kit.glm:ortho-matrix 0 width height 0 -1 1)
                                       (kit.glm:ortho-matrix 0 width 0 height -1 1))
             (env-y-axis-sgn env) (if (eq y-axis :down) +1 -1)
-            (env-vert-array env) vert-array
-            (env-vert-stream env) vert-stream
+            (env-vert-streamer env) vert-streamer
+            (env-vert-scratch-array env) scratch-arr
             (env-white-pixel-texture env) white-tex
             (env-white-pixel-sampler env) white-sampler
             (env-white-color-vector env) #(255 255 255 255)
@@ -62,7 +66,7 @@
 
 (defun initialize-gl (w)
   (with-slots ((env %env) width height) w
-    (sdl2:gl-set-swap-interval 1)
+    (sdl2:gl-set-swap-interval 0)
     (setf (kit.sdl2:idle-render w) t)
     (gl:viewport 0 0 width height)
     (gl:enable :blend :line-smooth :polygon-smooth)

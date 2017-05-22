@@ -1,4 +1,4 @@
- ;;;; sketch-examples.asd
+;;;; sketch-examples.asd
 
 (asdf:defsystem #:sketch-examples
   :description "Sketch examples"

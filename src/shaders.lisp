@@ -22,36 +22,16 @@
 (defun-g fill-verts-frag ((uv :vec2) (color :vec4) &uniform (tex :sampler-2d))
   (* (texture tex uv) (/ color 255)))
 
-(def-g-> fill-vertices-fan (:triangle-fan)
+(def-g-> fill-vertices-pline (:dynamic)
   (fill-verts sketch-vertex)
   (fill-verts-frag :vec2 :vec4))
 
-(def-g-> fill-vertices-strip (:triangle-strip)
-  (fill-verts sketch-vertex)
-  (fill-verts-frag :vec2 :vec4))
-
-(def-g-> fill-vertices-tri (:triangle)
-  (fill-verts sketch-vertex)
-  (fill-verts-frag :vec2 :vec4))
-
-(defun fill-primitive (kind sampler)
+(defun fill-primitive (sampler)
   (let* ((env *env*)
-         (stream (env-vert-stream env))
+         (stream (env-vert-streamer env))
          (model-m (env-model-matrix env))
          (view-m (env-view-matrix env)))
-    (ecase kind
-      (:triangle-strip
-       (map-g #'fill-vertices-strip stream
-              :model-m model-m
-              :view-m view-m
-              :tex sampler))
-      (:triangle-fan
-       (map-g #'fill-vertices-fan stream
-              :model-m model-m
-              :view-m view-m
-              :tex sampler))
-      (:triangles
-       (map-g #'fill-vertices-tri stream
-              :model-m model-m
-              :view-m view-m
-              :tex sampler)))))
+    (map-g #'fill-vertices-pline stream
+           :model-m model-m
+           :view-m view-m
+           :tex sampler)))

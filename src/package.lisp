@@ -2,6 +2,7 @@
 
 (uiop:define-package #:sketch
     (:use #:cl #:cepl)
+  (:import-from :nineveh :make-buffer-streamer :buffer-streamer-push)
   (:import-from :kit.sdl2
                 :mousebutton-event
                 :mousemotion-event
