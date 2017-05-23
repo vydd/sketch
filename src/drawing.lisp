@@ -73,8 +73,8 @@
                                                 (* position *bytes-per-vertex*)
                                                 (* (length vertices) *bytes-per-vertex*)
                                                 #x22)))
-      (%gl:unmap-buffer :array-buffer)
       (fill-buffer buffer-pointer vertices color)
+      (%gl:unmap-buffer :array-buffer)
       (%gl:draw-arrays primitive position (length vertices))
       (setf position (+ position (length vertices))))))
 
