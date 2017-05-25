@@ -42,9 +42,11 @@
   (let ((rendered-width (apply #'max (mapcar #'image-width resources)))
 	(rendered-height (+ (* (- (length resources) 1) spacing)
 			    (apply #'+ (mapcar #'image-height resources)))))
-    (cond ((and (null width) (null height)) (list 1 1))
+    (cond ((and (not (numberp width)) (not (numberp height))) (list 1 1))
 	  ((null width) (list 1 (/ height rendered-height)))
 	  ((null height) (list (/ width rendered-width) 1))
+	  ((eq :keep-ratio width) (list (/ height rendered-height) (/ height rendered-height)))
+	  ((eq :keep-ratio height) (list (/ width rendered-width) (/ width rendered-width)))
 	  (t (list (/ width rendered-width) (/ height rendered-height))))))
 
 (defun text-align (align width)
