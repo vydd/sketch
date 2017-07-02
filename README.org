@@ -319,7 +319,46 @@ because the rotated colors usually work pretty well together.
 #+END_SRC
 
 *** Pens
-TODO
+Pens are used to draw shapes. If no pen is specified, the defualt pen sets =:fill= to white, =:stroke= to black, and =weight= to 1.
+
+***** Creating and Using Pens
+Say you want to draw a red square and a blue circle. You would need to use two different pens.
+#+BEGIN_SRC lisp
+  (defsketch pen-test
+      ((title "pens"))
+    (with-pen (make-pen :fill +red+)
+      (rect 100 100 100 100)) ; this rect will be red
+    (with-pen (make-pen :fill +blue+)
+      (circle 315 315 50))) ; this rect will be blue
+#+END_SRC
+
+***** Fill/Stroke
+The squares in the previous example were filled because we specified the =:fill= property in =make-pen=. 
+If we wanted to just draw the outline of the square, we would use =:stroke= like this:
+#+BEGIN_SRC lisp
+  (defsketch outline-square
+      ((title "Outline Square"))
+    (with-pen (make-pen :stroke +red+)
+      (rect 100 100 100 100)))
+#+END_SRC
+#+BEGIN_SRC lisp
+  (defsketch fill-stroke
+      ((title "Fill and Stroke"))
+    (background +white+)
+    (with-pen (make-pen :stroke (rgb .5 0 .6) :fill (rgb 0 .8 .8))
+      (rect 50 50 100 75)
+      (circle 300 220 100)))
+#+END_SRC
+
+***** Weight
+We can also change the thickness of the lines and shapes that we draw by changing the pen =:weight=.
+#+BEGIN_SRC lisp
+  (defsketch weight-test
+      ((title "Weight Test"))
+    (dotimes (i 10)
+      (with-pen (make-pen :stroke +white+ :weight (+ i 1)) ; pen weight can't be zero
+        (line 50 (* i 20) 350 (* i 20)))))
+#+END_SRC
 
 *** Transforms
 TODO
