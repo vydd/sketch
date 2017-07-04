@@ -361,7 +361,7 @@ We can also change the thickness of the lines and shapes that we draw by changin
 #+END_SRC
 
 **** Curve-steps
-=:curve-steps is used to change the "smoothness" of curves like =#'bezier=. More specifically, =:curve-steps= controls the detalization of curves. 
+=:curve-steps= is used to change the "smoothness" of curves like =#'bezier=. More specifically, =:curve-steps= controls the detalization of curves. 
 #+BEGIN_SRC lisp
   (defsketch curve-test
      ((title "Curve-steps"))
