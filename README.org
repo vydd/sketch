@@ -333,7 +333,7 @@ Say you want to draw a red square and a blue circle. You would need to use two d
 #+END_SRC
 
 ***** Fill/Stroke
-The squares in the previous example were filled because we specified the =:fill= property in =make-pen=. 
+The squares in the previous example were filled because we specified the =:fill= property in =make-pen=.
 If we wanted to just draw the outline of the square, we would use =:stroke= like this:
 #+BEGIN_SRC lisp
   (defsketch outline-square
@@ -361,7 +361,7 @@ We can also change the thickness of the lines and shapes that we draw by changin
 #+END_SRC
 
 **** Curve-steps
-=:curve-steps= is used to change the "smoothness" of curves like =#'bezier=. More specifically, =:curve-steps= controls the detalization of curves. 
+=:curve-steps= is used to change the smoothness (resolution) of curves like =#'bezier=.
 #+BEGIN_SRC lisp
   (defsketch curve-test
      ((title "Curve-steps"))
