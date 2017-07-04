@@ -319,7 +319,7 @@ because the rotated colors usually work pretty well together.
 #+END_SRC
 
 *** Pens
-Pens are used to draw shapes. If no pen is specified, the defualt pen sets =:fill= to white, =:stroke= to black, and =weight= to 1.
+Pens are used to draw shapes. If no pen is specified, the default pen sets =:fill= to white, =:stroke= to black, and =weight= to 1.
 
 ***** Creating and Using Pens
 Say you want to draw a red square and a blue circle. You would need to use two different pens.
@@ -333,7 +333,7 @@ Say you want to draw a red square and a blue circle. You would need to use two d
 #+END_SRC
 
 ***** Fill/Stroke
-The squares in the previous example were filled because we specified the =:fill= property in =make-pen=. 
+The squares in the previous example were filled because we specified the =:fill= property in =make-pen=.
 If we wanted to just draw the outline of the square, we would use =:stroke= like this:
 #+BEGIN_SRC lisp
   (defsketch outline-square
@@ -358,6 +358,16 @@ We can also change the thickness of the lines and shapes that we draw by changin
     (dotimes (i 10)
       (with-pen (make-pen :stroke +white+ :weight (+ i 1)) ; pen weight can't be zero
         (line 50 (* i 20) 350 (* i 20)))))
+#+END_SRC
+
+**** Curve-steps
+=:curve-steps= is used to change the smoothness (resolution) of curves like =#'bezier=.
+#+BEGIN_SRC lisp
+  (defsketch curve-test
+     ((title "Curve-steps"))
+    (dotimes (i 99)
+      (with-pen (make-pen :stroke +red+ :curve-step (+ i 1)) ; as curve-step increases, curve becomes "smoother"
+        (bezier 0 400 100 100 300 100 400 400))))
 #+END_SRC
 
 *** Transforms
