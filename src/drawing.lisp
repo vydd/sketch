@@ -52,8 +52,8 @@
          (len (length vertices)))
     (let ((ptr (c-array-pointer scratch-arr)))
       (fill-buffer ptr vertices color))
-    (buffer-streamer-push (subseq-c scratch-arr 0 len) streamer
-                          primitive)
+    (nineveh.streams:buffer-streamer-push-from-range
+     scratch-arr streamer 0 len primitive)
     (fill-primitive texture)))
 
 (defmethod push-vertices (vertices color texture primitive (draw-mode (eql :figure)))

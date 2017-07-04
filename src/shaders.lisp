@@ -22,7 +22,7 @@
 (defun-g fill-verts-frag ((uv :vec2) (color :vec4) &uniform (tex :sampler-2d))
   (* (texture tex uv) (/ color 255)))
 
-(def-g-> fill-vertices-pline (:dynamic)
+(defpipeline-g fill-vertices-pline (:dynamic)
   (fill-verts sketch-vertex)
   (fill-verts-frag :vec2 :vec4))
 

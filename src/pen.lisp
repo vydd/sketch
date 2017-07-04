@@ -40,6 +40,7 @@
   (apply #'gl:clear-color (color-rgba color))
   (gl:clear :color-buffer))
 
+
 (let ((pen))
   (defun make-default-pen ()
     (setf pen (or pen

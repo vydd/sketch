@@ -22,8 +22,8 @@
               (len (getf draw :length)))
           (let ((ptr (c-array-pointer scratch-arr)))
             (copy-buffer pointer ptr (* len +bytes-per-vertex+)))
-          (buffer-streamer-push (subseq-c scratch-arr 0 len) streamer
-                                primitive)
+          (nineveh.streams:buffer-streamer-push-from-range
+           scratch-arr streamer 0 len primitive)
           (fill-primitive (env-white-pixel-sampler *env*)))))))
 
 (defmacro deffigure (name &body body)
