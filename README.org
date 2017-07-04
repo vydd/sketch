@@ -366,8 +366,9 @@ We can also change the thickness of the lines and shapes that we draw by changin
   (defsketch curve-test
      ((title "Curve-steps"))
     (dotimes (i 99)
-      (with-pen (make-pen :stroke +red+ :curve-step (+ i 1))
-        (bezier 
+      (with-pen (make-pen :stroke +red+ :curve-step (+ i 1)) ; as curve-step increases, curve becomes "smoother"
+        (bezier 0 400 100 100 300 100 400 400))))
+#+END_SRC
 
 *** Transforms
 TODO
