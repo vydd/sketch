@@ -42,9 +42,9 @@
                                        &key &allow-other-keys)
   (ensure-sketch-is-initialized)
   (let ((ctx *cepl-context*)) ;; ← {TODO} make a new one
-    (with-slots ((env %env) context viewport width height y-axis) sketch
+    (with-slots ((env %env) context viewport window width height y-axis) sketch
       (setf context ctx)
-      (add-window ctx)
+      (setf window (add-window ctx))
       (setf env (make-environment width height y-axis))
       (setf viewport (make-viewport (list width height)))
       ;;

@@ -45,7 +45,7 @@
 (defmacro define-sketch-writer (slot &body body)
   `(defmethod (setf ,(alexandria:symbolicate 'sketch- slot)) (value (instance sketch))
      (setf (slot-value instance ',slot) value)
-     (let ((win (kit.sdl2:sdl-window instance)))
+     (let ((win (slot-value instance 'window)))
        ,@body)))
 
 (defgeneric (setf sketch-title) (value instance))
@@ -116,25 +116,17 @@ used for drawing, 60fps.")
 
 ;;; Default events
 
-(defmethod kit.sdl2:keyboard-event :before ((instance sketch)
-                                            state
-                                            timestamp
-                                            repeatp
-                                            keysym)
-  (declare (ignorable timestamp repeatp))
-  (when (and (eql state :keydown)
-             (sdl2:scancode= (sdl2:scancode-value keysym) :scancode-escape))
-    (kit.sdl2:close-window instance)))
+;; {TODO} both of these
 
-(defmethod close-window :before ((instance sketch))
-  (with-environment (slot-value instance '%env)
-    (loop for resource being the hash-values of (env-resources *env*)
-       do (free-resource resource))))
+;; (defmethod kit.sdl2:close-window :before ((instance sketch))
+;;   (with-environment (slot-value instance '%env)
+;;     (loop for resource being the hash-values of (env-resources *env*)
+;;        do (free-resource resource))))
 
-(defmethod close-window :after ((instance sketch))
-  (when (and *build* (not (kit.sdl2:all-windows)))
-    (sdl2-ttf:quit)
-    (kit.sdl2:quit)))
+;; (defmethod kit.sdl2:close-window :after ((instance sketch))
+;;   (when (and *build* (not (kit.sdl2:all-windows)))
+;;     (sdl2-ttf:quit)
+;;     (kit.sdl2:quit)))
 
 ;;; DEFSKETCH helpers
 
@@ -173,9 +165,9 @@ used for drawing, 60fps.")
 
 (defun make-channel-observer (sketch binding)
   `(define-channel-observer
-     (let ((win (kit.sdl2:last-window)))
-       (when win
-         (setf (,(binding-accessor sketch binding) win) ,(cadr binding))))))
+     (with-slots (window) sketch
+       (when window
+         (setf (,(binding-accessor sketch binding) window) ,(cadr binding))))))
 
 (defun make-channel-observers (sketch bindings)
   (mapcar (lambda (binding)
@@ -228,14 +220,16 @@ used for drawing, 60fps.")
                    `(or (getf initargs ,(alexandria:make-keyword name)) ,value)))))
 
 (defmacro defsketch (sketch-name bindings &body body)
-  (let ((redefines-sketch-p (gensym)))
-    `(let ((,redefines-sketch-p (find-class ',sketch-name nil)))
-
+  (let ((redefines-sketch-p (find-class sketch-name nil))
+        (def-form `((defclass ,sketch-name (sketch)
+                      ,(sketch-bindings-to-slots `,sketch-name bindings))))
+        (default-slots
+         (remove-if (lambda (x) (find x bindings :key #'first))
+                    *default-slots*)))
+    `(progn
        ;; defined here or lower down depending on whether the class
        ;; already exists
-       (unless ,redefines-sketch-p
-         (defclass ,sketch-name (sketch)
-           ,(sketch-bindings-to-slots `,sketch-name bindings)))
+       ,@(unless redefines-sketch-p def-form)
 
        ,@(remove nil (make-channel-observers sketch-name bindings))
 
@@ -244,7 +238,7 @@ used for drawing, 60fps.")
          ((instance ,sketch-name) &rest initargs &key &allow-other-keys)
          (declare (ignorable initargs))
          (let* (;; default slots
-                ,@(loop :for slot :in *default-slots* :collect
+                ,@(loop :for slot :in default-slots :collect
                      (list slot `(slot-value instance ',slot)))
                 ;; custom slots
                 ,@(mapcar #'prepare-binding
@@ -257,10 +251,8 @@ used for drawing, 60fps.")
                    +1
                    -1)))
 
-       ;; see not for defclass above
-       (when ,redefines-sketch-p
-         (defclass ,sketch-name (sketch)
-           ,(sketch-bindings-to-slots `,sketch-name bindings)))
+       ;; see note for defclass above
+       ,@(when redefines-sketch-p def-form)
 
        (defmethod draw ((instance ,sketch-name) &key &allow-other-keys)
          (with-accessors ,(mapcar (lambda (x) (list x (intern-accessor x)))

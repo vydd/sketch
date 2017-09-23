@@ -9,7 +9,7 @@
   :pathname "examples"
   :serial t
   :components ((:file "package")
-               (:file "sinewave")
-               (:file "life")
-               (:file "brownian")
+               ;; (:file "sinewave")
+               ;; (:file "life")
+               ;; (:file "brownian")
                (:file "hello-world")))

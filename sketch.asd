@@ -33,7 +33,7 @@
                (:file "drawing")
                (:file "shapes")
                (:file "transforms")
-               (:file "engine") ;; ← compiles up to here :)
                (:file "sketch")
+               (:file "engine")
                (:file "figures")
                (:file "controllers")))
