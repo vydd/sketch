@@ -259,7 +259,10 @@ used for drawing, 60fps.")
 ;;; DEFSKETCH macro
 
 (defmacro defsketch (sketch-name bindings &body body)
-  (let ((redefines-sketch-p (gensym)))
+  (let ((redefines-sketch-p (gensym))
+        (default-not-overridden
+         (remove-if (lambda (x) (find x bindings :key #'car))
+                    (mapcar #'car *default-slots*))))
     `(let ((,redefines-sketch-p (find-class ',sketch-name nil)))
 
        (unless ,redefines-sketch-p
@@ -270,8 +273,8 @@ used for drawing, 60fps.")
 
        (defmethod prepare progn ((instance ,sketch-name) &rest initargs &key &allow-other-keys)
                   (declare (ignorable initargs))
-                  (let* (,@(loop for (slot . nil) in *default-slots*
-                              collect (list slot `(slot-value instance ',slot)))
+                  (let* (,@(loop for slot in default-not-overridden
+                              collect `(,slot (slot-value instance ',slot)))
                          ,@(mapcar (lambda (binding)
                                      (destructuring-bind (name value)
                                          (first-two binding)
