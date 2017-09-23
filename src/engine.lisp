@@ -1,49 +1,8 @@
 (in-package :sketch)
 
 ;;------------------------------------------------------------
-;; Window
-
-    ;; (case fullscreen
-    ;;   ((nil))
-    ;;   ((:windowed :desktop)
-    ;;    (pushnew :fullscreen-desktop flags))
-    ;;   (t (pushnew :fullscreen flags)))
-
-;; (defmethod sdl2.kit::initialize-window progn
-;;     ((window sdl2.kit::gl-window)
-;;      &key (title "SDL2 Window") (x :centered) (y :centered) (w 800) (h 600)
-;;        (shown t) resizable fullscreen flags &allow-other-keys)
-;;   ;; {TODO} support these
-;;   (declare (ignore x y))
-;;   (format t "~%~%FLAGS: ~s~%~%" flags)
-;;   (with-slots (sdl2.kit::sdl-window sdl2.kit::gl-context) window
-;;     (add-surface *cepl-context*
-;;                  :title title
-;;                  :width (truncate w)
-;;                  :height (truncate h)
-;;                  :fullscreen (not (null fullscreen))
-;;                  :resizable resizable
-;;                  :hidden (not shown)
-;;                  :make-current t)
-;;     (setf sdl2.kit::sdl-window
-;;           (current-surface *cepl-context*))
-;;     (setf sdl2.kit::gl-context
-;;           (cepl.context::handle
-;;            (slot-value *cepl-context*
-;;                        'cepl.context::gl-context)))
-;;     ;;
-;;     ;; Setup GL defaults
-;;     (setf (cull-face *cepl-context*) nil)
-;;     (setf (depth-test-function *cepl-context*) nil)
-;;     ;;
-;;     (setf (gethash (sdl2:get-window-id sdl2.kit::sdl-window)
-;;                    sdl2.kit::*all-windows*)
-;;           window)))
-
-;;------------------------------------------------------------
 
 (defvar *sketches* nil)
-
 
 (defun ensure-sketch-is-initialized ()
   ;; {TODO} nasty ↓↓↓
@@ -51,27 +10,73 @@
     (initialize-cepl)
     (sdl2-ttf:init)))
 
+;;------------------------------------------------------------
+;; Window
 
+;; (case fullscreen
+;;   ((nil))
+;;   ((:windowed :desktop)
+;;    (pushnew :fullscreen-desktop flags))
+;;   (t (pushnew :fullscreen flags)))
 
+(defun add-window (context
+                   &key (title "SDL2 Window")
+                     (x :centered) (y :centered) (w 800) (h 600)
+                     (shown t) resizable fullscreen flags &allow-other-keys)
+  ;; {TODO} support these
+  (declare (ignore x y))
+  (format t "~%~%FLAGS: ~s~%~%" flags)
+  (add-surface context
+               :title title
+               :width (truncate w)
+               :height (truncate h)
+               :fullscreen (not (null fullscreen))
+               :resizable resizable
+               :hidden (not shown)
+               :make-current t))
 
-(defvar *stepper*
-  (temporal-functions:make-stepper (temporal-functions:seconds 1)))
-(defvar *frames* 0)
-(defvar *fps* 0)
+;;------------------------------------------------------------
+
+(defmethod initialize-instance :after ((sketch sketch)
+                                       &rest initargs
+                                       &key &allow-other-keys)
+  (ensure-sketch-is-initialized)
+  (let ((ctx *cepl-context*)) ;; ← {TODO} make a new one
+    (with-slots ((env %env) context viewport width height y-axis) sketch
+      (setf context ctx)
+      (add-window ctx)
+      (setf env (make-environment width height y-axis))
+      (setf viewport (make-viewport (list width height)))
+      ;;
+      (setf (clear-color ctx) (v! 0.0 1.0 0.0 1.0))
+      (setf (cull-face ctx) nil)
+      (setf (depth-test-function ctx) nil)
+      ;; {TODO} add these to CEPL
+      (gl:enable :line-smooth :polygon-smooth)
+      (gl:hint :line-smooth-hint :nicest)
+      (gl:hint :polygon-smooth-hint :nicest)
+      ;;
+      (apply #'prepare sketch initargs)
+      ;;
+      (push sketch *sketches*)
+      ;; Need to kick off thread to run #'main-loop
+      )))
+
+(defmethod update-instance-for-redefined-class :after
+    ((instance sketch) added-slots discarded-slots property-list &rest initargs)
+  (declare (ignore added-slots discarded-slots property-list))
+  (apply #'prepare (list* instance initargs)))
+
+;;------------------------------------------------------------
 
 (defun step-sketch (sketch)
-  (incf *frames*)
-  (when (funcall *stepper*)
-    (setf *fps* *frames*)
-    (setf *frames* 0))
-
-  (with-slots (window) sketch
+  (with-slots (context window) sketch
     ;; before any sdl2 window event
-    ;;(make-surface-current *cepl-context* sdl2.kit::sdl-window)
+    ;;(make-surface-current context sdl2.kit::sdl-window)
 
     ;; render
     (with-slots (cepl-window) window
-      (make-surface-current *cepl-context* cepl-window))
+      (make-surface-current context cepl-window))
 
     (with-slots (%env %restart width height copy-pixels viewport blending)
         sketch
@@ -99,6 +104,9 @@
 
     (gl:flush) ;; {TODO} do we need this?
     (swap)))
+
+;; hack, wont be needed when we we run these in threads
+(defvar *running* nil)
 
 (defun main-loop ()
   (loop :while *running* :do

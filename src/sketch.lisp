@@ -19,22 +19,24 @@
 ;;; Sketch class
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
+  ;; Names of slots that code later in this file needs
   (defparameter *default-slots*
-    '((title :initform "Sketch" :reader sketch-title :initarg :title)
+    '(title width height fullscreen copy-pixels y-axis)))
+
+(defmacro define-sketch-class ()
+  `(defclass sketch ()
+     ((context)
+      (window)
+      (viewport)
+      (blending :initform (make-blending-params))
+      (%env)
+      (%restart :initform t)
+      (title :initform "Sketch" :reader sketch-title :initarg :title)
       (width :initform 400 :reader sketch-width :initarg :width)
       (height :initform 400 :reader sketch-height :initarg :height)
       (fullscreen :initform nil :reader sketch-fullscreen :initarg :fullscreen)
       (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :copy-pixels)
       (y-axis :initform :down :reader sketch-y-axis :initarg :y-axis))))
-
-(defmacro define-sketch-class ()
-  `(defclass sketch ()
-     ((window)
-      (viewport)
-      (blending (make-blending-params))
-      (%env :initform (make-env))
-      (%restart :initform t)
-      ,@*default-slots*)))
 
 (define-sketch-class)
 
@@ -93,24 +95,6 @@
 used for drawing, 60fps.")
   (:method ((instance sketch) &key &allow-other-keys) ()))
 
-;;; Initialization
-
-
-
-(defmethod initialize-instance :after ((instance sketch)
-                                       &rest initargs
-                                       &key &allow-other-keys)
-  (ensure-sketch-is-initialized)
-  (initialize-gl instance)
-  (initialize-environment instance)
-  (apply #'prepare (list* instance initargs))
-  (push instance *sketches*))
-
-(defmethod update-instance-for-redefined-class :after
-    ((instance sketch) added-slots discarded-slots property-list &rest initargs)
-  (declare (ignore added-slots discarded-slots property-list))
-  (apply #'prepare (list* instance initargs)))
-
 ;;; Rendering
 
 (defmacro gl-catch (error-color &body body)
@@ -132,7 +116,11 @@ used for drawing, 60fps.")
 
 ;;; Default events
 
-(defmethod kit.sdl2:keyboard-event :before ((instance sketch) state timestamp repeatp keysym)
+(defmethod kit.sdl2:keyboard-event :before ((instance sketch)
+                                            state
+                                            timestamp
+                                            repeatp
+                                            keysym)
   (declare (ignorable timestamp repeatp))
   (when (and (eql state :keydown)
              (sdl2:scancode= (sdl2:scancode-value keysym) :scancode-escape))
@@ -154,14 +142,14 @@ used for drawing, 60fps.")
   (list (first list) (second list)))
 
 (defun default-slot-p (slot-or-binding)
-  (let ((defaults (mapcar #'car *default-slots*)))
+  (let ((defaults *default-slots*))
     (typecase slot-or-binding
       (list (member (car slot-or-binding) defaults))
       (t (member slot-or-binding defaults)))))
 
 (defun custom-bindings (&optional bindings)
   (remove-if (lambda (binding)
-               (member (car binding) (mapcar #'car *default-slots*)))
+               (member (car binding) *default-slots*))
              bindings))
 
 (defun intern-accessor (name)
@@ -207,14 +195,14 @@ used for drawing, 60fps.")
 (defun sketch-bindings-to-slots (sketch bindings)
   (mapcar (lambda (x) (make-slot-form sketch x))
           (remove-if (lambda (x)
-                       (member (car x) (mapcar #'car *default-slots*)))
+                       (member (car x) *default-slots*))
                      bindings)))
 
 ;;; DEFSKETCH setf instructions
 
 (defun make-window-parameter-setf ()
   `(setf ,@(mapcan (lambda (slot)
-                     `((,(intern-accessor (car slot)) instance) ,(car slot)))
+                     `((,(intern-accessor slot) instance) ,slot))
                    *default-slots*)))
 
 (defun make-custom-slots-setf (sketch bindings)
@@ -224,8 +212,8 @@ used for drawing, 60fps.")
 
 (defun make-reinitialize-setf ()
   `(setf ,@(mapcan (lambda (slot)
-                     `((,(intern-accessor (car slot)) instance)
-                       (,(intern-accessor (car slot)) instance)))
+                     `((,(intern-accessor slot) instance)
+                       (,(intern-accessor slot) instance)))
                    *default-slots*)))
 
 ;;; DEFSKETCH macro
@@ -256,12 +244,12 @@ used for drawing, 60fps.")
          ((instance ,sketch-name) &rest initargs &key &allow-other-keys)
          (declare (ignorable initargs))
          (let* (;; default slots
-                ,@(loop :for (slot . nil) :in *default-slots* :collect
+                ,@(loop :for slot :in *default-slots* :collect
                      (list slot `(slot-value instance ',slot)))
                 ;; custom slots
                 ,@(mapcar #'prepare-binding
                           (replace-channels-with-values bindings)))
-           (declare (ignorable ,@(mapcar #'car *default-slots*)))
+           (declare (ignorable ,@*default-slots*))
            ,(make-window-parameter-setf)
            ,(make-custom-slots-setf sketch-name (custom-bindings bindings)))
          (setf (env-y-axis-sgn (slot-value instance '%env))
@@ -275,8 +263,9 @@ used for drawing, 60fps.")
            ,(sketch-bindings-to-slots `,sketch-name bindings)))
 
        (defmethod draw ((instance ,sketch-name) &key &allow-other-keys)
-         (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
-                                  *default-slots*) instance
+         (with-accessors ,(mapcar (lambda (x) (list x (intern-accessor x)))
+                                  *default-slots*)
+             instance
            (with-slots ,(mapcar #'car bindings) instance
              ,@body)))
 
