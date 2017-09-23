@@ -6,7 +6,7 @@
 
 (defun ensure-sketch-is-initialized ()
   ;; {TODO} nasty ↓↓↓
-  (unless (cepl::uninitialized-p)
+  (when (cepl::uninitialized-p)
     (initialize-cepl)
     (sdl2-ttf:init)))
 
@@ -33,7 +33,8 @@
                :fullscreen (not (null fullscreen))
                :resizable resizable
                :hidden (not shown)
-               :make-current t))
+               :make-current t)
+  (first (surfaces context)))
 
 ;;------------------------------------------------------------
 
@@ -94,8 +95,9 @@
                     (setf (slot-value sketch '%restart) nil))
                   ;; If we're in the debug mode, we exit from it immediately,
                   ;; so that the restarts are shown only once. Afterwards, we
-                  ;; continue presenting the user with the red screen, waiting for
-                  ;; the error to be fixed, or for the debug key to be pressed again.
+                  ;; continue presenting the user with the red screen, waiting
+                  ;; for the error to be fixed, or for the debug key to be
+                  ;; pressed again.
                   (if (debug-mode-p)
                       (progn
                         (exit-debug-mode)

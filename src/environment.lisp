@@ -63,7 +63,8 @@
           (env-white-pixel-sampler env) white-sampler
           (env-white-color-vector env) #(255 255 255 255)
           (env-pen env) (make-default-pen)
-          (env-font env) (make-default-font))))
+          (env-font env) (make-default-font))
+    env))
 
 (defun debug-mode-p ()
   (and (env-red-screen *env*)
