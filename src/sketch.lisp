@@ -43,6 +43,12 @@
      (let ((win (kit.sdl2:sdl-window instance)))
        ,@body)))
 
+(defgeneric (setf sketch-title) (value instance))
+(defgeneric (setf sketch-width) (value instance))
+(defgeneric (setf sketch-height) (value instance))
+(defgeneric (setf sketch-fullscreen) (value instance))
+(defgeneric (setf sketch-y-axis) (value instance))
+
 (define-sketch-writer title
   (sdl2:set-window-title win (slot-value instance 'title)))
 

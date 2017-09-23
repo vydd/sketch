@@ -9,7 +9,6 @@
 	       #:glkit
 	       #:mathkit
 	       #:md5
-	       #:sb-cga
 	       #:sdl2-image
 	       #:sdl2-ttf
 	       #:sdl2kit
@@ -20,17 +19,18 @@
   :components ((:file "package")
 	       (:file "math")
 	       (:file "utils")
+	       (:file "environment")
+	       (:file "resources")
+	       (:file "color")
 	       (:file "channels")
 	       (:file "shaders")
-	       (:file "environment")
 	       (:file "pen")
+               (:file "image")
 	       (:file "font")
 	       (:file "geometry")
 	       (:file "drawing")
 	       (:file "shapes")
 	       (:file "transforms")
-	       (:file "resources")
-	       (:file "color")
                (:file "sketch")
 	       (:file "figures")
 	       (:file "controllers")))
