@@ -271,6 +271,7 @@ used for drawing, 60fps.")
        (defmethod prepare progn ((instance ,sketch-name) &rest initargs &key &allow-other-keys)
                   (declare (ignorable initargs))
                   (let* (,@(loop for (slot . nil) in *default-slots*
+                              if (not (member slot (mapcar #'car bindings)))
                               collect (list slot `(slot-value instance ',slot)))
                          ,@(mapcar (lambda (binding)
                                      (destructuring-bind (name value)
