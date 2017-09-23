@@ -12,15 +12,14 @@
                #:sb-cga
                #:sdl2-image
                #:sdl2-ttf
-               #:sdl2kit
                #:static-vectors
                #:cepl.sdl2
+               #:cepl.skitter.sdl2
                #:nineveh
                :temporal-functions)
   :pathname "src"
   :serial t
   :components ((:file "package")
-               (:file "monkey-patching")
                (:file "math")
                (:file "utils")
                (:file "channels")

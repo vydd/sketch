@@ -28,8 +28,11 @@
       (y-axis :initform :down :reader sketch-y-axis :initarg :y-axis))))
 
 (defmacro define-sketch-class ()
-  `(defclass sketch (kit.sdl2:gl-window)
-     ((%env :initform (make-env))
+  `(defclass sketch ()
+     ((window)
+      (viewport)
+      (blending (make-blending-params))
+      (%env :initform (make-env))
       (%restart :initform t)
       ,@*default-slots*)))
 
@@ -86,31 +89,16 @@ used for drawing, 60fps.")
 
 ;;; Initialization
 
-(defparameter *initialized* nil)
 
-(defun initialize-sketch ()
-  (unless *initialized*
-    (setf *initialized* t)
-    (kit.sdl2:init)
-    (sdl2-ttf:init)
-    ;; (sdl2:in-main-thread ()
-    ;;   (sdl2:gl-set-attr :multisamplebuffers 1)
-    ;;   (sdl2:gl-set-attr :multisamplesamples 4)
 
-    ;;   (sdl2:gl-set-attr :context-major-version 3)
-    ;;   (sdl2:gl-set-attr :context-minor-version 3)
-    ;;   (sdl2:gl-set-attr :context-profile-mask 1))
-    ))
-
-(defmethod initialize-instance :around ((instance sketch) &key &allow-other-keys)
-  (initialize-sketch)
-  (call-next-method)
-  (kit.sdl2:start))
-
-(defmethod initialize-instance :after ((instance sketch) &rest initargs &key &allow-other-keys)
+(defmethod initialize-instance :after ((instance sketch)
+                                       &rest initargs
+                                       &key &allow-other-keys)
+  (ensure-sketch-is-initialized)
+  (initialize-gl instance)
   (initialize-environment instance)
   (apply #'prepare (list* instance initargs))
-  (initialize-gl instance))
+  (push instance *sketches*))
 
 (defmethod update-instance-for-redefined-class :after
     ((instance sketch) added-slots discarded-slots property-list &rest initargs)
@@ -134,38 +122,7 @@ used for drawing, 60fps.")
          (setf %restart t
                (env-red-screen *env*) t)))))
 
-(defvar *stepper*
-  (temporal-functions:make-stepper (temporal-functions:seconds 1)))
-(defvar *frames* 0)
-(defvar *fps* 0)
 
-(defmethod kit.sdl2:render ((instance sketch))
-  (incf *frames*)
-  (when (funcall *stepper*)
-    (setf *fps* *frames*)
-    (setf *frames* 0))
-  (with-slots (%env %restart width height copy-pixels) instance
-    (with-environment %env
-      (with-pen (make-default-pen)
-        (with-font (make-default-font)
-          (with-identity-matrix
-            (unless copy-pixels
-              (background (gray 0.4)))
-            ;; Restart sketch on setup and when recovering from an error.
-            (when %restart
-              (gl-catch (rgb 1 1 0.3)
-                (setup instance))
-              (setf (slot-value instance '%restart) nil))
-            ;; If we're in the debug mode, we exit from it immediately,
-            ;; so that the restarts are shown only once. Afterwards, we
-            ;; continue presenting the user with the red screen, waiting for
-            ;; the error to be fixed, or for the debug key to be pressed again.
-            (if (debug-mode-p)
-                (progn
-                  (exit-debug-mode)
-                  (draw instance))
-                (gl-catch (rgb 0.7 0 0)
-                  (draw instance)))))))))
 
 ;;; Default events
 
@@ -267,35 +224,46 @@ used for drawing, 60fps.")
 
 ;;; DEFSKETCH macro
 
+(defun prepare-binding (binding)
+  (destructuring-bind (name value)
+      (first-two binding)
+    (list name (if (default-slot-p name)
+                   `(if (getf initargs ,(alexandria:make-keyword name))
+                        (slot-value instance ',name)
+                        ,value)
+                   `(or (getf initargs ,(alexandria:make-keyword name)) ,value)))))
+
 (defmacro defsketch (sketch-name bindings &body body)
   (let ((redefines-sketch-p (gensym)))
     `(let ((,redefines-sketch-p (find-class ',sketch-name nil)))
 
+       ;; defined here or lower down depending on whether the class
+       ;; already exists
        (unless ,redefines-sketch-p
          (defclass ,sketch-name (sketch)
            ,(sketch-bindings-to-slots `,sketch-name bindings)))
 
-       ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
+       ,@(remove nil (make-channel-observers sketch-name bindings))
 
-       (defmethod prepare progn ((instance ,sketch-name) &rest initargs &key &allow-other-keys)
-                  (declare (ignorable initargs))
-                  (let* (,@(loop for (slot . nil) in *default-slots*
-                              collect (list slot `(slot-value instance ',slot)))
-                         ,@(mapcar (lambda (binding)
-                                     (destructuring-bind (name value)
-                                         (first-two binding)
-                                       (list name (if (default-slot-p name)
-                                                      `(if (getf initargs ,(alexandria:make-keyword name))
-                                                           (slot-value instance ',name)
-                                                           ,value)
-                                                      `(or (getf initargs ,(alexandria:make-keyword name)) ,value)))))
-                                   (replace-channels-with-values bindings)))
-                    (declare (ignorable ,@(mapcar #'car *default-slots*)))
-                    ,(make-window-parameter-setf)
-                    ,(make-custom-slots-setf sketch-name (custom-bindings bindings)))
-                  (setf (env-y-axis-sgn (slot-value instance '%env))
-                        (if (eq (slot-value instance 'y-axis) :down) +1 -1)))
+       (defmethod prepare
+           progn
+         ((instance ,sketch-name) &rest initargs &key &allow-other-keys)
+         (declare (ignorable initargs))
+         (let* (;; default slots
+                ,@(loop :for (slot . nil) :in *default-slots* :collect
+                     (list slot `(slot-value instance ',slot)))
+                ;; custom slots
+                ,@(mapcar #'prepare-binding
+                          (replace-channels-with-values bindings)))
+           (declare (ignorable ,@(mapcar #'car *default-slots*)))
+           ,(make-window-parameter-setf)
+           ,(make-custom-slots-setf sketch-name (custom-bindings bindings)))
+         (setf (env-y-axis-sgn (slot-value instance '%env))
+               (if (eq (slot-value instance 'y-axis) :down)
+                   +1
+                   -1)))
 
+       ;; see not for defclass above
        (when ,redefines-sketch-p
          (defclass ,sketch-name (sketch)
            ,(sketch-bindings-to-slots `,sketch-name bindings)))

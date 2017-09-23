@@ -64,18 +64,7 @@
             (env-pen env) (make-default-pen)
             (env-font env) (make-default-font)))))
 
-(defun initialize-gl (w)
-  (with-slots ((env %env) width height) w
-    (sdl2:gl-set-swap-interval 0)
-    (setf (kit.sdl2:idle-render w) t)
-    (gl:viewport 0 0 width height)
-    (gl:enable :blend :line-smooth :polygon-smooth)
-    (gl:blend-func :src-alpha :one-minus-src-alpha)
-    (gl:hint :line-smooth-hint :nicest)
-    (gl:hint :polygon-smooth-hint :nicest)
-    (gl:clear-color 0.0 1.0 0.0 1.0)
-    (gl:clear :color-buffer :depth-buffer)
-    (gl:flush)))
+
 
 (defun debug-mode-p ()
   (and (env-red-screen *env*)
