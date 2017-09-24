@@ -76,8 +76,7 @@
     ;;(make-surface-current context sdl2.kit::sdl-window)
 
     ;; render
-    (with-slots (cepl-window) window
-      (make-surface-current context cepl-window))
+    (make-surface-current context window)
 
     (with-slots (%env %restart width height copy-pixels viewport blending)
         sketch
@@ -111,6 +110,7 @@
 (defvar *running* nil)
 
 (defun main-loop ()
+  (setf *running* t)
   (loop :while *running* :do
      (loop :for sketch :in *sketches* :do
         (continuable (step-sketch sketch)))))

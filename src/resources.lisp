@@ -59,7 +59,8 @@
       (error (format nil "Unsupported resource type ~a" type))))
 
 (defun make-image-from-surface (surface)
-  (destructuring-bind (width height) (surface-dimensions surface)
+  (let ((width (sdl2:surface-width surface))
+        (height (sdl2:surface-height surface)))
     (let* ((texture (prog1 (let ((carr (make-c-array-from-pointer
                                         (list width height)
                                         :uint8-vec4
