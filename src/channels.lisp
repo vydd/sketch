@@ -113,6 +113,7 @@
   (remhash channel *channels*)
   (remhash channel *channel-propagations*)
   (maphash (lambda (name propagation)
+             (declare (ignore name))
              (setf (propagation-inputs propagation)
                    (remove-if (lambda (x) (eql x channel))
                               (propagation-inputs propagation))

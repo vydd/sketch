@@ -96,14 +96,3 @@
   (gl:delete-textures (list (image-texture image))))
 
 (defmethod free-resource ((typeface typeface)))
-
-;;; Sketch drawing functions
-
-(defun image (image-resource x y &optional width height)
-  (with-pen (make-pen :fill image-resource
-                      :stroke (pen-stroke (env-pen *env*))
-                      :weight (pen-weight (env-pen *env*)))
-    (rect x
-          y
-          (or (abs-or-rel width (image-width image-resource)))
-          (or (abs-or-rel height (image-height image-resource))))))
