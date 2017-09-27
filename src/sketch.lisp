@@ -253,7 +253,7 @@ used for drawing, 60fps.")
 
 (defun make-custom-slots-setf (sketch bindings)
   `(setf ,@(mapcan (lambda (binding)
-                     `((,(binding-accessor sketch binding) instance) ,(car binding)))
+                     `((slot-value instance ',(car binding)) ,(cadr binding)))
                    bindings)))
 
 (defun make-reinitialize-setf ()
@@ -262,18 +262,21 @@ used for drawing, 60fps.")
                        (,(intern-accessor (car slot)) instance)))
                    *default-slots*)))
 
+(defun custom-slots (bindings)
+  (loop
+     for b in (mapcar #'car bindings)
+     if (not (member b *default-slots*))
+     collect b))
+
 ;;; DEFSKETCH macro
 
 (defmacro defsketch (sketch-name bindings &body body)
-  (let ((redefines-sketch-p (gensym))
-        (default-not-overridden
-         (remove-if (lambda (x) (find x bindings :key #'car))
-                    (mapcar #'car *default-slots*))))
-    `(let ((,redefines-sketch-p (find-class ',sketch-name nil)))
-
-       (unless ,redefines-sketch-p
-         (defclass ,sketch-name (sketch)
-           ,(sketch-bindings-to-slots `,sketch-name bindings)))
+  (let ((default-not-overridden
+          (remove-if (lambda (x) (find x bindings :key #'car))
+                     (mapcar #'car *default-slots*))))
+    `(progn
+       (defclass ,sketch-name (sketch)
+         ,(sketch-bindings-to-slots `,sketch-name bindings))
 
        ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
 
@@ -290,20 +293,18 @@ used for drawing, 60fps.")
                                                            ,value)
                                                       `(or (getf initargs ,(alexandria:make-keyword name)) ,value)))))
                                    (replace-channels-with-values bindings)))
-                    (declare (ignorable ,@(mapcar #'car *default-slots*)))
+                    (declare (ignorable ,@(mapcar #'car *default-slots*) ,@(custom-slots bindings)))
                     ,(make-window-parameter-setf)
                     ,(make-custom-slots-setf sketch-name (custom-bindings bindings)))
                   (setf (env-y-axis-sgn (slot-value instance '%env))
                         (if (eq (slot-value instance 'y-axis) :down) +1 -1)))
-
-       (when ,redefines-sketch-p
-         (defclass ,sketch-name (sketch)
-           ,(sketch-bindings-to-slots `,sketch-name bindings)))
 
        (defmethod draw ((instance ,sketch-name) &key &allow-other-keys)
          (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
                                   *default-slots*) instance
            (with-slots ,(mapcar #'car bindings) instance
              ,@body)))
+
+       (make-instances-obsolete ',sketch-name)
 
        (find-class ',sketch-name))))
