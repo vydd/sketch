@@ -5,32 +5,32 @@
   :author "Danilo Vidovic (vydd)"
   :license "MIT"
   :depends-on (#:alexandria
-	       #:cl-geometry
-	       #:glkit
-	       #:mathkit
-	       #:md5
-	       #:sdl2-image
-	       #:sdl2-ttf
-	       #:sdl2kit
-	       #:split-sequence
-	       #:static-vectors)
+               #:cl-geometry
+               #:glkit
+               #:mathkit
+               #:md5
+               #:sdl2-image
+               #:sdl2-ttf
+               #:sdl2kit
+               #:split-sequence
+               #:static-vectors)
   :pathname "src"
   :serial t
   :components ((:file "package")
-	       (:file "math")
-	       (:file "utils")
-	       (:file "environment")
-	       (:file "resources")
-	       (:file "color")
-	       (:file "channels")
-	       (:file "shaders")
-	       (:file "pen")
+               (:file "math")
+               (:file "utils")
+               (:file "environment")
+               (:file "resources")
+               (:file "color")
+               (:file "channels")
+               (:file "shaders")
+               (:file "pen")
                (:file "image")
-	       (:file "font")
-	       (:file "geometry")
-	       (:file "drawing")
-	       (:file "shapes")
-	       (:file "transforms")
+               (:file "font")
+               (:file "geometry")
+               (:file "drawing")
+               (:file "shapes")
+               (:file "transforms")
                (:file "sketch")
-	       (:file "figures")
-	       (:file "controllers")))
+               (:file "figures")
+               (:file "controllers")))

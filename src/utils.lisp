@@ -65,8 +65,7 @@
 (defun lerp-lists (v list-a list-b)
   (mapcar (lambda (a b) (alexandria:lerp v a b)) list-a list-b))
 
-(defun flatten (tree
-                &optional (unless-test (lambda (_) (declare (ignore _)) nil)))
+(defun flatten (tree &optional (unless-test (lambda (_) (declare (ignore _)) nil)))
   (let (list)
     (labels ((traverse (subtree)
                (when subtree
