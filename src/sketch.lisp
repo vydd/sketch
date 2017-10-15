@@ -36,7 +36,10 @@
       (height :initform 400 :reader sketch-height :initarg :height)
       (fullscreen :initform nil :reader sketch-fullscreen :initarg :fullscreen)
       (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :copy-pixels)
-      (y-axis :initform :down :reader sketch-y-axis :initarg :y-axis))))
+      (y-axis :initform :down :reader sketch-y-axis :initarg :y-axis)
+      (thread :initform nil :reader sketch-thread :initarg :thread)
+      (to-thread-chanl :initform nil :reader to-thread-chanl)
+      (from-thread-chanl :initform nil :reader from-thread-chanl))))
 
 (define-sketch-class)
 
@@ -97,12 +100,15 @@ used for drawing, 60fps.")
 
 ;;; Rendering
 
+(defvar *last-error* nil)
+
 (defmacro gl-catch (error-color &body body)
   `(handler-case
        (progn
          ,@body)
      (error (e)
        (progn
+         (push e *last-error*)
          (background ,error-color)
          (with-font (make-error-font)
            (with-identity-matrix

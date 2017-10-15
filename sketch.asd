@@ -15,7 +15,9 @@
                #:cepl.sdl2
                #:cepl.skitter.sdl2
                #:nineveh
-               :temporal-functions)
+               #:temporal-functions
+               #:bordeaux-threads
+               #:chanl)
   :pathname "src"
   :serial t
   :components ((:file "package")

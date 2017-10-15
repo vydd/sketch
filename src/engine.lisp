@@ -7,7 +7,8 @@
 (defun ensure-sketch-is-initialized ()
   ;; {TODO} nasty ↓↓↓
   (when (cepl::uninitialized-p)
-    (initialize-cepl)
+    (initialize-cepl))
+  (when (= 0 (sdl2-ttf:was-init))
     (sdl2-ttf:init)))
 
 ;;------------------------------------------------------------
@@ -41,27 +42,72 @@
 (defmethod initialize-instance :after ((sketch sketch)
                                        &rest initargs
                                        &key &allow-other-keys)
+  ;;
+  ;; Let's begin
   (ensure-sketch-is-initialized)
-  (let ((ctx *cepl-context*)) ;; ← {TODO} make a new one
-    (with-slots ((env %env) context viewport window width height y-axis) sketch
-      (setf context ctx)
-      (setf window (add-window ctx))
-      (setf env (make-environment width height y-axis))
-      (setf viewport (make-viewport (list width height)))
-      ;;
-      (setf (clear-color ctx) (v! 0.0 1.0 0.0 1.0))
-      (setf (cull-face ctx) nil)
-      (setf (depth-test-function ctx) nil)
-      ;; {TODO} add these to CEPL
-      (gl:enable :line-smooth :polygon-smooth)
-      (gl:hint :line-smooth-hint :nicest)
-      (gl:hint :polygon-smooth-hint :nicest)
-      ;;
-      (apply #'prepare sketch initargs)
-      ;;
-      (push sketch *sketches*)
-      ;; Need to kick off thread to run #'main-loop
-      )))
+  ;;
+  ;; Make some communication channels for our soon-to-be-created thread
+  (let ((to-thread (make-instance 'chanl:unbounded-channel))
+        (from-thread (make-instance 'chanl:unbounded-channel))
+        (master-out-stream *standard-output*))
+    ;;
+    ;; make the thread which will be the main loop for the sketch
+    (with-slots (thread) sketch
+      (setf thread
+            (bt:make-thread
+             (lambda ()
+               ;;
+               ;; CEPL contexts are bound to 1 thread so make 1 for our
+               ;; new thread
+               (with-cepl-context
+                   (ctx (cepl.context::make-context))
+                 ;;
+                 ;; Initialize all the internal data for our sketch
+                 (with-slots ((env %env) context viewport window width height
+                              y-axis to-thread-chanl from-thread-chanl)
+                     sketch
+                   (setf context ctx)
+                   (setf window (add-window ctx))
+                   (setf env (make-environment width height y-axis))
+                   (setf viewport (make-viewport (list width height)))
+                   (setf to-thread-chanl to-thread
+                         from-thread-chanl from-thread)
+                   ;;
+                   (setf (clear-color ctx) (v! 0.0 1.0 0.0 1.0))
+                   (setf (cull-face ctx) nil)
+                   (setf (depth-test-function ctx) nil)
+                   ;; {TODO} add these to CEPL
+                   (gl:enable :line-smooth :polygon-smooth)
+                   (gl:hint :line-smooth-hint :nicest)
+                   (gl:hint :polygon-smooth-hint :nicest)
+                   ;;
+                   (apply #'prepare sketch initargs)
+                   ;;
+                   ;; Let the REPL thread know we are done with the setup
+                   ;; it can now return the sketch object
+                   (chanl:send from-thread :initialized)
+                   ;;
+                   ;; main loop
+                   (let ((running t))
+                     (loop :while running :do
+                        (multiple-value-bind (msg from)
+                            (chanl:recv from-thread :blockp nil)
+                          (when from
+                            (setf running
+                                  (sketch-handle-thread-message sketch msg)))
+                          (step-sketch sketch)))
+                     (format master-out-stream
+                             "## SKETCH LOOP FOR ~a HAS ENDED ##"
+                             sketch))))))))
+    (print (chanl:recv from-thread :blockp t))
+    (push sketch *sketches*)
+    sketch))
+
+(defgeneric sketch-handle-thread-message (sketch msg))
+
+(defmethod sketch-handle-thread-message ((sketch sketch) msg)
+  ;; ignored messages
+  (declare (ignore sketch msg)))
 
 (defmethod update-instance-for-redefined-class :after
     ((instance sketch) added-slots discarded-slots property-list &rest initargs)
@@ -105,12 +151,3 @@
 
     (gl:flush) ;; {TODO} do we need this?
     (swap)))
-
-;; hack, wont be needed when we we run these in threads
-(defvar *running* nil)
-
-(defun main-loop ()
-  (setf *running* t)
-  (loop :while *running* :do
-     (loop :for sketch :in *sketches* :do
-        (continuable (step-sketch sketch)))))
