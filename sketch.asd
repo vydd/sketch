@@ -12,6 +12,8 @@
                #:sdl2-image
                #:sdl2-ttf
                #:static-vectors
+               #:rtg-math
+               #:rtg-math.vari
                #:cepl.sdl2
                #:cepl.skitter.sdl2
                #:nineveh

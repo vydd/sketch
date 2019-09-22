@@ -1,7 +1,8 @@
 ;;;; package.lisp
 
 (uiop:define-package #:sketch
-    (:use #:cl #:cepl #:livesupport #:cepl.skitter.sdl2)
+    (:use #:cl #:cepl #:livesupport #:cepl.skitter.sdl2
+          #:rtg-math #:vari)
   (:import-from :nineveh :make-buffer-streamer :buffer-streamer-push)
   (:export :sketch
            :setup
