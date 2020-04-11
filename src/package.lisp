@@ -140,6 +140,8 @@
            ;; Resources
            :load-resource
            :image
+           :image-portion
+           :with-uv-rect
 
            ;; Font
            :make-font

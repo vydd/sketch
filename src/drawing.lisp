@@ -24,6 +24,8 @@
 (defparameter *draw-mode* :gpu)
 (defparameter *draw-sequence* nil)
 
+(defparameter *uv-rect* nil)
+
 (defun start-draw ()
   (%gl:bind-buffer :array-buffer 1)
   (%gl:buffer-data :array-buffer *buffer-size* (cffi:null-pointer) :stream-draw)
@@ -88,11 +90,23 @@
                 :pointer buffer-pointer
                 :length (length vertices)) *draw-sequence*)))
 
+(defmacro with-uv-rect (rect &body body)
+  `(let ((*uv-rect* ,rect))
+     ,@body))
+
+(defun fit-uv-to-rect (uv)
+  (if *uv-rect* 
+      (destructuring-bind (u-in v-in) uv
+        (destructuring-bind (u1 v1 u-range v-range) *uv-rect*
+            (list (+ u1 (* u-range u-in))
+                  (+ v1 (* v-range v-in)))))
+      uv))
+
 (defun fill-buffer (buffer-pointer vertices color)
   (loop
      for idx from 0 by *vertex-attributes*
      for (x y) in vertices
-     for (tx ty) in (normalize-to-bounding-box vertices)
+     for (tx ty) in (mapcar #'fit-uv-to-rect (normalize-to-bounding-box vertices))
      do (setf (cffi:mem-aref buffer-pointer :float idx) (coerce-float x)
               (cffi:mem-aref buffer-pointer :float (+ idx 1)) (coerce-float y)
               (cffi:mem-aref buffer-pointer :float (+ idx 2)) (coerce-float tx)
