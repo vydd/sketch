@@ -24,6 +24,12 @@
 (defparameter *draw-mode* :gpu)
 (defparameter *draw-sequence* nil)
 
+(defparameter *uv-rect* nil)
+
+(defmacro with-uv-rect (rect &body body)
+  `(let ((*uv-rect* ,rect))
+     ,@body))
+
 (defun start-draw ()
   (%gl:bind-buffer :array-buffer 1)
   (%gl:buffer-data :array-buffer *buffer-size* (cffi:null-pointer) :stream-draw)
@@ -38,29 +44,34 @@
   (typecase res
     (color (values (or (color-vector-255 res) (env-white-color-vector *env*))
                    (env-white-pixel-texture *env*)))
+    (cropped-image (values (env-white-color-vector *env*)
+                           (or (image-texture res) (env-white-pixel-texture *env*))
+                           (cropped-image-uv-rect res)))
     (image (values (env-white-color-vector *env*)
                    (or (image-texture res) (env-white-pixel-texture *env*))))))
 
 (defun draw-shape (primitive fill-vertices stroke-vertices)
   (when (and fill-vertices (pen-fill (env-pen *env*)))
-    (multiple-value-bind (shader-color shader-texture)
+    (multiple-value-bind (shader-color shader-texture uv-rect)
         (shader-color-texture-values (pen-fill (env-pen *env*)))
-      (push-vertices fill-vertices
-                     shader-color
-                     shader-texture
-                     primitive
-                     *draw-mode*)))
-  (when (and stroke-vertices (pen-stroke (env-pen *env*)))
-    (multiple-value-bind (shader-color shader-texture)
-        (shader-color-texture-values (pen-stroke (env-pen *env*)))
-      (let* ((weight (or (pen-weight (env-pen *env*)) 1))
-             (mixed (mix-lists stroke-vertices
-                               (grow-polygon stroke-vertices weight))))
-        (push-vertices (append mixed (list (first mixed) (second mixed)))
+      (with-uv-rect uv-rect
+        (push-vertices fill-vertices
                        shader-color
                        shader-texture
-                       :triangle-strip
-                       *draw-mode*)))))
+                       primitive
+                       *draw-mode*))))
+  (when (and stroke-vertices (pen-stroke (env-pen *env*)))
+    (multiple-value-bind (shader-color shader-texture uv-rect)
+        (shader-color-texture-values (pen-stroke (env-pen *env*)))
+      (with-uv-rect uv-rect
+        (let* ((weight (or (pen-weight (env-pen *env*)) 1))
+               (mixed (mix-lists stroke-vertices
+                                 (grow-polygon stroke-vertices weight))))
+          (push-vertices (append mixed (list (first mixed) (second mixed)))
+                         shader-color
+                         shader-texture
+                         :triangle-strip
+                         *draw-mode*))))))
 
 (defmethod push-vertices (vertices color texture primitive (draw-mode (eql :gpu)))
   (kit.gl.shader:uniform-matrix (env-programs *env*) :model-m 4
@@ -88,11 +99,19 @@
                 :pointer buffer-pointer
                 :length (length vertices)) *draw-sequence*)))
 
+(defun fit-uv-to-rect (uv)
+  (if *uv-rect* 
+      (destructuring-bind (u-in v-in) uv
+        (destructuring-bind (u1 v1 u-range v-range) *uv-rect*
+            (list (+ u1 (* u-range u-in))
+                  (+ v1 (* v-range v-in)))))
+      uv))
+
 (defun fill-buffer (buffer-pointer vertices color)
   (loop
      for idx from 0 by *vertex-attributes*
      for (x y) in vertices
-     for (tx ty) in (normalize-to-bounding-box vertices)
+     for (tx ty) in (mapcar #'fit-uv-to-rect (normalize-to-bounding-box vertices))
      do (setf (cffi:mem-aref buffer-pointer :float idx) (coerce-float x)
               (cffi:mem-aref buffer-pointer :float (+ idx 1)) (coerce-float y)
               (cffi:mem-aref buffer-pointer :float (+ idx 2)) (coerce-float tx)
