@@ -18,9 +18,7 @@
    (height :accessor image-height :initarg :height)))
 
 (defclass cropped-image (image)
-  ((uv-rect :accessor cropped-image-uv-rect :initarg :uv-rect)
-   (crop-width :accessor cropped-image-width :initarg :cropped-width)
-   (crop-height :accessor cropped-image-height :initarg :cropped-height)))
+  ((uv-rect :accessor cropped-image-uv-rect :initarg :uv-rect)))
 
 (defun pixel-uv-rect (img x y w h)
   "Generate uv coordinates (0.0 to 1.0) for portion of IMG within
@@ -35,11 +33,9 @@
 (defun cropped-image-from-image (image x y w h)
   (make-instance 'cropped-image
                  :texture (image-texture image)
-                 :width (image-width image)
-                 :height (image-height image)
-                 :uv-rect (pixel-uv-rect image x y w h)
-                 :cropped-width w
-                 :cropped-height h))
+                 :width w
+                 :height h
+                 :uv-rect (pixel-uv-rect image x y w h)))
 
 (defclass typeface (resource)
   ((filename :accessor typeface-filename :initarg :filename)

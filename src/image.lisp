@@ -12,18 +12,10 @@
   (with-pen (make-pen :fill image-resource
                       :stroke (pen-stroke (env-pen *env*))
                       :weight (pen-weight (env-pen *env*)))
-    (typecase image-resource
-      (cropped-image
-       (with-uv-rect (cropped-image-uv-rect image-resource)
-         (rect x
-               y
-               (or width (cropped-image-width image-resource))
-               (or height (cropped-image-height image-resource)))))
-      (image
        (rect x
              y
              (or (abs-or-rel width (image-width image-resource)))
-             (or (abs-or-rel height (image-height image-resource))))))))
+             (or (abs-or-rel height (image-height image-resource))))))
 
 (defmethod crop ((image-resource image) x y w h)
   "Generate a cropped image resource from IMAGE-RESOURCE, limiting how much of the image is drawn
