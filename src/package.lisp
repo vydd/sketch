@@ -140,7 +140,7 @@
            ;; Resources
            :load-resource
            :image
-           :image-portion
+           :crop
            :with-uv-rect
 
            ;; Font

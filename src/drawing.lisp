@@ -26,6 +26,10 @@
 
 (defparameter *uv-rect* nil)
 
+(defmacro with-uv-rect (rect &body body)
+  `(let ((*uv-rect* ,rect))
+     ,@body))
+
 (defun start-draw ()
   (%gl:bind-buffer :array-buffer 1)
   (%gl:buffer-data :array-buffer *buffer-size* (cffi:null-pointer) :stream-draw)
@@ -55,14 +59,14 @@
   (when (and stroke-vertices (pen-stroke (env-pen *env*)))
     (multiple-value-bind (shader-color shader-texture)
         (shader-color-texture-values (pen-stroke (env-pen *env*)))
-      (let* ((weight (or (pen-weight (env-pen *env*)) 1))
-             (mixed (mix-lists stroke-vertices
-                               (grow-polygon stroke-vertices weight))))
-        (push-vertices (append mixed (list (first mixed) (second mixed)))
-                       shader-color
-                       shader-texture
-                       :triangle-strip
-                       *draw-mode*)))))
+        (let* ((weight (or (pen-weight (env-pen *env*)) 1))
+               (mixed (mix-lists stroke-vertices
+                                 (grow-polygon stroke-vertices weight))))
+          (push-vertices (append mixed (list (first mixed) (second mixed)))
+                         shader-color
+                         shader-texture
+                         :triangle-strip
+                         *draw-mode*)))))
 
 (defmethod push-vertices (vertices color texture primitive (draw-mode (eql :gpu)))
   (kit.gl.shader:uniform-matrix (env-programs *env*) :model-m 4
@@ -89,10 +93,6 @@
     (push (list :primitive primitive
                 :pointer buffer-pointer
                 :length (length vertices)) *draw-sequence*)))
-
-(defmacro with-uv-rect (rect &body body)
-  `(let ((*uv-rect* ,rect))
-     ,@body))
 
 (defun fit-uv-to-rect (uv)
   (if *uv-rect* 
