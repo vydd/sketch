@@ -148,4 +148,5 @@
            :with-font
            :set-font
            :text
+           :text-line-image
            ))

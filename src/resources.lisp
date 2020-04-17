@@ -77,7 +77,7 @@
       (error (format nil "~a's type cannot be deduced." filename))
       (error (format nil "Unsupported resource type ~a" type))))
 
-(defun make-image-from-surface (surface)
+(defun make-image-from-surface (surface &key (free-surface t))
   (let ((texture (car (gl:gen-textures 1))))
     (gl:bind-texture :texture-2d texture)
     (gl:tex-parameter :texture-2d :texture-min-filter :linear)
@@ -92,7 +92,7 @@
                                 :width (sdl2:surface-width surface)
                                 :height (sdl2:surface-height surface)
                                 :texture texture)))
-      (sdl2:free-surface surface)
+      (when free-surface (sdl2:free-surface surface))
       image)))
 
 (defmethod load-typed-resource (filename (type (eql :image)) &key &allow-other-keys)
