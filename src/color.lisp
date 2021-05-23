@@ -44,19 +44,46 @@
                      (0 ,x ,c) (,x 0 ,c) (,c 0 ,x))
                   (floor (/ h 60))))))
 
+(defun update-rgb (color)
+  (with-slots (red green blue hue saturation brightness) color
+    (destructuring-bind (r g b) (hsb-to-rgb hue saturation brightness)
+      (setf red r
+            green g
+            blue b))))
+
+(defun update-hsb (color)
+  (with-slots (red green blue hue saturation brightness) color
+    (destructuring-bind (h s b) (rgb-to-hsb red green blue)
+      (setf hue h
+            saturation s
+            brightness b))))
+
+(defmacro add-updater-to-accessor (accessor updater)
+  `(defmethod (setf ,accessor) :after (value color)
+     (,updater color)))
+
+(add-updater-to-accessor color-red update-hsb)
+(add-updater-to-accessor color-green update-hsb)
+(add-updater-to-accessor color-blue update-hsb)
+(add-updater-to-accessor color-hue update-rgb)
+(add-updater-to-accessor color-saturation update-rgb)
+(add-updater-to-accessor color-brightness update-rgb)
+
+;;; Constructors
+
 (defun rgb (red green blue &optional (alpha 1.0))
   (destructuring-bind (red green blue alpha)
       (mapcar #'clamp-1 (list red green blue alpha))
     (let ((hsb (rgb-to-hsb red green blue)))
       (make-instance 'color :red red :green green :blue blue :alpha alpha
-                     :hue (elt hsb 0) :saturation (elt hsb 1) :brightness (elt hsb 2)))))
+                            :hue (elt hsb 0) :saturation (elt hsb 1) :brightness (elt hsb 2)))))
 
 (defun hsb (hue saturation brightness &optional (alpha 1.0))
   (destructuring-bind (hue saturation brightness alpha)
       (mapcar #'clamp-1 (list hue saturation brightness alpha))
     (let ((rgb (hsb-to-rgb hue saturation brightness)))
       (make-instance 'color :hue hue :saturation saturation :brightness brightness :alpha alpha
-                     :red (elt rgb 0) :green (elt rgb 1) :blue (elt rgb 2)))))
+                            :red (elt rgb 0) :green (elt rgb 1) :blue (elt rgb 2)))))
 
 (defun gray (amount &optional (alpha 1.0))
   (rgb amount amount amount alpha))
