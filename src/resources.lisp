@@ -81,6 +81,7 @@
   (let ((texture (car (gl:gen-textures 1))))
     (gl:bind-texture :texture-2d texture)
     (gl:tex-parameter :texture-2d :texture-min-filter :linear)
+    (gl:pixel-store :unpack-row-length (/ (sdl2:surface-pitch surface) 4))
     (gl:tex-image-2d :texture-2d 0 :rgba
                      (sdl2:surface-width surface)
                      (sdl2:surface-height surface)
