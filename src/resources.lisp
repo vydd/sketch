@@ -78,21 +78,25 @@
       (error (format nil "Unsupported resource type ~a" type))))
 
 (defun make-image-from-surface (surface &key (free-surface t))
-  (let ((texture (car (gl:gen-textures 1))))
+  (let ((texture (car (gl:gen-textures 1)))
+        (rgba-surface (if (eq (sdl2:surface-format-format surface) sdl2:+pixelformat-rgba32+)
+                          surface
+                          (sdl2:convert-surface-format surface sdl2:+pixelformat-rgba32+))))
     (gl:bind-texture :texture-2d texture)
     (gl:tex-parameter :texture-2d :texture-min-filter :linear)
-    (gl:pixel-store :unpack-row-length (/ (sdl2:surface-pitch surface) 4))
+    (gl:pixel-store :unpack-row-length (/ (sdl2:surface-pitch rgba-surface) 4))
     (gl:tex-image-2d :texture-2d 0 :rgba
-                     (sdl2:surface-width surface)
-                     (sdl2:surface-height surface)
+                     (sdl2:surface-width rgba-surface)
+                     (sdl2:surface-height rgba-surface)
                      0
-                     :bgra
-                     :unsigned-byte (sdl2:surface-pixels surface))
+                     :rgba
+                     :unsigned-byte (sdl2:surface-pixels rgba-surface))
     (gl:bind-texture :texture-2d 0)
     (let ((image (make-instance 'image
-                                :width (sdl2:surface-width surface)
-                                :height (sdl2:surface-height surface)
+                                :width (sdl2:surface-width rgba-surface)
+                                :height (sdl2:surface-height rgba-surface)
                                 :texture texture)))
+      (unless (eq rgba-surface surface) (sdl2:free-surface rgba-surface))
       (when free-surface (sdl2:free-surface surface))
       image)))
 
