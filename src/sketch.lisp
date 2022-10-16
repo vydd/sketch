@@ -253,7 +253,7 @@ used for drawing, 60fps.")
 
 (defun make-custom-slots-setf (sketch bindings)
   `(setf ,@(mapcan (lambda (binding)
-                     `((slot-value instance ',(car binding)) ,(cadr binding)))
+                     `((slot-value instance ',(car binding)) ,(car binding)))
                    bindings)))
 
 (defun make-reinitialize-setf ()
