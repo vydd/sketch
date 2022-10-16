@@ -55,13 +55,14 @@
 	(t 0)))
 
 (defun text-line-image (line)
-  (let* ((font (env-font *env*))
+  (let* ((line (if (> (length line) 0) line " "))
+         (font (env-font *env*))
          (typeface (and font (load-resource (typeface-filename (font-face font))
                                             :size (font-size font)))))
     (destructuring-bind (r g b a) (color-rgba-255 (font-color font))
       (make-image-from-surface (sdl2-ttf:render-utf8-blended
                                 (typeface-pointer typeface)
-                                (if (string= line "") " " line) r g b a)
+                                line r g b a)
                                :free-surface nil))))
 
 (defun text (text-string x y &optional width height)
