@@ -61,13 +61,11 @@
     (destructuring-bind (r g b a) (color-rgba-255 (font-color font))
       (make-image-from-surface (sdl2-ttf:render-utf8-blended
                                 (typeface-pointer typeface)
-                                line r g b a)
+                                (if (string= line "") " " line) r g b a)
                                :free-surface nil))))
 
 (defun text (text-string x y &optional width height)
-  (let* ((font (env-font *env*))
-         (typeface (and font (load-resource (typeface-filename (font-face font))
-                                            :size (font-size font)))))
+  (let* ((font (env-font *env*)))
     (when (and font (> (length text-string) 0))
       (with-pen (make-pen :stroke nil)
         (let* ((top 0)
