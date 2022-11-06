@@ -13,7 +13,8 @@
                #:sdl2-ttf
                #:sdl2kit
                #:split-sequence
-               #:static-vectors)
+               #:static-vectors
+               #:zpng)
   :pathname "src"
   :serial t
   :components ((:file "package")

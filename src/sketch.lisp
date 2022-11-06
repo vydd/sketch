@@ -18,6 +18,9 @@
 
 ;;; Sketch class
 
+(defparameter *sketch* nil
+  "The current sketch instance.")
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *default-slots*
     '((title :initform "Sketch" :reader sketch-title :initarg :title)
@@ -300,10 +303,11 @@ used for drawing, 60fps.")
                         (if (eq (slot-value instance 'y-axis) :down) +1 -1)))
 
        (defmethod draw ((instance ,sketch-name) &key &allow-other-keys)
-         (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
-                                  *default-slots*) instance
-           (with-slots ,(mapcar #'car bindings) instance
-             ,@body)))
+         (let ((*sketch* instance))
+           (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
+                             *default-slots*) instance
+             (with-slots ,(mapcar #'car bindings) instance
+               ,@body))))
 
        (make-instances-obsolete ',sketch-name)
 

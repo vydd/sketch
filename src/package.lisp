@@ -142,6 +142,7 @@
            :image
            :crop
            :with-uv-rect
+           :save-png
 
            ;; Font
            :make-font
