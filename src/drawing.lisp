@@ -90,17 +90,30 @@
       (setf position (+ position (length vertices))))))
 
 (defmethod push-vertices (vertices color texture primitive (draw-mode (eql :figure)))
-  (let* ((buffer (static-vectors:make-static-vector
+  (let* ((vertices (mapcar (lambda (v) (transform-vertex v (env-model-matrix *env*)))
+                           vertices))
+         (buffer (static-vectors:make-static-vector
                   (* *bytes-per-vertex* (length vertices))
                   :element-type '(unsigned-byte 8)))
          (buffer-pointer (static-vectors:static-vector-pointer buffer)))
     (fill-buffer buffer-pointer vertices color)
     (push (list :primitive primitive
                 :pointer buffer-pointer
-                :length (length vertices)) *draw-sequence*)))
+                :length (length vertices))
+          *draw-sequence*)))
+
+(defun transform-vertex (vertex matrix)
+  (let* ((vector (sb-cga:vec
+                  (coerce (car vertex) 'single-float)
+                  (coerce (cadr vertex) 'single-float)
+                  0.0))
+         (transformed (sb-cga:transform-point vector matrix)))
+    ;; TODO: This is painfully inelegant.
+    ;; No consing should happen at this point.
+    (list (elt transformed 0) (elt transformed 1))))
 
 (defun fit-uv-to-rect (uv)
-  (if *uv-rect* 
+  (if *uv-rect*
       (destructuring-bind (u-in v-in) uv
         (destructuring-bind (u1 v1 u-range v-range) *uv-rect*
             (list (+ u1 (* u-range u-in))
