@@ -118,15 +118,30 @@
         (color-green color)
         (color-blue color)))
 
+(defun color-bgr (color)
+  (list (color-blue color)
+        (color-green color)
+        (color-red color)))
+
 (defun color-rgba (color)
   (list (color-red color)
         (color-green color)
         (color-blue color)
         (color-alpha color)))
 
+(defun color-bgra (color)
+  (list (color-blue color)
+        (color-green color)
+        (color-red color)
+        (color-alpha color)))
+
 (defun color-rgba-255 (color)
   (mapcar (lambda (x) (coerce (truncate (* 255 x)) 'unsigned-byte))
           (color-rgba color)))
+
+(defun color-bgra-255 (color)
+  (mapcar (lambda (x) (coerce (truncate (* 255 x)) 'unsigned-byte))
+          (color-bgra color)))
 
 (defun color-hsba (color)
   (list (color-hue color)

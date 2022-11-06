@@ -150,4 +150,12 @@
            :set-font
            :text
            :text-line-image
+
+           ;; Canvas
+           :make-canvas
+           :canvas-reset
+           :canvas-paint
+           :canvas-image
+           :canvas-lock
+           :canvas-unlock
            ))

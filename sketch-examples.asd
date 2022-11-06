@@ -13,4 +13,5 @@
                (:file "life")
                (:file "brownian")
                (:file "hello-world")
+               (:file "stars")
                ))

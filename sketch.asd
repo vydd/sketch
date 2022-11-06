@@ -34,4 +34,5 @@
                (:file "transforms")
                (:file "sketch")
                (:file "figures")
-               (:file "controllers")))
+               (:file "controllers")
+               (:file "canvas")))
