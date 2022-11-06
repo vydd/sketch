@@ -118,7 +118,8 @@
 (defun ellipse (cx cy rx ry)
   (declare (type real cx cy rx ry))
   (when (and (not (zerop rx)) (not (zerop ry)))
-    (ngon (max 24 (truncate (* 5 (sqrt (/ (+ (abs rx) (abs ry)) 2))))) cx cy (abs rx) (abs ry))))
+    (ngon (max 24 (truncate (* 5 (sqrt (/ (+ (abs rx) (abs ry)) 2)))))
+          cx cy (abs rx) (abs ry))))
 
 (defun circle (x y r)
   (declare (type real x y r))
