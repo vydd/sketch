@@ -167,6 +167,20 @@ used for drawing, 60fps.")
                 (gl-catch (rgb 0.7 0 0)
                   (draw-window instance)))))))))
 
+;;; Support for resizable windows
+
+(defmethod kit.sdl2:window-event :before ((instance sketch) (type (eql :size-changed)) timestamp data1 data2)
+  (with-slots ((env %env) width height y-axis) instance
+    (setf width data1
+          height data2
+          (env-view-matrix env)
+          (if (eq y-axis :down)
+              (kit.glm:ortho-matrix 0 width height 0 -1 1)
+              (kit.glm:ortho-matrix 0 width 0 height -1 1)))
+    (gl:viewport 0 0 width height)
+    (kit.gl.shader:uniform-matrix
+     (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
+
 ;;; Default events
 
 (defmethod kit.sdl2:keyboard-event :before ((instance sketch) state timestamp repeatp keysym)
