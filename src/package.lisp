@@ -48,6 +48,7 @@
            :degrees
 
            ;; Utils
+           :define-start-function
            :relative-path
 
            ;; Colors
