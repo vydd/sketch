@@ -113,9 +113,14 @@ used for drawing, 60fps.")
       (sdl2:gl-set-attr :context-minor-version 3)
       (sdl2:gl-set-attr :context-profile-mask 1))))
 
-(defmethod initialize-instance :around ((instance sketch) &key &allow-other-keys)
+(defmethod initialize-instance :around ((instance sketch) &rest initargs &key &allow-other-keys)
   (initialize-sketch)
-  (call-next-method)
+  ;; We pass the size of sketch (:width and :height)
+  ;; to the kit.sdl2:gl-window initialization (:w and :h)
+  ;; to avoid immediate window resizing and keep the window centered.
+  (let ((width (or (getf initargs :width) *default-width*))
+        (height (or (getf initargs :height) *default-height*)))
+    (apply #'call-next-method instance :w width :h height initargs))
   (kit.sdl2:start))
 
 (defmethod initialize-instance :after ((instance sketch) &rest initargs &key &allow-other-keys)
@@ -266,6 +271,18 @@ used for drawing, 60fps.")
                        (member (car x) (mapcar #'car *default-slots*)))
                      bindings)))
 
+;;; DEFSKETCH default initargs
+
+(defparameter *default-initargs* '(width height))
+
+(defun sketch-default-initargs (bindings)
+  (mapcan (lambda (slot)
+            (let ((slot-spec (cdr (assoc slot *default-slots*))))
+              (list (getf slot-spec :initarg)
+                    (or (cadr (assoc slot bindings))
+                        (getf slot-spec :initform)))))
+          *default-initargs*))
+
 ;;; DEFSKETCH setf instructions
 
 (defun make-window-parameter-setf ()
@@ -298,7 +315,8 @@ used for drawing, 60fps.")
                      (mapcar #'car *default-slots*))))
     `(progn
        (defclass ,sketch-name (sketch)
-         ,(sketch-bindings-to-slots `,sketch-name bindings))
+         ,(sketch-bindings-to-slots `,sketch-name bindings)
+         (:default-initargs ,@(sketch-default-initargs bindings)))
 
        ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
 
