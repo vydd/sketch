@@ -21,11 +21,16 @@
 (defparameter *sketch* nil
   "The current sketch instance.")
 
+(defparameter *default-width* 400
+  "The default width of sketch window")
+(defparameter *default-height* 400
+  "The default height of sketch window")
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *default-slots*
     '((title :initform "Sketch" :reader sketch-title :initarg :title)
-      (width :initform 400 :reader sketch-width :initarg :width)
-      (height :initform 400 :reader sketch-height :initarg :height)
+      (width :initform *default-width* :reader sketch-width :initarg :width)
+      (height :initform *default-height* :reader sketch-height :initarg :height)
       (fullscreen :initform nil :reader sketch-fullscreen :initarg :fullscreen)
       (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :copy-pixels)
       (y-axis :initform :down :reader sketch-y-axis :initarg :y-axis))))
