@@ -11,11 +11,13 @@
 (defparameter *build* nil)
 
 (defmacro define-start-function (name sketch (&rest args))
-  `(defun ,name ()
-     (sdl2:make-this-thread-main
-      (lambda ()
-        (let ((*build* t))
-          (make-instance ',sketch ,@args))))))
+  `(defun ,name (&optional live)
+     (if live
+         (make-instance ',sketch ,@args)
+         (sdl2:make-this-thread-main
+          (lambda ()
+            (let ((*build* t))
+              (make-instance ',sketch ,@args)))))))
 
 (defun pad-list (list pad length)
   (if (>= (length list) length)
