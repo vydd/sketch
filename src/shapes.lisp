@@ -130,7 +130,7 @@
    (group coordinates)))
 
 (defun polygon (&rest coordinates)
-  (apply #'draw-shape (apply #'make-polygon coordinates)))
+  (draw-polygon coordinates))
 
 (defun quadratic-bezier-point (v a b c)
   (let* ((d (lerp-lists v a b))
