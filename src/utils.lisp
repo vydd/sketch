@@ -10,14 +10,22 @@
 
 (defparameter *build* nil)
 
-(defmacro define-start-function (name sketch (&rest args))
-  `(defun ,name (&optional live)
-     (if live
-         (make-instance ',sketch ,@args)
-         (sdl2:make-this-thread-main
-          (lambda ()
-            (let ((*build* t))
-              (make-instance ',sketch ,@args)))))))
+(defmacro define-start-function (name sketch (&rest args) &body setup-and-on-close)
+  (flet ((define-method (name allow-other-keys arg &rest body)
+           `(defmethod ,name :before ((,@arg ,sketch)
+                                      ,@(if allow-other-keys
+                                            '(&key &allow-other-keys)))
+              ,@body)))
+    `(progn
+       ,(apply #'define-method 'sketch:setup t (cdr (assoc :setup setup-and-on-close)))
+       ,(apply #'define-method 'kit.sdl2:close-window nil (cdr (assoc :on-close setup-and-on-close)))
+       (defun ,name (&optional live)
+         (if live
+             (make-instance ',sketch ,@args)
+             (sdl2:make-this-thread-main
+              (lambda ()
+                (let ((*build* t))
+                  (make-instance ',sketch ,@args)))))))))
 
 (defun pad-list (list pad length)
   (if (>= (length list) length)
