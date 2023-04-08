@@ -10,6 +10,52 @@
 
 (defparameter *build* nil)
 
+(defmacro define-start-function ((name &optional toplevel-name)
+                                 sketch-name initargs
+                                 &rest options)
+  "If toplevel-name is not specified uses `<name>-toplevel'.
+Possible options:
+  :setup - defines `sketch:setup' `:before' method
+      (:setup (<arg-name>)
+        <body>)
+  :on-close - defines `kit.sdl2:on-close' `:before' method;
+      (:on-close (<arg-name>)
+        <body>)
+  :start - executed before creating an instance of sketch (on every function call)
+      (:start <body>)
+  :quit - executed after the instance is closed (only for toplevel function)
+      (:quit <body>)"
+  (let ((initargs-name (gensym "INITARGS"))
+        (toplevel-name (or toplevel-name
+                           (intern (concatenate 'string
+                                                (symbol-name name)
+                                                "-TOPLEVEL")
+                                   (symbol-package name)))))
+    (flet ((define-method (name allow-other-keys arg &rest body)
+             `(defmethod ,name :before ((,@arg ,sketch-name)
+                                        ,@(if allow-other-keys
+                                              '(&key &allow-other-keys)))
+                (declare (ignorable ,@arg))
+                ,@body)))
+      `(progn
+         ,(alexandria:when-let (arg-and-body (cdr (assoc :setup options)))
+            (apply #'define-method 'sketch:setup t arg-and-body))
+         ,(alexandria:when-let (arg-and-body (cdr (assoc :on-close options)))
+            (apply #'define-method 'kit.sdl2:close-window nil arg-and-body))
+         (defun ,name (&rest ,initargs-name &key &allow-other-keys)
+           (initialize-sketch)
+           ,@(cdr (assoc :start options))
+           (apply #'make-instance ',sketch-name (append ,initargs-name ',initargs)))
+         (defun ,toplevel-name ()
+           (sdl2:make-this-thread-main
+            (lambda ()
+              (let ((*build* t))
+                (initialize-sketch)
+                ,@(cdr (assoc :start options))
+                (make-instance ',sketch-name ,@initargs))))
+           ,@(cdr (assoc :quit options)))
+         (values ,name ,toplevel-name)))))
+
 (defun pad-list (list pad length)
   (let ((pad-length (- length (length list))))
     (if (> pad-length 0)
