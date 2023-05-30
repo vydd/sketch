@@ -54,7 +54,7 @@ Possible options:
                 ,@(cdr (assoc :start options))
                 (make-instance ',sketch-name ,@initargs))))
            ,@(cdr (assoc :quit options)))
-         (values ,name ,toplevel-name)))))
+         (values ',name ',toplevel-name)))))
 
 (defun pad-list (list pad length)
   (let ((pad-length (- length (length list))))
