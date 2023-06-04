@@ -28,12 +28,11 @@
 
 (defmacro with-font (font &body body)
   (alexandria:once-only (font)
-    `(alexandria:with-gensyms (previous-font)
-       (progn
-         (setf previous-font (env-font *env*)
-               (env-font *env*) ,font)
+    (alexandria:with-gensyms (previous-font)
+      `(let ((,previous-font (env-font *env*)))
+         (setf (env-font *env*) ,font)
          ,@body
-         (setf (env-font *env*) previous-font)))))
+         (setf (env-font *env*) ,previous-font)))))
 
 (defun set-font (font)
   (setf (env-font *env*) font))
