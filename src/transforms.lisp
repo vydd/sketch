@@ -38,8 +38,8 @@
   `(progn
      (push-matrix)
      (set-matrix ,matrix)
-     ,@body
-     (pop-matrix)))
+     (multiple-value-prog1 (progn ,@body)
+       (pop-matrix))))
 
 (defmacro with-identity-matrix (&body body)
   `(with-matrix sb-cga::+identity-matrix+
