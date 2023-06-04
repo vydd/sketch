@@ -121,4 +121,7 @@
 (defmethod free-resource ((image image))
   (gl:delete-textures (list (image-texture image))))
 
-(defmethod free-resource ((typeface typeface)))
+(defmethod free-resource ((typeface typeface))
+  (let ((pointer (typeface-pointer typeface)))
+    (setf (typeface-pointer typeface) nil)
+    (sdl2-ttf:close-font pointer)))
