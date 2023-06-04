@@ -52,6 +52,7 @@
 (defun load-resource (filename &rest all-keys &key type force-reload-p &allow-other-keys)
   (let ((*env* (or *env* (make-env)))) ;; try faking env if we still don't have one
     (symbol-macrolet ((resource (gethash key (env-resources *env*))))
+      (alexandria:remove-from-plistf all-keys :force-reload-p)
       (let* ((key (alexandria:make-keyword
                    (alexandria:symbolicate filename (format nil "~a" all-keys)))))
         (when force-reload-p
