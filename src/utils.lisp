@@ -53,7 +53,8 @@ Possible options:
                 (initialize-sketch)
                 ,@(cdr (assoc :start options))
                 (make-instance ',sketch-name ,@initargs))))
-           ,@(cdr (assoc :quit options)))
+           ,@(cdr (assoc :quit options))
+           (values))
          (values ',name ',toplevel-name)))))
 
 (defun pad-list (list pad length)
