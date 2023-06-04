@@ -22,7 +22,8 @@
                              (font-face (or (env-font *env*)
                                             (make-default-font))))
                    :color (or color +black+)
-                   :size (or size 18)
+                   :size (coerce (truncate (or size 18))
+                                 '(signed-byte 32))
 		   :line-height (or line-height 1.41)
 		   :align (or align :left))))
 
