@@ -12,7 +12,7 @@
 
 (defmacro define-start-function ((name &optional toplevel-name)
                                  sketch-name initargs
-                                 &rest options)
+                                 &body options)
   "If toplevel-name is not specified uses `<name>-toplevel'.
 Possible options:
   :setup - defines `sketch:setup' `:before' method
