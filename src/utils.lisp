@@ -45,7 +45,7 @@ Possible options:
          (defun ,name (&rest ,initargs-name &key &allow-other-keys)
            (initialize-sketch)
            ,@(cdr (assoc :start options))
-           (apply #'make-instance ',sketch-name (append ,initargs-name ',initargs)))
+           (apply #'make-instance ',sketch-name (append ,initargs-name (list ,@initargs))))
          (defun ,toplevel-name ()
            (sdl2:make-this-thread-main
             (lambda ()
