@@ -18,20 +18,10 @@
       list))
 
 (defun group (list &optional (group-length 2))
-  (flet ((split-n (list n)
-           (when (>= (length list) n)
-             (loop with acc = '()
-                for i below n
-                do (setf acc (cons (car list) acc)
-                         list (cdr list))
-                finally (return (cons (nreverse acc) list))))))
-    (loop with acc = '()
-       while (or (not acc) (cdr list))
-       do (let ((split (split-n list group-length)))
-            (when (car split)
-              (setf acc (cons (car split) acc)))
-            (setf list (cdr split)))
-       finally (return (nreverse acc)))))
+  (loop with list = (copy-list list)
+        for tail = (nthcdr (1- group-length) list)
+        while tail
+        collect (shiftf list (cdr tail) nil)))
 
 (defun group-bits (x &optional (bits 8))
   (loop with result = ()
