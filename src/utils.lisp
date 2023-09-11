@@ -34,11 +34,10 @@
        finally (return (nreverse acc)))))
 
 (defun group-bits (x &optional (bits 8))
-  (let ((bit-fill (1- (expt 2 bits))))
-    (do* ((x x (ash x (- bits)))
-          (acc `(,(boole boole-and x bit-fill))
-               (cons (boole boole-and x bit-fill) acc)))
-         ((zerop x) (cdr acc)))))
+  (loop with result = ()
+        for pos from 0 below (integer-length x) by bits
+        do (push (ldb (byte bits pos) x) result)
+        finally (return result)))
 
 (declaim (inline order-list))
 (defun order-list (order list)
