@@ -31,9 +31,9 @@
 (defconstant +half-pi+ (/ PI 2))
 (defconstant +quarter-pi+ (/ PI 4))
 (defconstant +epsilon+ single-float-epsilon)
-(defconstant +phi+ 1.61803398875)
+(defconstant +phi+ (/ (1+ (sqrt 5d0)) 2))
 (defconstant +golden-ratio+ +phi+)
-(defconstant +e+ (exp 1))
+(defconstant +e+ (exp 1d0))
 
 (defun radians (deg)
   (* PI (/ deg 180)))
