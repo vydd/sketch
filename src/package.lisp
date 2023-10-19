@@ -125,6 +125,9 @@
            :with-matrix
            :with-identity-matrix
            :with-current-matrix
+           :with-translate
+           :with-rotate
+           :with-scale
 
            ;; Channels
            :register-input
