@@ -22,18 +22,18 @@
                              (font-face (or (env-font *env*)
                                             (make-default-font))))
                    :color (or color +black+)
-                   :size (or size 18)
+                   :size (coerce (truncate (or size 18))
+                                 '(signed-byte 32))
 		   :line-height (or line-height 1.41)
 		   :align (or align :left))))
 
 (defmacro with-font (font &body body)
   (alexandria:once-only (font)
-    `(alexandria:with-gensyms (previous-font)
-       (progn
-         (setf previous-font (env-font *env*)
-               (env-font *env*) ,font)
+    (alexandria:with-gensyms (previous-font)
+      `(let ((,previous-font (env-font *env*)))
+         (setf (env-font *env*) ,font)
          ,@body
-         (setf (env-font *env*) previous-font)))))
+         (setf (env-font *env*) ,previous-font)))))
 
 (defun set-font (font)
   (setf (env-font *env*) font))

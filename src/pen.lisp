@@ -16,12 +16,11 @@
 
 (defmacro with-pen (pen &body body)
   (alexandria:once-only (pen)
-    `(alexandria:with-gensyms (previous-pen)
-       (progn
-         (setf previous-pen (env-pen *env*)
-               (env-pen *env*) ,pen)
+    (alexandria:with-gensyms (previous-pen)
+      `(let ((,previous-pen (env-pen *env*)))
+         (setf (env-pen *env*) ,pen)
          ,@body
-         (setf (env-pen *env*) previous-pen)))))
+         (setf (env-pen *env*) ,previous-pen)))))
 
 (defun set-pen (pen)
   "Sets environment pen to PEN."

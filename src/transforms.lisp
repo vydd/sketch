@@ -31,15 +31,15 @@
 
 (defun scale (sx &optional sy (cx 0) (cy 0))
   (translate cx cy)
-  (set-matrix* (sb-cga::scale* (coerce-float sx) (coerce-float (or sy sx)) 0.0))
+  (set-matrix* (sb-cga::scale* (coerce-float sx) (coerce-float (or sy sx)) 1.0))
   (translate (- cx) (- cy)))
 
 (defmacro with-matrix (matrix &body body)
   `(progn
      (push-matrix)
      (set-matrix ,matrix)
-     ,@body
-     (pop-matrix)))
+     (multiple-value-prog1 (progn ,@body)
+       (pop-matrix))))
 
 (defmacro with-identity-matrix (&body body)
   `(with-matrix sb-cga::+identity-matrix+

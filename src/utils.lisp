@@ -10,34 +10,24 @@
 
 (defparameter *build* nil)
 
-(defun pad-list (list pad length)
-  (if (>= (length list) length)
-      list
-      (append (make-list (- length (length list)) :initial-element pad)
-              list)))
+(defun pad-list (list pad length
+                 &aux (pad-length (- length (length list))))
+  (if (> pad-length 0)
+      (append (make-list pad-length :initial-element pad)
+              list)
+      list))
 
 (defun group (list &optional (group-length 2))
-  (flet ((split-n (list n)
-           (when (>= (length list) n)
-             (loop with acc = '()
-                for i below n
-                do (setf acc (cons (car list) acc)
-                         list (cdr list))
-                finally (return (cons (nreverse acc) list))))))
-    (loop with acc = '()
-       while (or (not acc) (cdr list))
-       do (let ((split (split-n list group-length)))
-            (when (car split)
-              (setf acc (cons (car split) acc)))
-            (setf list (cdr split)))
-       finally (return (nreverse acc)))))
+  (loop with list = (copy-list list)
+        for tail = (nthcdr (1- group-length) list)
+        while tail
+        collect (shiftf list (cdr tail) nil)))
 
 (defun group-bits (x &optional (bits 8))
-  (let ((bit-fill (1- (expt 2 bits))))
-    (do* ((x x (ash x (- bits)))
-          (acc `(,(boole boole-and x bit-fill))
-               (cons (boole boole-and x bit-fill) acc)))
-         ((zerop x) (cdr acc)))))
+  (loop with result = ()
+        for pos from 0 below (integer-length x) by bits
+        do (push (ldb (byte bits pos) x) result)
+        finally (return result)))
 
 (declaim (inline order-list))
 (defun order-list (order list)
