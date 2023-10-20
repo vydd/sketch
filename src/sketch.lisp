@@ -185,7 +185,7 @@ used for drawing, 60fps.")
 
 (defmethod kit.sdl2:keyboard-event :before ((instance sketch) state timestamp repeatp keysym)
   (declare (ignorable timestamp repeatp))
-  (when (and (eql state :keydown)
+  (when (and (eql state :keyup)
              (sdl2:scancode= (sdl2:scancode-value keysym) :scancode-escape))
     (kit.sdl2:close-window instance)))
 
