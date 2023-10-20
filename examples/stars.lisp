@@ -9,7 +9,8 @@
 ;;; |____/ |_/_/   \_\_| \_\____/
 
 (defsketch stars
-    ((stars (loop :for i :below 10 :collect (make-stars)))
+    ((bw nil)
+     (stars (loop :for i :below 10 :collect (make-stars bw)))
      (positions (loop :for i :from 18 :downto 0 :by 2 :collect i))
      (rotations (loop :repeat 10 :collect (cons 0 (- (random 0.2) 0.05)))))
   (background +black+)
@@ -34,16 +35,18 @@
           rotations (rotate-list rotations))
     (setf stars (rotate-list stars))))
 
-(defun make-stars ()
+(defun make-stars (bw)
   (let ((canvas (make-canvas 100 100)))
     (dotimes (i 20)
       (let ((x (random 100))
             (y (random 100)))
         (unless (and (< 40 x 60)
                      (< 40 y 60)))
-        (canvas-paint canvas (if (< (random 3) 1)
-                                 +magenta+
-                                 +cyan+)
+        (canvas-paint canvas (if bw
+				 (gray-255 (+ 200 (random 55)))
+				 (if (< (random 3) 1)
+				     +magenta+
+				     +cyan+))
                       x y)))
     (canvas-lock canvas)
     canvas))
