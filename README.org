@@ -375,36 +375,37 @@ We can also change the thickness of the lines and shapes that we draw by changin
 *** Transforms
 The transforms =(translate dx dy)=, =(rotate angle &optional (cx 0) (cy 0))= and =(scale sx &optional sy (cx 0) (cy 0))= are available to change the view matrix that is applied to coordinates.
 
-The current view can be saved on a stack and restored with =(push-matrix)= and =(pop-matrix)=, which are analogous to =push()= and =pop()= in p5.js. The macro =(with-identity-matrix &body body)= pushes the current view matrix onto the stack, sets the view matrix to the identity matrix, executes =body=, and then pops the view matrix. =(with-current-matrix &body body)= is the same, except it doesn't change the view matrix after pushing it.
+Macros =(with-translate (dx dy) &body body)=, =(with-rotate (angle &optional (cx 0) (cy 0)) &body body)= and =(with-scale (sx &optional sy (cx 0) (cy 0)) &body body)= can be used to restore the view matrix after executing the body.
+
+The current view can also be saved on a stack and restored with =(push-matrix)= and =(pop-matrix)=, which are analogous to =push()= and =pop()= in p5.js. The macro =(with-identity-matrix &body body)= pushes the current view matrix onto the stack, sets the view matrix to the identity matrix, executes =body=, and then pops the view matrix. =(with-current-matrix &body body)= is the same, except it doesn't change the view matrix after pushing it.
 
 In this example, translation and rotation are used to draw a triangle in the centre of the screen, without explicitly defining the coordinates of the vertices.
 
 #+BEGIN_SRC lisp
   (defsketch transform-test
-    ((title "Transform test")
-     (width 500)
-     (height 500)
-     (side 100)
-     (y-offset (/ side (* 2 (tan (radians 60))))))
-   (with-identity-matrix
-     (translate 250 250)
-     (loop repeat 3
-           do (line (- (* 1/2 side)) y-offset  (* 1/2 side) y-offset)
-           do (rotate 120))))
+      ((title "Transform test")
+       (width 500)
+       (height 500)
+       (side 100)
+       (y-offset (/ side (* 2 (tan (radians 60))))))
+    (with-translate (250 250)
+      (loop repeat 3
+            do (line (- (* 1/2 side)) y-offset  (* 1/2 side) y-offset)
+            do (rotate 120))))
 #+END_SRC
 
 This example draws a sequence of increasingly shrinking squares using scaling.
 
 #+BEGIN_SRC lisp
   (defsketch transform-test
-     ((width 400)
-	  (height 400)
-	  (title "Scale test"))
+      ((width 400)
+       (height 400)
+       (title "Scale test"))
    (translate 100 100)
    (dotimes (x 5)
      (rect 0 0 100 100)
      (translate 150 0)
-	 (scale 1/2)))
+     (scale 1/2)))
 #+END_SRC
 
 *** Text
