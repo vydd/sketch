@@ -90,7 +90,7 @@ CL-USER> (make-instance 'sketch-examples:hello-world)
 CL-USER> (make-instance 'sketch-examples:sinewave)
 CL-USER> (make-instance 'sketch-examples:brownian)
 CL-USER> (make-instance 'sketch-examples:life) ; Click to toggle cells,
-	                                           ; any key to toggle iteration
+                                               ; any key to toggle iteration
 #+END_SRC
 
 *** Running example code from this page
@@ -118,6 +118,8 @@ If all goes well, this should give you an unremarkable gray window.
 
 *** Shapes
 Let's draw something!
+
+=(rect x y w h)= draws a rectangle where =x= and =y= specify the top-left corner of the rectangle, and =w= and =h= are the width and height. By default, the origin (0, 0) is at the top-left corner of the drawing area, and the positive y direction is facing down.
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
@@ -371,19 +373,163 @@ We can also change the thickness of the lines and shapes that we draw by changin
 #+END_SRC
 
 *** Transforms
-TODO
+The transforms =(translate dx dy)=, =(rotate angle &optional (cx 0) (cy 0))= and =(scale sx &optional sy (cx 0) (cy 0))= are available to change the view matrix that is applied to coordinates.
+
+The current view can be saved on a stack and restored with =(push-matrix)= and =(pop-matrix)=, which are analogous to =push()= and =pop()= in p5.js. The macro =(with-identity-matrix &body body)= pushes the current view matrix onto the stack, sets the view matrix to the identity matrix, executes =body=, and then pops the view matrix. =(with-current-matrix &body body)= is the same, except it doesn't change the view matrix after pushing it.
+
+In this example, translation and rotation are used to draw a triangle in the centre of the screen, without explicitly defining the coordinates of the vertices.
+
+#+BEGIN_SRC lisp
+  (defsketch transform-test
+    ((title "Transform test")
+     (width 500)
+     (height 500)
+     (side 100)
+     (y-offset (/ side (* 2 (tan (radians 60))))))
+   (with-identity-matrix
+     (translate 250 250)
+     (loop repeat 3
+           do (line (- (* 1/2 side)) y-offset  (* 1/2 side) y-offset)
+           do (rotate 120))))
+#+END_SRC
+
+This example draws a sequence of increasingly shrinking squares using scaling.
+
+#+BEGIN_SRC lisp
+  (defsketch transform-test
+     ((width 400)
+	  (height 400)
+	  (title "Scale test"))
+   (translate 100 100)
+   (dotimes (x 5)
+     (rect 0 0 100 100)
+     (translate 150 0)
+	 (scale 1/2)))
+#+END_SRC
 
 *** Text
-TODO
+Use =(text text-string x y &optional width height)= to draw text, where =x= and =y= specify the top-left corner of the rectangle containing the text. =width= and =height= control the shape of the text box. There is support for changing the [[https://github.com/vydd/sketch/blob/master/src/font.lisp#L29][font]].
+
+#+BEGIN_SRC lisp
+  (defsketch text-test
+     ((title "Hello, world!"))
+   (text title 0 0 100))
+#+END_SRC
 
 *** Images
-TODO
+First =(load-resource filename ...)= to load the image from a given file, then =(image image-resource x y &optional width height)= to draw the image with its top-left corner at =(x, y)= and with the given =width= and =height=.
 
-*** Bindings
-TODO
+#+BEGIN_SRC lisp
+  (defsketch image-test
+     ((title "Hello, image!")
+      (rsc (load-resource "/path/to/img.png")))
+    (image rsc 10 10 200 200))
+#+END_SRC
+
+Images can be cropped using =(crop (image-resource image) x y w h)=, where =x= and =y= indicate the top-left corner of the cropping rectangle and =w= and =h= indicate the width & height. Image flipping can be accomplished by using negative =w= and =h= values.
 
 *** Input
-TODO
+Input is handled by overriding methods provided by [[https://github.com/lispgames/sdl2kit/#Windows][sdl2kit]]; the sketch window is a subclass of the =WINDOW= class provided by =sdl2kit=, which provides these generic functions for handling input. Drawing functions cannot be called from these methods, only from the body of =defsketch=.
+
+In this example, we draw a new rectangle every time there is a click. The important parameters of the event method: =state= is a keyword symbol indicating the state of the mouse, =ts= is a timestamp, =x= and =y= are the coordinates of the mouse click.
+
+#+BEGIN_SRC lisp
+  (defsketch input-test
+     ((title "Hello, input")
+      (rectangles nil))
+   (loop for (x y) in rectangles
+         do (rect x y 50 50)))
+  (defmethod kit.sdl2:mousebutton-event ((window input-test) state ts b x y)
+    (with-slots (rectangles) window
+      (when (eq state :mousebuttondown)
+        (push (list x y) rectangles))))
+#+END_SRC
+
+In this example, all keyboard text input is echoed to the screen. =text= is a string / character array containing a single character.
+
+#+BEGIN_SRC lisp
+  (defsketch input-test
+     ((title "Hello, input")
+      (text-to-write nil))
+    (loop for s in text-to-write
+          do (text s 0 0 20 20)
+          do (translate 20 0)))
+  (defmethod kit.sdl2:textinput-event ((window input-test) ts text)
+    (with-slots (text-to-write) window
+      (setf text-to-write (nconc text-to-write (list text)))))
+#+END_SRC
+
+Finally, here is an example where a pair of eyes follow the mouse (the pupils are restricted to a rectangle, it would look better if they were restricted to a circle).
+
+#+BEGIN_SRC lisp
+  (defsketch input-test
+     ((looking-at (list 0 0))
+      (cx (/ width 2))
+      (cy (/ height 2)))
+    (let ((cx-1 (- cx 50))
+          (cx-2 (+ cx 50))
+          (mx (car looking-at))
+          (my (cadr looking-at)))
+      (with-pen (make-pen :fill +white+)
+        (ellipse cx-1 cy 40 80)
+        (ellipse cx-2 cy 40 80))
+      (with-pen (make-pen :fill +black+)
+        (flet ((move-towards (x1 x2)
+                 (let ((diff (- x2 x1)))
+                   (+ x1 (if (< (abs diff) 10)
+                             diff
+                             (* (signum diff) 10))))))
+          (circle (move-towards cx-1 mx) (move-towards cy my) 10)
+          (circle (move-towards cx-2 mx) (move-towards cy my) 10)))))
+  (defmethod kit.sdl2:mousemotion-event ((window input-test) ts bm x y xrel yrel)
+    (with-slots (looking-at) window
+      (setf (car looking-at) x
+            (cadr looking-at) y)))
+#+END_SRC
+
+See also: [[https://github.com/vydd/sketch/blob/master/examples/life.lisp][life.lisp]] and [[https://github.com/vydd/sketch/blob/master/examples/input.lisp][input.lisp]].
+
+*** Setup
+The generic function =(setup instance &key &allow-other-keys)= is a hook that gets called before the window is initialised. Since the window has not been initialised, it can't be used to draw anything, but the background colour can be set. Here is an example from [[https://github.com/vydd/sketch/blob/master/examples/brownian.lisp][brownian.lisp]].
+
+#+BEGIN_SRC lisp
+  (defmethod setup ((instance brownian) &key &allow-other-keys)
+    (background (gray 1)))
+#+END_SRC
+
+*** Saving a picture
+=(save-png pathname)= can be called within the body of =defsketch= to save a PNG of the currently running sketch. A keyboard shortcut could be set up to take screenshots, as follows.
+
+#+BEGIN_SRC lisp
+  (defsketch save-test
+     ((should-save nil)
+      (copy-pixels t))
+    (rect (random width) (random height) 10 10)
+    (when should-save
+      (setf should-save nil)
+      (save-png "/tmp/my-sketch.png")))
+  (defmethod kit.sdl2:textinput-event ((window save-test) ts text)
+    (when (string= text "s")
+      (setf (slot-value window 'should-save) t)))
+#+END_SRC
+
+*** Drawing with a canvas
+=(make-canvas width height)= can be used to create a rectangular grid of pixels. The shape of the grid is defined by =width= and =height=.
+
+=(canvas-paint canvas color x y)= sets the color of a pixel within the grid.
+
+=(canvas-lock canvas)= freezes the appearance of the canvas. Any calls to =(canvas-image canvas)= will show an image of the canvas when =canvas-lock= was last called.
+
+=(canvas-unlock canvas)= allows the image of the canvas to be modified again.
+
+To draw the canvas:
+
+#+BEGIN_SRC lisp
+  (with-pen (make-pen :fill (canvas-image canvas))
+    (rect 0 0 (canvas-width canvas) (canvas-height canvas)))
+#+END_SRC
+
+Example: [[https://github.com/vydd/sketch/blob/master/examples/stars.lisp][stars.lisp]].
 
 ** Made with Sketch
 - [[https://vydd.itch.io/qelt][QELT]]
