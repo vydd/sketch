@@ -48,3 +48,18 @@
 (defmacro with-current-matrix (&body body)
   `(with-matrix (env-model-matrix *env*)
      ,@body))
+
+(defmacro with-translate ((dx dy) &body body)
+  `(with-current-matrix
+     (translate ,dx ,dy)
+     ,@body))
+
+(defmacro with-rotate ((angle &optional (cx 0) (cy 0)) &body body)
+  `(with-current-matrix
+     (rotate ,angle ,cx ,cy)
+     ,@body))
+
+(defmacro with-scale ((sx &optional sy (cx 0) (cy 0)) &body body)
+  `(with-current-matrix
+     (scale ,sx ,sy ,cx ,cy)
+     ,@body))
