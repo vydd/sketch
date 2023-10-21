@@ -285,9 +285,22 @@ used for drawing, 60fps.")
                                                sketch-name '#:- name)))))
   name initform initarg sketch-name accessor)
 
-(defun parse-bindings (bindings)
-  (flet ((parse (blob)))
-    (mapcar #'parse bindings)))
+(defun add-default-bindings (parsed-bindings)
+  (loop for (name . args) in (reverse *default-slots*)
+        unless (member name parsed-bindings :key #'%binding-name)
+        do (push (apply #'make-binding name args) parsed-bindings))
+  parsed-bindings)
+
+(defun parse-bindings (sketch-name bindings)
+  (add-default-bindings
+   (loop for (name value . args) in (alexandria:ensure-list bindings)
+         for default-slot-p = (assoc name *default-slots*)
+         collect (apply #'make-binding
+                        name
+                        :initform value
+                        (if default-slot-p
+                            (cdddr default-slot-p)
+                            (list* :sketch-name sketch-name args))))))
 
 (defun sketch-class-definition (sketch-name bindings)
   `(defclass ,sketch-name (sketch)
@@ -324,7 +337,7 @@ used for drawing, 60fps.")
   (let ((default-not-overridden
           (remove-if (lambda (x) (find x bindings :key #'car))
                      (mapcar #'car *default-slots*)))
-        (parsed-bindings (parse-bindings bindings)))
+        (parsed-bindings (parse-bindings sketch-name bindings)))
     (declare (ignorable parsed-bindings))
     `(progn
        ,(sketch-class-definition sketch-name bindings)
