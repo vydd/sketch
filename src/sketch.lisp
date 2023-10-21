@@ -304,7 +304,11 @@ used for drawing, 60fps.")
 
 (defun sketch-class-definition (sketch-name bindings)
   `(defclass ,sketch-name (sketch)
-     ,(sketch-bindings-to-slots `,sketch-name bindings)))
+     (,@(loop for slot in bindings
+              unless (eq 'sketch (%binding-sketch-name slot))
+              collect `(,(%binding-name slot)
+                        :initarg ,(%binding-initarg slot)
+                        :accessor ,(%binding-accessor slot))))))
 
 (defun draw-method-definition (sketch-name bindings body)
   `(defmethod draw ((*sketch* ,sketch-name) &key &allow-other-keys)
@@ -340,7 +344,7 @@ used for drawing, 60fps.")
         (parsed-bindings (parse-bindings sketch-name bindings)))
     (declare (ignorable parsed-bindings))
     `(progn
-       ,(sketch-class-definition sketch-name bindings)
+       ,(sketch-class-definition sketch-name parsed-bindings)
        ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
        ,(prepare-method-definition sketch-name bindings default-not-overridden)
        ,(draw-method-definition sketch-name bindings body)
