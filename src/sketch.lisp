@@ -314,13 +314,8 @@ used for drawing, 60fps.")
                      (mapcar #'car *default-slots*))))
     `(progn
        ,(sketch-class-definition sketch-name bindings)
-
        ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
-
        ,(prepare-method-definition sketch-name bindings default-not-overridden)
-
        ,(draw-method-definition sketch-name bindings body)
-
        (make-instances-obsolete ',sketch-name)
-
        (find-class ',sketch-name))))
