@@ -279,16 +279,17 @@ used for drawing, 60fps.")
 
 (defstruct (%binding (:constructor make-binding
                          (name &key (sketch-name 'sketch)
+                                    ((:default default-p) nil)
                                     (initform nil)
                                     (initarg (alexandria:make-keyword name))
                                     (accessor (alexandria:symbolicate
                                                sketch-name '#:- name)))))
-  name initform initarg sketch-name accessor)
+  name initform initarg sketch-name accessor default-p)
 
 (defun add-default-bindings (parsed-bindings)
   (loop for (name . args) in (reverse *default-slots*)
         unless (member name parsed-bindings :key #'%binding-name)
-        do (push (apply #'make-binding name args) parsed-bindings))
+        do (push (apply #'make-binding name :default t args) parsed-bindings))
   parsed-bindings)
 
 (defun parse-bindings (sketch-name bindings)
