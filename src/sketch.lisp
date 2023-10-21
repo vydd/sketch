@@ -277,6 +277,10 @@ used for drawing, 60fps.")
 
 ;;; DEFSKETCH macro
 
+(defun sketch-class-definition (sketch-name bindings)
+  `(defclass ,sketch-name (sketch)
+     ,(sketch-bindings-to-slots `,sketch-name bindings)))
+
 (defun draw-method-definition (sketch-name bindings body)
   `(defmethod draw ((*sketch* ,sketch-name) &key &allow-other-keys)
      (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
@@ -309,8 +313,7 @@ used for drawing, 60fps.")
           (remove-if (lambda (x) (find x bindings :key #'car))
                      (mapcar #'car *default-slots*))))
     `(progn
-       (defclass ,sketch-name (sketch)
-         ,(sketch-bindings-to-slots `,sketch-name bindings))
+       ,(sketch-class-definition sketch-name bindings)
 
        ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
 
