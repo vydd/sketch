@@ -324,10 +324,7 @@ used for drawing, 60fps.")
                             ,@(mapcar (lambda (binding)
                                         (destructuring-bind (name value)
                                             (first-two binding)
-                                          (list name
-                                                (if (default-slot-p name)
-                                                    `,value
-                                                    `,value))))
+                                          (list name value)))
                                       (replace-channels-with-values bindings))
                        &allow-other-keys)
      (declare (ignorable ,@(mapcar #'car *default-slots*) ,@(custom-slots bindings)))
