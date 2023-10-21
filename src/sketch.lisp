@@ -189,39 +189,14 @@ used for drawing, 60fps.")
     (sdl2-ttf:quit)
     (kit.sdl2:quit)))
 
-;;; DEFSKETCH helpers
-
-(defun default-slot-p (slot-or-binding)
-  (let ((defaults (mapcar #'car *default-slots*)))
-    (typecase slot-or-binding
-      (list (member (car slot-or-binding) defaults))
-      (t (member slot-or-binding defaults)))))
-
-(defun intern-accessor (name)
-  (intern (string (alexandria:symbolicate 'sketch- name)) :sketch))
-
-(defun binding-accessor (sketch binding)
-  (if (default-slot-p binding)
-      (intern-accessor (car binding))
-      (or (cadr (member :accessor (cddr binding)))
-          (alexandria:symbolicate sketch '- (car binding)))))
-
 ;;; DEFSKETCH channels
 
-(defun channel-binding-p (binding)
-  (and (consp (cadr binding)) (eql 'in (caadr binding))))
-
+#+(or)
 (defun make-channel-observer (sketch binding)
   `(define-channel-observer
      (let ((win (kit.sdl2:last-window)))
        (when win
          (setf (,(binding-accessor sketch binding) win) ,(cadr binding))))))
-
-(defun make-channel-observers (sketch bindings)
-  (mapcar (lambda (binding)
-            (when (channel-binding-p binding)
-              (make-channel-observer sketch binding)))
-          bindings))
 
 ;;; DEFSKETCH macro
 
@@ -286,7 +261,6 @@ used for drawing, 60fps.")
     (declare (ignorable parsed-bindings))
     `(progn
        ,(sketch-class-definition sketch-name parsed-bindings)
-       ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
        ,(prepare-method-definition sketch-name parsed-bindings)
        ,(draw-method-definition sketch-name parsed-bindings body)
        (make-instances-obsolete ',sketch-name)
