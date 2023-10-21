@@ -277,6 +277,18 @@ used for drawing, 60fps.")
 
 ;;; DEFSKETCH macro
 
+(defstruct (%binding (:constructor make-binding
+                         (name &key (sketch-name 'sketch)
+                                    (initform nil)
+                                    (initarg (alexandria:make-keyword name))
+                                    (accessor (alexandria:symbolicate
+                                               sketch-name '#:- name)))))
+  name initform initarg sketch-name accessor)
+
+(defun parse-bindings (bindings)
+  (flet ((parse (blob)))
+    (mapcar #'parse bindings)))
+
 (defun sketch-class-definition (sketch-name bindings)
   `(defclass ,sketch-name (sketch)
      ,(sketch-bindings-to-slots `,sketch-name bindings)))
@@ -311,7 +323,9 @@ used for drawing, 60fps.")
 (defmacro defsketch (sketch-name bindings &body body)
   (let ((default-not-overridden
           (remove-if (lambda (x) (find x bindings :key #'car))
-                     (mapcar #'car *default-slots*))))
+                     (mapcar #'car *default-slots*)))
+        (parsed-bindings (parse-bindings bindings)))
+    (declare (ignorable parsed-bindings))
     `(progn
        ,(sketch-class-definition sketch-name bindings)
        ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
