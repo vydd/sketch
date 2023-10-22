@@ -78,13 +78,16 @@
       (error (format nil "~a's type cannot be deduced." filename))
       (error (format nil "Unsupported resource type ~a" type))))
 
-(defun make-image-from-surface (surface &key (free-surface t))
+(defun make-image-from-surface (surface &key (free-surface t)
+                                             (min-filter :linear)
+                                             (mag-filter :linear))
   (let ((texture (car (gl:gen-textures 1)))
         (rgba-surface (if (eq (sdl2:surface-format-format surface) sdl2:+pixelformat-rgba32+)
                           surface
                           (sdl2:convert-surface-format surface sdl2:+pixelformat-rgba32+))))
     (gl:bind-texture :texture-2d texture)
-    (gl:tex-parameter :texture-2d :texture-min-filter :linear)
+    (gl:tex-parameter :texture-2d :texture-min-filter min-filter)
+    (gl:tex-parameter :texture-2d :texture-mag-filter mag-filter)
     (gl:pixel-store :unpack-row-length (/ (sdl2:surface-pitch rgba-surface) 4))
     (gl:tex-image-2d :texture-2d 0 :rgba
                      (sdl2:surface-width rgba-surface)
@@ -101,8 +104,13 @@
       (when free-surface (sdl2:free-surface surface))
       image)))
 
-(defmethod load-typed-resource (filename (type (eql :image)) &key &allow-other-keys)
-  (make-image-from-surface (sdl2-image:load-image filename)))
+(defmethod load-typed-resource (filename (type (eql :image))
+                                &key (min-filter :linear)
+                                     (mag-filter :linear)
+                                &allow-other-keys)
+  (make-image-from-surface (sdl2-image:load-image filename)
+                           :min-filter min-filter
+                           :mag-filter mag-filter))
 
 (defmethod load-typed-resource (filename (type (eql :typeface))
                                 &key (size 18) &allow-other-keys)
