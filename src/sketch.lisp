@@ -23,12 +23,12 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *default-slots*
-    '((title :initform "Sketch" :reader sketch-title :initarg :title)
-      (width :initform 400 :reader sketch-width :initarg :width)
-      (height :initform 400 :reader sketch-height :initarg :height)
-      (fullscreen :initform nil :reader sketch-fullscreen :initarg :fullscreen)
+    '((title :initform "Sketch" :accessor sketch-title :initarg :title)
+      (width :initform 400 :accessor sketch-width :initarg :width)
+      (height :initform 400 :accessor sketch-height :initarg :height)
+      (fullscreen :initform nil :accessor sketch-fullscreen :initarg :fullscreen)
       (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :copy-pixels)
-      (y-axis :initform :down :reader sketch-y-axis :initarg :y-axis))))
+      (y-axis :initform :down :accessor sketch-y-axis :initarg :y-axis))))
 
 (defmacro define-sketch-class ()
   `(defclass sketch (kit.sdl2:gl-window)
@@ -41,30 +41,21 @@
 ;;; Non trivial sketch writers
 
 (defmacro define-sketch-writer (slot &body body)
-  `(defmethod (setf ,(alexandria:symbolicate 'sketch- slot)) (value (instance sketch))
-     (setf (slot-value instance ',slot) value)
+  `(defmethod (setf ,(alexandria:symbolicate 'sketch- slot)) :after (value (instance sketch))
      (let ((win (kit.sdl2:sdl-window instance)))
        ,@body)))
 
-(defgeneric (setf sketch-title) (value instance))
-(defgeneric (setf sketch-width) (value instance))
-(defgeneric (setf sketch-height) (value instance))
-(defgeneric (setf sketch-fullscreen) (value instance))
-(defgeneric (setf sketch-y-axis) (value instance))
-
 (define-sketch-writer title
-  (sdl2:set-window-title win (slot-value instance 'title)))
+  (sdl2:set-window-title win value))
 
 (define-sketch-writer width
-  (sdl2:set-window-size win (slot-value instance 'width)
-                        (slot-value instance 'height)))
+  (sdl2:set-window-size win value (sketch-height instance)))
 
 (define-sketch-writer height
-  (sdl2:set-window-size win (slot-value instance 'width)
-                        (slot-value instance 'height)))
+  (sdl2:set-window-size win (sketch-width instance) value))
 
 (define-sketch-writer fullscreen
-  (sdl2:set-window-fullscreen win (slot-value instance 'fullscreen)))
+  (sdl2:set-window-fullscreen win value))
 
 (define-sketch-writer y-axis
   (declare (ignore win))
