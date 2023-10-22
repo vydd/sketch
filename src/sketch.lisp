@@ -256,18 +256,18 @@ used for drawing, 60fps.")
 
 (defun make-window-parameter-setf ()
   `(setf ,@(mapcan (lambda (slot)
-                     `((,(intern-accessor (car slot)) instance) ,(car slot)))
+                     `((,(intern-accessor (car slot)) *sketch*) ,(car slot)))
                    *default-slots*)))
 
 (defun make-custom-slots-setf (sketch bindings)
   `(setf ,@(mapcan (lambda (binding)
-                     `((slot-value instance ',(car binding)) ,(car binding)))
+                     `((slot-value *sketch* ',(car binding)) ,(car binding)))
                    bindings)))
 
 (defun make-reinitialize-setf ()
   `(setf ,@(mapcan (lambda (slot)
-                     `((,(intern-accessor (car slot)) instance)
-                       (,(intern-accessor (car slot)) instance)))
+                     `((,(intern-accessor (car slot)) *sketch*)
+                       (,(intern-accessor (car slot)) *sketch*)))
                    *default-slots*)))
 
 (defun custom-slots (bindings)
@@ -288,31 +288,30 @@ used for drawing, 60fps.")
 
        ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
 
-       (defmethod prepare progn ((instance ,sketch-name) &rest initargs &key &allow-other-keys)
+       (defmethod prepare progn ((*sketch* ,sketch-name) &rest initargs &key &allow-other-keys)
                   (declare (ignorable initargs))
                   (let* (,@(loop for slot in default-not-overridden
-                              collect `(,slot (slot-value instance ',slot)))
+                              collect `(,slot (slot-value *sketch* ',slot)))
                          ,@(mapcar (lambda (binding)
                                      (destructuring-bind (name value)
                                          (first-two binding)
                                        (list name (if (default-slot-p name)
                                                       `(if (getf initargs ,(alexandria:make-keyword name))
-                                                           (slot-value instance ',name)
+                                                           (slot-value *sketch* ',name)
                                                            ,value)
                                                       `(or (getf initargs ,(alexandria:make-keyword name)) ,value)))))
                                    (replace-channels-with-values bindings)))
                     (declare (ignorable ,@(mapcar #'car *default-slots*) ,@(custom-slots bindings)))
                     ,(make-window-parameter-setf)
                     ,(make-custom-slots-setf sketch-name (custom-bindings bindings)))
-                  (setf (env-y-axis-sgn (slot-value instance '%env))
-                        (if (eq (slot-value instance 'y-axis) :down) +1 -1)))
+                  (setf (env-y-axis-sgn (slot-value *sketch* '%env))
+                        (if (eq (slot-value *sketch* 'y-axis) :down) +1 -1)))
 
-       (defmethod draw ((instance ,sketch-name) &key &allow-other-keys)
-         (let ((*sketch* instance))
-           (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
-                             *default-slots*) instance
-             (with-slots ,(mapcar #'car bindings) instance
-               ,@body))))
+       (defmethod draw ((*sketch* ,sketch-name) &key &allow-other-keys)
+         (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
+                           *default-slots*) *sketch*
+           (with-slots ,(mapcar #'car bindings) *sketch*
+             ,@body)))
 
        (make-instances-obsolete ',sketch-name)
 
