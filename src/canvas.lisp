@@ -35,7 +35,10 @@
     (dotimes (i 4)
       (setf (cffi:mem-aref ptr :uint8 (+ pos i)) (elt vec i)))))
 
-(defmethod canvas-image ((canvas canvas))
+(defmethod canvas-image ((canvas canvas)
+			 &key (min-filter :linear)
+                              (mag-filter :linear)
+			 &allow-other-keys)
   (if (%canvas-locked canvas)
       (%canvas-image canvas)
       (make-image-from-surface
@@ -45,10 +48,17 @@
         (canvas-height canvas)
         32
         (* 4 (canvas-width canvas))
-        :format sdl2:+pixelformat-argb8888+))))
+        :format sdl2:+pixelformat-argb8888+)
+       :min-filter min-filter
+       :mag-filter mag-filter)))
 
-(defmethod canvas-lock ((canvas canvas))
-  (setf (%canvas-image canvas) (canvas-image canvas)
+(defmethod canvas-lock ((canvas canvas)
+			&key (min-filter :linear)
+			     (mag-filter :linear)
+			&allow-other-keys)
+  (setf (%canvas-image canvas) (canvas-image canvas
+					     :min-filter min-filter
+					     :mag-filter mag-filter)
         (%canvas-locked canvas) t))
 
 (defmethod canvas-unlock ((canvas canvas))
