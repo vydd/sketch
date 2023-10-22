@@ -287,7 +287,7 @@ used for drawing, 60fps.")
 
        ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
 
-       (defmethod prepare progn ((*sketch* ,sketch-name) &rest initargs &key &allow-other-keys)
+       (defmethod prepare ((*sketch* ,sketch-name) &rest initargs &key &allow-other-keys)
                   (declare (ignorable initargs))
                   (let* (,@(loop for slot in default-not-overridden
                               collect `(,slot (slot-value *sketch* ',slot)))
