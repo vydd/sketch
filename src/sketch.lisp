@@ -298,6 +298,14 @@ used for drawing, 60fps.")
       (setf (env-y-axis-sgn (slot-value *sketch* '%env))
             (if (eq (slot-value *sketch* 'y-axis) :down) +1 -1)))))
 
+(defun draw-definition (sketch-name bindings body)
+  (cddr
+   `(defmethod draw ((*sketch* ,sketch-name) &key &allow-other-keys)
+      (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
+                        *default-slots*) *sketch*
+        (with-slots ,(mapcar #'car bindings) *sketch*
+          ,@body)))))
+
 ;;; DEFSKETCH macro
 
 (defmacro defsketch (sketch-name bindings &body body)
@@ -312,11 +320,7 @@ used for drawing, 60fps.")
 
        (defmethod prepare ,@(prepare-definition sketch-name bindings default-not-overridden))
 
-       (defmethod draw ((*sketch* ,sketch-name) &key &allow-other-keys)
-         (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
-                           *default-slots*) *sketch*
-           (with-slots ,(mapcar #'car bindings) *sketch*
-             ,@body)))
+       (defmethod draw ,@(draw-definition sketch-name bindings body))
 
        (make-instances-obsolete ',sketch-name)
 
