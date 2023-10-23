@@ -275,6 +275,13 @@ used for drawing, 60fps.")
      if (not (member b *default-slots*))
      collect b))
 
+;;; Class definition
+
+(defun sketch-class-definition (sketch-name bindings)
+  (cdr
+   `(defclass ,sketch-name (sketch)
+      ,(sketch-bindings-to-slots `,sketch-name bindings))))
+
 ;;; Method definitions
 
 (defun prepare-definition (sketch-name bindings default-not-overridden)
@@ -313,8 +320,7 @@ used for drawing, 60fps.")
           (remove-if (lambda (x) (find x bindings :key #'car))
                      (mapcar #'car *default-slots*))))
     `(progn
-       (defclass ,sketch-name (sketch)
-         ,(sketch-bindings-to-slots `,sketch-name bindings))
+       (defclass ,@(sketch-class-definition sketch-name bindings))
 
        ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
 
