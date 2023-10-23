@@ -277,6 +277,16 @@ used for drawing, 60fps.")
 
 ;;; DEFSKETCH macro
 
+(defun generate-accessors (sketch-name bindings)
+  (let ((default-accessors
+	  (mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
+		  *default-slots*))
+	(user-accessors
+	  (mapcar (lambda (x) (list (car x) (alexandria:symbolicate sketch-name '- (car x))))
+		  (remove-if (lambda (x) (member (car x) (mapcar #'car *default-slots*)))
+			     bindings))))
+    (append default-accessors user-accessors)))
+
 (defmacro defsketch (sketch-name bindings &body body)
   (let ((default-not-overridden
           (remove-if (lambda (x) (find x bindings :key #'car))
@@ -307,10 +317,8 @@ used for drawing, 60fps.")
                (if (eq (slot-value *sketch* 'y-axis) :down) +1 -1)))
 
        (defmethod draw ((*sketch* ,sketch-name) &key &allow-other-keys)
-         (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
-                           *default-slots*) *sketch*
-           (with-slots ,(mapcar #'car bindings) *sketch*
-             ,@body)))
+         (with-accessors ,(generate-accessors sketch-name bindings) *sketch*
+           ,@body))
 
        (make-instances-obsolete ',sketch-name)
 
