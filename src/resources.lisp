@@ -107,10 +107,25 @@
 (defmethod load-typed-resource (filename (type (eql :image))
                                 &key (min-filter :linear)
                                      (mag-filter :linear)
+				     (x nil)
+				     (y nil)
+				     (w nil)
+				     (h nil)
                                 &allow-other-keys)
-  (make-image-from-surface (sdl2-image:load-image filename)
-                           :min-filter min-filter
-                           :mag-filter mag-filter))
+  (let ((surface (sdl2-image:load-image filename)))
+    (make-image-from-surface (cut-surface surface x y w h)
+			     :min-filter min-filter
+			     :mag-filter mag-filter)))
+
+(defun cut-surface (surface x y w h)
+  (if (and x y w h)
+      (let ((src-rect (sdl2:make-rect x y w h))
+	    (dst-rect (sdl2:make-rect 0 0 w h))
+	    (dst-surface (sdl2:create-rgb-surface w h 32)))
+	(sdl2:blit-surface surface src-rect dst-surface dst-rect)
+	(sdl2:free-surface surface)
+	dst-surface)
+      surface))
 
 (defmethod load-typed-resource (filename (type (eql :typeface))
                                 &key (size 18) &allow-other-keys)
