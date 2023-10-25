@@ -318,15 +318,18 @@ used for drawing, 60fps.")
          *sketch*
        ,@body)))
 
-(defun prepare-method-definition (sketch-name bindings default-not-overridden)
+(defun prepare-method-definition (sketch-name bindings)
   `(defmethod prepare ((*sketch* ,sketch-name)
-                       &key ,@(loop for slot in default-not-overridden
-                                    collect `(,slot (slot-value *sketch* ',slot)))
-                            ,@(replace-channels-with-values bindings)
+                       &key ,@(loop for slot in bindings
+                                    collect `((,(%binding-initarg slot) ,(%binding-name slot))
+                                              ,(if (%binding-default-p slot)
+                                                   `(,(%binding-accessor slot) *sketch*)
+                                                   (%binding-initform slot))))
                        &allow-other-keys)
-     (declare (ignorable ,@(mapcar #'car *default-slots*) ,@(custom-slots bindings)))
-     ,(make-window-parameter-setf)
-     ,(make-custom-slots-setf sketch-name (custom-bindings bindings))
+     (declare (ignorable ,@(mapcar #'%binding-name bindings)))
+     (setf ,@(loop for slot in bindings
+                   collect `(,(%binding-accessor slot) *sketch*)
+                   collect (%binding-name slot)))
      (setf (env-y-axis-sgn (slot-value *sketch* '%env))
            (if (eq (slot-value *sketch* 'y-axis) :down) +1 -1))))
 
@@ -339,7 +342,7 @@ used for drawing, 60fps.")
     `(progn
        ,(sketch-class-definition sketch-name parsed-bindings)
        ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
-       ,(prepare-method-definition sketch-name bindings default-not-overridden)
+       ,(prepare-method-definition sketch-name parsed-bindings)
        ,(draw-method-definition sketch-name parsed-bindings body)
        (make-instances-obsolete ',sketch-name)
        (find-class ',sketch-name))))
