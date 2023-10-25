@@ -60,10 +60,11 @@
 (define-sketch-writer y-axis
   (declare (ignore win))
   (with-slots ((env %env) width height y-axis) instance
-    (setf (env-view-matrix env)
-          (if (eq y-axis :down)
-              (kit.glm:ortho-matrix 0 width height 0 -1 1)
-              (kit.glm:ortho-matrix 0 width 0 height -1 1)))
+    ;; FIXME: Code duplicated (with initialize-environment)
+    (setf (env-view-matrix env) (if (eq y-axis :down)
+                                    (kit.glm:ortho-matrix 0 width height 0 -1 1)
+                                    (kit.glm:ortho-matrix 0 width 0 height -1 1))
+          (env-y-axis-sgn env) (if (eq y-axis :down) +1 -1))
     (kit.gl.shader:uniform-matrix
      (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
 
@@ -257,9 +258,7 @@ used for drawing, 60fps.")
      (declare (ignorable ,@(mapcar #'binding-name bindings)))
      (setf ,@(loop for b in bindings
                    collect `(,(binding-accessor b) *sketch*)
-                   collect (binding-name b)))
-     (setf (env-y-axis-sgn (slot-value *sketch* '%env))
-           (if (eq (slot-value *sketch* 'y-axis) :down) +1 -1))))
+                   collect (binding-name b)))))
 
 (defmacro defsketch (sketch-name bindings &body body)
   (let ((bindings (parse-bindings sketch-name bindings)))
