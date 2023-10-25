@@ -190,15 +190,6 @@ used for drawing, 60fps.")
     (sdl2-ttf:quit)
     (kit.sdl2:quit)))
 
-;;; DEFSKETCH channels
-
-#+(or)
-(defun make-channel-observer (sketch binding)
-  `(define-channel-observer
-     (let ((win (kit.sdl2:last-window)))
-       (when win
-         (setf (,(binding-accessor sketch binding) win) ,(cadr binding))))))
-
 ;;; DEFSKETCH bindings
 
 (defclass binding ()
@@ -207,19 +198,24 @@ used for drawing, 60fps.")
    (initform :initarg :initform :accessor binding-initform)
    (defaultp :initarg :defaultp :accessor binding-defaultp)
    (initarg :initarg :initarg :accessor binding-initarg)
-   (accessor :initarg :accessor :accessor binding-accessor)))
+   (accessor :initarg :accessor :accessor binding-accessor)
+   (channelp :initarg :channelp :accessor binding-channelp)
+   (channel-name :initarg :channel-name :accessor binding-channel-name)))
 
 (defun make-binding (name &key (sketch-name 'sketch)
                                (defaultp nil)
                                (initform nil)
                                (initarg (alexandria:make-keyword name))
-                               (accessor (alexandria:symbolicate sketch-name '#:- name)))
+                               (accessor (alexandria:symbolicate sketch-name '#:- name))
+                               (channel-name nil channel-name-p))
   (make-instance 'binding :name name
                           :sketch-name sketch-name
                           :defaultp defaultp
                           :initform initform
                           :initarg initarg
-                          :accessor accessor))
+                          :accessor accessor
+                          :channel-name channel-name
+                          :channelp channel-name-p))
 
 (defun add-default-bindings (parsed-bindings)
   (loop for (name . args) in (reverse *default-slots*)
@@ -231,12 +227,32 @@ used for drawing, 60fps.")
   (add-default-bindings
    (loop for (name value . args) in (alexandria:ensure-list bindings)
          for default-slot-p = (assoc name *default-slots*)
+         ;; If a VALUE is of form (IN CHANNEL-NAME DEFAULT-VALUE) it
+         ;; is recognized as a channel. We should pass additional
+         ;; :channel-name parameter to MAKE-BINDING and set the VALUE
+         ;; to the DEFAULT-VALUE.
+         when (and (consp value)
+                   (eq 'in (car value)))
+           do (setf args (list* :channel-name (second value) args)
+                    value (third value))
          collect (apply #'make-binding
                         name
                         :initform value
                         (if default-slot-p
                             (cdddr default-slot-p)
                             (list* :sketch-name sketch-name args))))))
+
+;;; DEFSKETCH channels
+
+(defun define-channel-observers (bindings)
+  (loop for b in bindings
+        when (binding-channelp b)
+        collect `(define-channel-observer
+                   (let ((win (kit.sdl2:last-window)))
+                     (when win
+                       (setf (,(binding-accessor b) win)
+                             (in ,(binding-channel-name b)
+                                 ,(binding-initform b))))))))
 
 ;;; DEFSKETCH macro
 
@@ -272,6 +288,7 @@ used for drawing, 60fps.")
   (let ((bindings (parse-bindings sketch-name bindings)))
     `(progn
        ,(define-sketch-defclass sketch-name bindings)
+       ,@(define-channel-observers bindings)
        ,(define-prepare-method sketch-name bindings)
        ,(define-draw-method sketch-name bindings body)
 
