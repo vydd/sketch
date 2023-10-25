@@ -312,10 +312,10 @@ used for drawing, 60fps.")
 
 (defun draw-method-definition (sketch-name bindings body)
   `(defmethod draw ((*sketch* ,sketch-name) &key &allow-other-keys)
-     (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
-                       *default-slots*) *sketch*
-       (with-slots ,(mapcar #'car bindings) *sketch*
-         ,@body))))
+     (with-accessors (,@(loop for slot in bindings
+                              collect `(,(%binding-name slot) ,(%binding-accessor slot))))
+         *sketch*
+       ,@body)))
 
 (defun prepare-method-definition (sketch-name bindings default-not-overridden)
   `(defmethod prepare ((*sketch* ,sketch-name) &rest initargs &key &allow-other-keys)
@@ -347,6 +347,6 @@ used for drawing, 60fps.")
        ,(sketch-class-definition sketch-name parsed-bindings)
        ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
        ,(prepare-method-definition sketch-name bindings default-not-overridden)
-       ,(draw-method-definition sketch-name bindings body)
+       ,(draw-method-definition sketch-name parsed-bindings body)
        (make-instances-obsolete ',sketch-name)
        (find-class ',sketch-name))))
