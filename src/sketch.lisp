@@ -191,19 +191,11 @@ used for drawing, 60fps.")
 
 ;;; DEFSKETCH helpers
 
-(defun first-two (list)
-  (list (first list) (second list)))
-
 (defun default-slot-p (slot-or-binding)
   (let ((defaults (mapcar #'car *default-slots*)))
     (typecase slot-or-binding
       (list (member (car slot-or-binding) defaults))
       (t (member slot-or-binding defaults)))))
-
-(defun custom-bindings (&optional bindings)
-  (remove-if (lambda (binding)
-               (member (car binding) (mapcar #'car *default-slots*)))
-             bindings))
 
 (defun intern-accessor (name)
   (intern (string (alexandria:symbolicate 'sketch- name)) :sketch))
@@ -213,11 +205,6 @@ used for drawing, 60fps.")
       (intern-accessor (car binding))
       (or (cadr (member :accessor (cddr binding)))
           (alexandria:symbolicate sketch '- (car binding)))))
-
-(defun make-slot-form (sketch binding)
-  `(,(car binding)
-     :initarg ,(alexandria:make-keyword (car binding))
-     :accessor ,(binding-accessor sketch binding)))
 
 ;;; DEFSKETCH channels
 
@@ -235,45 +222,6 @@ used for drawing, 60fps.")
             (when (channel-binding-p binding)
               (make-channel-observer sketch binding)))
           bindings))
-
-(defun replace-channels-with-values (bindings)
-  (loop for binding in bindings
-     collect (list (car binding)
-                   (if (channel-binding-p binding)
-                       (caddr (cadr binding))
-                       (cadr binding)))))
-
-;;; DEFSKETCH bindings
-
-(defun sketch-bindings-to-slots (sketch bindings)
-  (mapcar (lambda (x) (make-slot-form sketch x))
-          (remove-if (lambda (x)
-                       (member (car x) (mapcar #'car *default-slots*)))
-                     bindings)))
-
-;;; DEFSKETCH setf instructions
-
-(defun make-window-parameter-setf ()
-  `(setf ,@(mapcan (lambda (slot)
-                     `((,(intern-accessor (car slot)) *sketch*) ,(car slot)))
-                   *default-slots*)))
-
-(defun make-custom-slots-setf (sketch bindings)
-  `(setf ,@(mapcan (lambda (binding)
-                     `((slot-value *sketch* ',(car binding)) ,(car binding)))
-                   bindings)))
-
-(defun make-reinitialize-setf ()
-  `(setf ,@(mapcan (lambda (slot)
-                     `((,(intern-accessor (car slot)) *sketch*)
-                       (,(intern-accessor (car slot)) *sketch*)))
-                   *default-slots*)))
-
-(defun custom-slots (bindings)
-  (loop
-     for b in (mapcar #'car bindings)
-     if (not (member b *default-slots*))
-     collect b))
 
 ;;; DEFSKETCH macro
 
@@ -334,10 +282,7 @@ used for drawing, 60fps.")
            (if (eq (slot-value *sketch* 'y-axis) :down) +1 -1))))
 
 (defmacro defsketch (sketch-name bindings &body body)
-  (let ((default-not-overridden
-          (remove-if (lambda (x) (find x bindings :key #'car))
-                     (mapcar #'car *default-slots*)))
-        (parsed-bindings (parse-bindings sketch-name bindings)))
+  (let ((parsed-bindings (parse-bindings sketch-name bindings)))
     (declare (ignorable parsed-bindings))
     `(progn
        ,(sketch-class-definition sketch-name parsed-bindings)
