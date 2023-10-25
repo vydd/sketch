@@ -199,7 +199,7 @@ used for drawing, 60fps.")
        (when win
          (setf (,(binding-accessor sketch binding) win) ,(cadr binding))))))
 
-;;; DEFSKETCH macro
+;;; DEFSKETCH bindings
 
 (defstruct (binding (:constructor make-binding
                         (name &key (sketch-name 'sketch)
@@ -231,6 +231,8 @@ used for drawing, 60fps.")
                         (if default-slot-p
                             (cdddr default-slot-p)
                             (list* :sketch-name sketch-name args))))))
+
+;;; DEFSKETCH macro
 
 (defun define-sketch-defclass (name bindings)
   `(defclass ,name (sketch)
