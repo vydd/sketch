@@ -201,24 +201,30 @@ used for drawing, 60fps.")
 
 ;;; DEFSKETCH bindings
 
-(defstruct (binding (:constructor make-binding
-                        (name &key (sketch-name 'sketch)
-                                   ((:default default-p) nil)
-                                   (initform nil)
-                                   (initarg (alexandria:make-keyword name))
-                                   (accessor (alexandria:symbolicate
-                                              sketch-name '#:- name)))))
-  name
-  sketch-name
-  default-p
-  initform
-  initarg
-  accessor)
+(defclass binding ()
+  ((name :initarg :name :accessor binding-name)
+   (sketch-name :initarg :sketch-name :accessor binding-sketch-name)
+   (initform :initarg :initform :accessor binding-initform)
+   (defaultp :initarg :defaultp :accessor binding-defaultp)
+   (initarg :initarg :initarg :accessor binding-initarg)
+   (accessor :initarg :accessor :accessor binding-accessor)))
+
+(defun make-binding (name &key (sketch-name 'sketch)
+                               (defaultp nil)
+                               (initform nil)
+                               (initarg (alexandria:make-keyword name))
+                               (accessor (alexandria:symbolicate sketch-name '#:- name)))
+  (make-instance 'binding :name name
+                          :sketch-name sketch-name
+                          :defaultp defaultp
+                          :initform initform
+                          :initarg initarg
+                          :accessor accessor))
 
 (defun add-default-bindings (parsed-bindings)
   (loop for (name . args) in (reverse *default-slots*)
         unless (member name parsed-bindings :key #'binding-name)
-        do (push (apply #'make-binding name :default t args) parsed-bindings))
+        do (push (apply #'make-binding name :defaultp t args) parsed-bindings))
   parsed-bindings)
 
 (defun parse-bindings (sketch-name bindings)
@@ -253,7 +259,7 @@ used for drawing, 60fps.")
   `(defmethod prepare ((*sketch* ,name)
                        &key ,@(loop for b in bindings
                                     collect `((,(binding-initarg b) ,(binding-name b))
-                                              ,(if (binding-default-p b)
+                                              ,(if (binding-defaultp b)
                                                    `(,(binding-accessor b) *sketch*)
                                                    (binding-initform b))))
                        &allow-other-keys)
