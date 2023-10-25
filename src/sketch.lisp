@@ -60,10 +60,11 @@
 (define-sketch-writer y-axis
   (declare (ignore win))
   (with-slots ((env %env) width height y-axis) instance
-    (setf (env-view-matrix env)
-          (if (eq y-axis :down)
-              (kit.glm:ortho-matrix 0 width height 0 -1 1)
-              (kit.glm:ortho-matrix 0 width 0 height -1 1)))
+    ;; FIXME: Code duplicated (with initialize-environment)
+    (setf (env-view-matrix env) (if (eq y-axis :down)
+                                    (kit.glm:ortho-matrix 0 width height 0 -1 1)
+                                    (kit.glm:ortho-matrix 0 width 0 height -1 1))
+          (env-y-axis-sgn env) (if (eq y-axis :down) +1 -1))
     (kit.gl.shader:uniform-matrix
      (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
 
@@ -189,129 +190,106 @@ used for drawing, 60fps.")
     (sdl2-ttf:quit)
     (kit.sdl2:quit)))
 
-;;; DEFSKETCH helpers
+;;; DEFSKETCH bindings
 
-(defun first-two (list)
-  (list (first list) (second list)))
+(defclass binding ()
+  ((name :initarg :name :accessor binding-name)
+   (sketch-name :initarg :sketch-name :accessor binding-sketch-name)
+   (initform :initarg :initform :accessor binding-initform)
+   (defaultp :initarg :defaultp :accessor binding-defaultp)
+   (initarg :initarg :initarg :accessor binding-initarg)
+   (accessor :initarg :accessor :accessor binding-accessor)
+   (channelp :initarg :channelp :accessor binding-channelp)
+   (channel-name :initarg :channel-name :accessor binding-channel-name)))
 
-(defun default-slot-p (slot-or-binding)
-  (let ((defaults (mapcar #'car *default-slots*)))
-    (typecase slot-or-binding
-      (list (member (car slot-or-binding) defaults))
-      (t (member slot-or-binding defaults)))))
+(defun make-binding (name &key (sketch-name 'sketch)
+                               (defaultp nil)
+                               (initform nil)
+                               (initarg (alexandria:make-keyword name))
+                               (accessor (alexandria:symbolicate sketch-name '#:- name))
+                               (channel-name nil channel-name-p))
+  (make-instance 'binding :name name
+                          :sketch-name sketch-name
+                          :defaultp defaultp
+                          :initform initform
+                          :initarg initarg
+                          :accessor accessor
+                          :channel-name channel-name
+                          :channelp channel-name-p))
 
-(defun custom-bindings (&optional bindings)
-  (remove-if (lambda (binding)
-               (member (car binding) (mapcar #'car *default-slots*)))
-             bindings))
+(defun add-default-bindings (parsed-bindings)
+  (loop for (name . args) in (reverse *default-slots*)
+        unless (member name parsed-bindings :key #'binding-name)
+        do (push (apply #'make-binding name :defaultp t args) parsed-bindings))
+  parsed-bindings)
 
-(defun intern-accessor (name)
-  (intern (string (alexandria:symbolicate 'sketch- name)) :sketch))
-
-(defun binding-accessor (sketch binding)
-  (if (default-slot-p binding)
-      (intern-accessor (car binding))
-      (or (cadr (member :accessor (cddr binding)))
-          (alexandria:symbolicate sketch '- (car binding)))))
-
-(defun make-slot-form (sketch binding)
-  `(,(car binding)
-     :initarg ,(alexandria:make-keyword (car binding))
-     :accessor ,(binding-accessor sketch binding)))
+(defun parse-bindings (sketch-name bindings)
+  (add-default-bindings
+   (loop for (name value . args) in (alexandria:ensure-list bindings)
+         for default-slot-p = (assoc name *default-slots*)
+         ;; If a VALUE is of form (IN CHANNEL-NAME DEFAULT-VALUE) it
+         ;; is recognized as a channel. We should pass additional
+         ;; :channel-name parameter to MAKE-BINDING and set the VALUE
+         ;; to the DEFAULT-VALUE.
+         when (and (consp value)
+                   (eq 'in (car value)))
+           do (setf args (list* :channel-name (second value) args)
+                    value (third value))
+         collect (apply #'make-binding
+                        name
+                        :initform value
+                        (if default-slot-p
+                            (cdddr default-slot-p)
+                            (list* :sketch-name sketch-name args))))))
 
 ;;; DEFSKETCH channels
 
-(defun channel-binding-p (binding)
-  (and (consp (cadr binding)) (eql 'in (caadr binding))))
+(defun define-channel-observers (bindings)
+  (loop for b in bindings
+        when (binding-channelp b)
+        collect `(define-channel-observer
+                   (let ((win (kit.sdl2:last-window)))
+                     (when win
+                       (setf (,(binding-accessor b) win)
+                             (in ,(binding-channel-name b)
+                                 ,(binding-initform b))))))))
 
-(defun make-channel-observer (sketch binding)
-  `(define-channel-observer
-     (let ((win (kit.sdl2:last-window)))
-       (when win
-         (setf (,(binding-accessor sketch binding) win) ,(cadr binding))))))
+;;; DEFSKETCH macro
 
-(defun make-channel-observers (sketch bindings)
-  (mapcar (lambda (binding)
-            (when (channel-binding-p binding)
-              (make-channel-observer sketch binding)))
-          bindings))
+(defun define-sketch-defclass (name bindings)
+  `(defclass ,name (sketch)
+     (,@(loop for b in bindings
+              unless (eq 'sketch (binding-sketch-name b))
+              collect `(,(binding-name b)
+                        :initarg ,(binding-initarg b)
+                        :accessor ,(binding-accessor b))))))
 
-(defun replace-channels-with-values (bindings)
-  (loop for binding in bindings
-     collect (list (car binding)
-                   (if (channel-binding-p binding)
-                       (caddr (cadr binding))
-                       (cadr binding)))))
+(defun define-draw-method (name bindings body)
+  `(defmethod draw ((*sketch* ,name) &key &allow-other-keys)
+     (with-accessors (,@(loop for b in bindings
+                              collect `(,(binding-name b) ,(binding-accessor b))))
+         *sketch*
+       ,@body)))
 
-;;; DEFSKETCH bindings
-
-(defun sketch-bindings-to-slots (sketch bindings)
-  (mapcar (lambda (x) (make-slot-form sketch x))
-          (remove-if (lambda (x)
-                       (member (car x) (mapcar #'car *default-slots*)))
-                     bindings)))
-
-;;; DEFSKETCH setf instructions
-
-(defun make-window-parameter-setf ()
-  `(setf ,@(mapcan (lambda (slot)
-                     `((,(intern-accessor (car slot)) *sketch*) ,(car slot)))
-                   *default-slots*)))
-
-(defun make-custom-slots-setf (sketch bindings)
-  `(setf ,@(mapcan (lambda (binding)
-                     `((slot-value *sketch* ',(car binding)) ,(car binding)))
-                   bindings)))
-
-(defun make-reinitialize-setf ()
-  `(setf ,@(mapcan (lambda (slot)
-                     `((,(intern-accessor (car slot)) *sketch*)
-                       (,(intern-accessor (car slot)) *sketch*)))
-                   *default-slots*)))
-
-(defun custom-slots (bindings)
-  (loop
-     for b in (mapcar #'car bindings)
-     if (not (member b *default-slots*))
-     collect b))
-
-;;; DEFSKETCH macro
+(defun define-prepare-method (name bindings)
+  `(defmethod prepare ((*sketch* ,name)
+                       &key ,@(loop for b in bindings
+                                    collect `((,(binding-initarg b) ,(binding-name b))
+                                              ,(if (binding-defaultp b)
+                                                   `(,(binding-accessor b) *sketch*)
+                                                   (binding-initform b))))
+                       &allow-other-keys)
+     (setf ,@(loop for b in bindings
+                   collect `(,(binding-accessor b) *sketch*)
+                   collect (binding-name b)))))
 
 (defmacro defsketch (sketch-name bindings &body body)
-  (let ((default-not-overridden
-          (remove-if (lambda (x) (find x bindings :key #'car))
-                     (mapcar #'car *default-slots*))))
+  (let ((bindings (parse-bindings sketch-name bindings)))
     `(progn
-       (defclass ,sketch-name (sketch)
-         ,(sketch-bindings-to-slots `,sketch-name bindings))
-
-       ,@(remove-if-not #'identity (make-channel-observers sketch-name bindings))
-
-       (defmethod prepare ((*sketch* ,sketch-name) &rest initargs &key &allow-other-keys)
-                  (declare (ignorable initargs))
-                  (let* (,@(loop for slot in default-not-overridden
-                              collect `(,slot (slot-value *sketch* ',slot)))
-                         ,@(mapcar (lambda (binding)
-                                     (destructuring-bind (name value)
-                                         (first-two binding)
-                                       (list name (if (default-slot-p name)
-                                                      `(if (getf initargs ,(alexandria:make-keyword name))
-                                                           (slot-value *sketch* ',name)
-                                                           ,value)
-                                                      `(or (getf initargs ,(alexandria:make-keyword name)) ,value)))))
-                                   (replace-channels-with-values bindings)))
-                    (declare (ignorable ,@(mapcar #'car *default-slots*) ,@(custom-slots bindings)))
-                    ,(make-window-parameter-setf)
-                    ,(make-custom-slots-setf sketch-name (custom-bindings bindings)))
-                  (setf (env-y-axis-sgn (slot-value *sketch* '%env))
-                        (if (eq (slot-value *sketch* 'y-axis) :down) +1 -1)))
-
-       (defmethod draw ((*sketch* ,sketch-name) &key &allow-other-keys)
-         (with-accessors ,(mapcar (lambda (x) (list (car x) (intern-accessor (car x))))
-                           *default-slots*) *sketch*
-           (with-slots ,(mapcar #'car bindings) *sketch*
-             ,@body)))
+       ,(define-sketch-defclass sketch-name bindings)
+       ,@(define-channel-observers bindings)
+       ,(define-prepare-method sketch-name bindings)
+       ,(define-draw-method sketch-name bindings body)
 
        (make-instances-obsolete ',sketch-name)
-
        (find-class ',sketch-name))))
