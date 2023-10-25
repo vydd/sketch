@@ -326,10 +326,8 @@ used for drawing, 60fps.")
                                             (first-two binding)
                                           (list name
                                                 (if (default-slot-p name)
-                                                    `(if (getf initargs ,(alexandria:make-keyword name))
-                                                         (slot-value *sketch* ',name)
-                                                         ,value)
-                                                    `(or (getf initargs ,(alexandria:make-keyword name)) ,value)))))
+                                                    `,value
+                                                    `,value))))
                                       (replace-channels-with-values bindings))
                        &allow-other-keys)
      (declare (ignorable ,@(mapcar #'car *default-slots*) ,@(custom-slots bindings)))
