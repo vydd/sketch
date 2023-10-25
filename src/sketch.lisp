@@ -321,8 +321,7 @@ used for drawing, 60fps.")
   `(defmethod prepare ((*sketch* ,sketch-name)
                        &key ,@(loop for slot in default-not-overridden
                                     collect `(,slot (slot-value *sketch* ',slot)))
-                            ,@(mapcar #'first-two
-                                      (replace-channels-with-values bindings))
+                            ,@(replace-channels-with-values bindings)
                        &allow-other-keys)
      (declare (ignorable ,@(mapcar #'car *default-slots*) ,@(custom-slots bindings)))
      ,(make-window-parameter-setf)
