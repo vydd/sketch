@@ -279,7 +279,6 @@ used for drawing, 60fps.")
                                                    `(,(binding-accessor b) *sketch*)
                                                    (binding-initform b))))
                        &allow-other-keys)
-     (declare (ignorable ,@(mapcar #'binding-name bindings)))
      (setf ,@(loop for b in bindings
                    collect `(,(binding-accessor b) *sketch*)
                    collect (binding-name b)))))
