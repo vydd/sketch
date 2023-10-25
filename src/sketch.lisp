@@ -200,18 +200,23 @@ used for drawing, 60fps.")
 
 ;;; DEFSKETCH macro
 
-(defstruct (%binding (:constructor make-binding
-                         (name &key (sketch-name 'sketch)
-                                    ((:default default-p) nil)
-                                    (initform nil)
-                                    (initarg (alexandria:make-keyword name))
-                                    (accessor (alexandria:symbolicate
-                                               sketch-name '#:- name)))))
-  name initform initarg sketch-name accessor default-p)
+(defstruct (binding (:constructor make-binding
+                        (name &key (sketch-name 'sketch)
+                                   ((:default default-p) nil)
+                                   (initform nil)
+                                   (initarg (alexandria:make-keyword name))
+                                   (accessor (alexandria:symbolicate
+                                              sketch-name '#:- name)))))
+  name
+  sketch-name
+  default-p
+  initform
+  initarg
+  accessor)
 
 (defun add-default-bindings (parsed-bindings)
   (loop for (name . args) in (reverse *default-slots*)
-        unless (member name parsed-bindings :key #'%binding-name)
+        unless (member name parsed-bindings :key #'binding-name)
         do (push (apply #'make-binding name :default t args) parsed-bindings))
   parsed-bindings)
 
@@ -226,42 +231,41 @@ used for drawing, 60fps.")
                             (cdddr default-slot-p)
                             (list* :sketch-name sketch-name args))))))
 
-(defun sketch-class-definition (sketch-name bindings)
-  `(defclass ,sketch-name (sketch)
+(defun sketch-class-definition (name bindings)
+  `(defclass ,name (sketch)
      (,@(loop for slot in bindings
-              unless (eq 'sketch (%binding-sketch-name slot))
-              collect `(,(%binding-name slot)
-                        :initarg ,(%binding-initarg slot)
-                        :accessor ,(%binding-accessor slot))))))
+              unless (eq 'sketch (binding-sketch-name slot))
+              collect `(,(binding-name slot)
+                        :initarg ,(binding-initarg slot)
+                        :accessor ,(binding-accessor slot))))))
 
-(defun draw-method-definition (sketch-name bindings body)
-  `(defmethod draw ((*sketch* ,sketch-name) &key &allow-other-keys)
+(defun draw-method-definition (name bindings body)
+  `(defmethod draw ((*sketch* ,name) &key &allow-other-keys)
      (with-accessors (,@(loop for slot in bindings
-                              collect `(,(%binding-name slot) ,(%binding-accessor slot))))
+                              collect `(,(binding-name slot) ,(binding-accessor slot))))
          *sketch*
        ,@body)))
 
-(defun prepare-method-definition (sketch-name bindings)
-  `(defmethod prepare ((*sketch* ,sketch-name)
+(defun prepare-method-definition (name bindings)
+  `(defmethod prepare ((*sketch* ,name)
                        &key ,@(loop for slot in bindings
-                                    collect `((,(%binding-initarg slot) ,(%binding-name slot))
-                                              ,(if (%binding-default-p slot)
-                                                   `(,(%binding-accessor slot) *sketch*)
-                                                   (%binding-initform slot))))
+                                    collect `((,(binding-initarg slot) ,(binding-name slot))
+                                              ,(if (binding-default-p slot)
+                                                   `(,(binding-accessor slot) *sketch*)
+                                                   (binding-initform slot))))
                        &allow-other-keys)
-     (declare (ignorable ,@(mapcar #'%binding-name bindings)))
+     (declare (ignorable ,@(mapcar #'binding-name bindings)))
      (setf ,@(loop for slot in bindings
-                   collect `(,(%binding-accessor slot) *sketch*)
-                   collect (%binding-name slot)))
+                   collect `(,(binding-accessor slot) *sketch*)
+                   collect (binding-name slot)))
      (setf (env-y-axis-sgn (slot-value *sketch* '%env))
            (if (eq (slot-value *sketch* 'y-axis) :down) +1 -1))))
 
 (defmacro defsketch (sketch-name bindings &body body)
-  (let ((parsed-bindings (parse-bindings sketch-name bindings)))
-    (declare (ignorable parsed-bindings))
+  (let ((bindings (parse-bindings sketch-name bindings)))
     `(progn
-       ,(sketch-class-definition sketch-name parsed-bindings)
-       ,(prepare-method-definition sketch-name parsed-bindings)
-       ,(draw-method-definition sketch-name parsed-bindings body)
+       ,(sketch-class-definition sketch-name bindings)
+       ,(prepare-method-definition sketch-name bindings)
+       ,(draw-method-definition sketch-name bindings body)
        (make-instances-obsolete ',sketch-name)
        (find-class ',sketch-name))))
