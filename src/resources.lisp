@@ -140,9 +140,7 @@
 
 (defgeneric free-resource (resource))
 
-(defmethod free-resource :around (resource)
-  (when resource
-    (call-next-method)))
+(defmethod free-resource ((resource (eql nil))))
 
 (defmethod free-resource ((image image))
   (gl:delete-textures (list (image-texture image))))
