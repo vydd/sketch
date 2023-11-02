@@ -121,7 +121,10 @@
   (if (and x y w h)
       (let ((src-rect (sdl2:make-rect x y w h))
 	    (dst-rect (sdl2:make-rect 0 0 w h))
-	    (dst-surface (sdl2:create-rgb-surface w h 32)))
+	    (dst-surface (sdl2-ffi.functions:sdl-create-rgb-surface-with-format
+                          0 w h 32
+                          (surface-format surface))))
+        (sdl2-ffi.functions:sdl-set-surface-blend-mode surface sdl2-ffi:+sdl-blendmode-none+)
 	(sdl2:blit-surface surface src-rect dst-surface dst-rect)
 	(sdl2:free-surface surface)
 	dst-surface)
