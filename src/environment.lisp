@@ -57,7 +57,12 @@
 
 (defun initialize-gl (w)
   (with-slots ((env %env) width height) w
-    (sdl2:gl-set-swap-interval 1)
+    (handler-case (sdl2:gl-set-swap-interval 1)
+      ;; Some OpenGL drivers do not allow to control swapping.
+      ;; In this case SDL2 sets an error that needs to be cleared.
+      (sdl2::sdl-rc-error (e)
+        (warn "VSYNC was not enabled; frame rate was not restricted to 60fps.~%  ~A" e)
+        (sdl2-ffi.functions:sdl-clear-error)))
     (setf (kit.sdl2:idle-render w) t)
     (gl:viewport 0 0 width height)
     (gl:enable :blend :line-smooth :polygon-smooth)
