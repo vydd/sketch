@@ -57,7 +57,10 @@
 
 (defun initialize-gl (w)
   (with-slots ((env %env) width height) w
-    (sdl2:gl-set-swap-interval 1)
+    (handler-case (sdl2:gl-set-swap-interval 1)
+      (sdl2::sdl-rc-error (e)
+        (warn "Can't set swap interval: ~A" (slot-value e 'sdl2::string))
+        (sdl2-ffi.functions:sdl-clear-error)))
     (setf (kit.sdl2:idle-render w) t)
     (gl:viewport 0 0 width height)
     (gl:enable :blend :line-smooth :polygon-smooth)
