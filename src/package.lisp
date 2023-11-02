@@ -171,4 +171,9 @@
            :canvas-width
            :canvas-height
            :draw-canvas
+
+	   ;; Controllers
+	   :on-click
+	   :on-middle-click
+	   :on-right-click
            ))
