@@ -9,6 +9,8 @@
                #:glkit
                #:mathkit
                #:md5
+               #:sdl2
+               #:cl-plus-c
                #:sdl2-image
                #:sdl2-ttf
                #:sdl2kit
