@@ -101,7 +101,10 @@
                                 :height (sdl2:surface-height rgba-surface)
                                 :texture texture)))
       (unless (eq rgba-surface surface) (sdl2:free-surface rgba-surface))
-      (when free-surface (sdl2:free-surface surface))
+      (when free-surface
+        (when (eq free-surface :font)
+          (tg:cancel-finalization surface))
+        (sdl2:free-surface surface))
       image)))
 
 (defmethod load-typed-resource (filename (type (eql :image))

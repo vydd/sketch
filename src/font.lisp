@@ -63,7 +63,7 @@
       (make-image-from-surface (sdl2-ttf:render-utf8-blended
                                 (typeface-pointer typeface)
                                 line r g b a)
-                               :free-surface nil))))
+                               :free-surface :font))))
 
 (defun text (text-string x y &optional width height)
   (let* ((font (env-font *env*)))
