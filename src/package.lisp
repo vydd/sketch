@@ -30,6 +30,9 @@
            :copy-pixels
            :y-axis
 
+           :*default-width*
+           :*default-height*
+
            ;; Math
            :clamp-1
            :normalize
