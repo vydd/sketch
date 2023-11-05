@@ -16,6 +16,7 @@
                #:sdl2kit
                #:split-sequence
                #:static-vectors
+               #:trivial-garbage
                #:zpng)
   :pathname "src"
   :serial t
