@@ -81,10 +81,13 @@ but may be considered unique for all practical purposes."
   (coerce x 'single-float))
 
 (defun copy-buffer (src dst length &key (src-offset 0) (dst-offset 0))
-  (declare (optimize (speed 3) (debug 0)))
-  (loop for i from 0 below length
-     do (setf (cffi:mem-aref dst :uint8 (+ i src-offset))
-              (cffi:mem-aref src :uint8 (+ i dst-offset)))))
+  (declare (optimize (speed 3) (debug 0))
+           (type fixnum length src-offset dst-offset))
+  (loop with src* = (cffi:mem-aptr src :uint8 src-offset)
+        with dst* = (cffi:mem-aptr dst :uint8 dst-offset)
+        for i below length
+        do (setf (cffi:mem-aref dst* :uint8 i)
+                 (cffi:mem-aref src* :uint8 i))))
 
 (defun relative-path (path &optional (system 'sketch))
   (if *build*
