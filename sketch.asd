@@ -35,6 +35,7 @@
                (:file "image")
                (:file "shapes")
                (:file "transforms")
+               (:file "complex-transforms")
                (:file "sketch")
                (:file "figures")
                (:file "controllers")
