@@ -39,6 +39,7 @@
   `(defclass sketch (kit.sdl2:gl-window)
      ((%env :initform (make-env))
       (%restart :initform t)
+      (%viewport-changed :initform t)
       ,@*default-slots*)))
 
 (define-sketch-class)
@@ -54,24 +55,19 @@
   (sdl2:set-window-title win value))
 
 (define-sketch-writer width
-  (sdl2:set-window-size win value (sketch-height instance)))
+  (sdl2:set-window-size win value (sketch-height instance))
+  (initialize-view-matrix instance))
 
 (define-sketch-writer height
-  (sdl2:set-window-size win (sketch-width instance) value))
+  (sdl2:set-window-size win (sketch-width instance) value)
+  (initialize-view-matrix instance))
 
 (define-sketch-writer fullscreen
   (sdl2:set-window-fullscreen win value))
 
 (define-sketch-writer y-axis
   (declare (ignore win))
-  (with-slots ((env %env) width height y-axis) instance
-    ;; FIXME: Code duplicated (with initialize-environment)
-    (setf (env-view-matrix env) (if (eq y-axis :down)
-                                    (kit.glm:ortho-matrix 0 width height 0 -1 1)
-                                    (kit.glm:ortho-matrix 0 width 0 height -1 1))
-          (env-y-axis-sgn env) (if (eq y-axis :down) +1 -1))
-    (kit.gl.shader:uniform-matrix
-     (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
+  (initialize-view-matrix instance))
 
 ;;; Generic functions
 
@@ -140,7 +136,12 @@ used for drawing, 60fps.")
   (end-draw))
 
 (defmethod kit.sdl2:render ((instance sketch))
-  (with-slots (%env %restart width height copy-pixels) instance
+  (with-slots (%env %restart width height copy-pixels %viewport-changed) instance
+    (when %viewport-changed
+      (kit.gl.shader:uniform-matrix
+       (env-programs %env) :view-m 4 (vector (env-view-matrix %env)))
+      (gl:viewport 0 0 width height)
+      (setf %viewport-changed nil))
     (with-environment %env
       (with-pen (make-default-pen)
         (with-font (make-default-font)
@@ -168,14 +169,9 @@ used for drawing, 60fps.")
 (defmethod kit.sdl2:window-event :before ((instance sketch) (type (eql :size-changed)) timestamp data1 data2)
   (with-slots ((env %env) width height y-axis) instance
     (setf width data1
-          height data2
-          (env-view-matrix env)
-          (if (eq y-axis :down)
-              (kit.glm:ortho-matrix 0 width height 0 -1 1)
-              (kit.glm:ortho-matrix 0 width 0 height -1 1)))
-    (gl:viewport 0 0 width height)
-    (kit.gl.shader:uniform-matrix
-     (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
+          height data2)
+    (initialize-view-matrix instance))
+  (kit.sdl2:render instance))
 
 ;;; Default events
 

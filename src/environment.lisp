@@ -42,18 +42,21 @@
 (defun initialize-environment (w)
   (with-slots ((env %env) width height y-axis) w
     (setf (env-programs env) (kit.gl.shader:compile-shader-dictionary 'sketch-programs)
-          (env-view-matrix env) (if (eq y-axis :down)
-                                    (kit.glm:ortho-matrix 0 width height 0 -1 1)
-                                    (kit.glm:ortho-matrix 0 width 0 height -1 1))
-          (env-y-axis-sgn env) (if (eq y-axis :down) +1 -1)
           (env-vao env) (make-instance 'kit.gl.vao:vao :type 'sketch-vao)
           (env-white-pixel-texture env) (make-white-pixel-texture)
           (env-white-color-vector env) #(255 255 255 255)
           (env-pen env) (make-default-pen)
           (env-font env) (make-default-font))
-    (kit.gl.shader:use-program (env-programs env) :fill-shader)
-    (kit.gl.shader:uniform-matrix
-     (env-programs env) :view-m 4 (vector (env-view-matrix env)))))
+    (initialize-view-matrix w)
+    (kit.gl.shader:use-program (env-programs env) :fill-shader)))
+
+(defun initialize-view-matrix (w)
+  (with-slots ((env %env) width height y-axis %viewport-changed) w
+    (setf (env-view-matrix env) (if (eq y-axis :down)
+                                    (kit.glm:ortho-matrix 0 width height 0 -1 1)
+                                    (kit.glm:ortho-matrix 0 width 0 height -1 1))
+          (env-y-axis-sgn env) (if (eq y-axis :down) +1 -1)
+          %viewport-changed t)))
 
 (defun initialize-gl (w)
   (with-slots ((env %env) width height) w
@@ -64,7 +67,6 @@
         (warn "VSYNC was not enabled; frame rate was not restricted to 60fps.~%  ~A" e)
         (sdl2-ffi.functions:sdl-clear-error)))
     (setf (kit.sdl2:idle-render w) t)
-    (gl:viewport 0 0 width height)
     (gl:enable :blend :line-smooth :polygon-smooth)
     (gl:blend-func :src-alpha :one-minus-src-alpha)
     (gl:hint :line-smooth-hint :nicest)
