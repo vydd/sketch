@@ -10,8 +10,9 @@
 
 (defun point (x y)
   (declare (type real x y))
-  (with-pen (make-pen :fill (pen-stroke (env-pen *env*)))
-    (rect x y 1 1)))
+  (let ((weight (or (pen-weight (env-pen *env*)) 1)))
+    (with-pen (make-pen :fill (pen-stroke (env-pen *env*)))
+      (circle x y (/ weight 2)))))
 
 (defun make-line (x1 y1 x2 y2)
   (let* ((a (atan (- y2 y1) (- x2 x1)))
