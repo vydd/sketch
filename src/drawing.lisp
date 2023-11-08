@@ -20,6 +20,9 @@
 (defparameter *buffer-size* (expt 2 17))
 (defparameter *vertex-attributes* 5)
 (defparameter *bytes-per-vertex* (+ (* 4 *vertex-attributes*)))
+(defparameter +access-mode+
+  (cffi:foreign-bitfield-value '%gl:BufferAccessMask
+                               '(:map-write :map-unsynchronized)))
 
 (defparameter *draw-mode* :gpu)
 (defparameter *draw-sequence* nil)
@@ -83,7 +86,7 @@
     (let ((buffer-pointer (%gl:map-buffer-range :array-buffer
                                                 (* position *bytes-per-vertex*)
                                                 (* (length vertices) *bytes-per-vertex*)
-                                                #x22)))
+                                                +access-mode+)))
       (fill-buffer buffer-pointer vertices color)
       (%gl:unmap-buffer :array-buffer)
       (%gl:draw-arrays primitive position (length vertices))
