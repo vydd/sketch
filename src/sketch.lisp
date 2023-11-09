@@ -32,6 +32,7 @@
       (width :initform *default-width* :accessor sketch-width :initarg :width)
       (height :initform *default-height* :accessor sketch-height :initarg :height)
       (fullscreen :initform nil :accessor sketch-fullscreen :initarg :fullscreen)
+      (resizable :initform nil :accessor sketch-resizable :initarg :resizable)
       (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :copy-pixels)
       (y-axis :initform :down :accessor sketch-y-axis :initarg :y-axis))))
 
@@ -61,6 +62,11 @@
 
 (define-sketch-writer fullscreen
   (sdl2:set-window-fullscreen win value))
+
+(define-sketch-writer resizable
+  (sdl2-ffi.functions:sdl-set-window-resizable
+   win
+   (if value sdl2-ffi:+true+ sdl2-ffi:+false+)))
 
 (define-sketch-writer y-axis
   (declare (ignore win))

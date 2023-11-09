@@ -20,6 +20,7 @@
            :sketch-width
            :sketch-height
            :sketch-fullscreen
+           :sketch-resizable
            :sketch-copy-pixels
            :sketch-y-axis
 
@@ -27,6 +28,7 @@
            :width
            :height
            :fullscreen
+           :resizable
            :copy-pixels
            :y-axis
 
