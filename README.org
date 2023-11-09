@@ -422,10 +422,11 @@ First =(load-resource filename ...)= to load the image from a given file, then =
 
 #+BEGIN_SRC lisp
   (defsketch image-test
-     ((title "Hello, image!")
-      (rsc (load-resource "/path/to/img.png")))
-    (image rsc 10 10 200 200))
+     ((title "Hello, image!"))
+    (image (load-resource "/path/to/img.png") 10 10 200 200))
 #+END_SRC
+
+Note that =load-resource= automatically caches the resource when it is called inside a valid sketch environment (i.e. inside the defsketch's body), so it is not inefficient to call it in every loop. It is important to release resources using =sketch::free-resource=; this is done automatically for resources in the sketch environment when the sketch window is closed. Finally, to avoid caching and to reload the resource every time, the parameter =:force-reload-p= can be passed to =load-resource=.
 
 Images can be cropped using =(crop (image-resource image) x y w h)=, where =x= and =y= indicate the top-left corner of the cropping rectangle and =w= and =h= indicate the width & height. Image flipping can be accomplished by using negative =w= and =h= values.
 
@@ -491,7 +492,15 @@ Finally, here is an example where a pair of eyes follow the mouse (the pupils ar
 See also: [[https://github.com/vydd/sketch/blob/master/examples/life.lisp][life.lisp]] and [[https://github.com/vydd/sketch/blob/master/examples/input.lisp][input.lisp]].
 
 *** Setup
-The generic function =(setup instance &key &allow-other-keys)= is a hook that gets called before the window is initialised. Since the window has not been initialised, it can't be used to draw anything, but the background colour can be set. Here is an example from [[https://github.com/vydd/sketch/blob/master/examples/brownian.lisp][brownian.lisp]].
+The generic function =(setup instance &key &allow-other-keys)= is a hook that gets called once on every "restart" of the sketch. That is:
+
+- before the drawing code in the sketch body is called for the first time.
+- whenever the sketch is redefined.
+- every time an error occurs.
+
+Note that any drawing that takes place within =setup= will be immediately covered by a gray background, unless =(copy-pixels t)= is added to =defsketch=.
+
+Here is an example usage of =setup= from [[https://github.com/vydd/sketch/blob/master/examples/brownian.lisp][brownian.lisp]].
 
 #+BEGIN_SRC lisp
   (defmethod setup ((instance brownian) &key &allow-other-keys)
