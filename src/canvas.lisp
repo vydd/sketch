@@ -74,7 +74,10 @@ overwritten by parameters WIDTH and HEIGHT.
 
 MIN-FILTER and MAG-FILTER are used to determine pixel colours when the
 drawing area is smaller or larger, respectively, than the canvas. By default,
-the :LINEAR function is used. :NEAREST is also a common option.
+the :LINEAR function is used. :NEAREST is also a common option. Note that, if
+CANVAS-LOCK is being used, then MIN-FILTER and MAG-FILTER should be passed
+there instead.
+
 See: https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexParameter.xhtml"
   (with-pen (make-pen :fill (canvas-image canvas
                                           :min-filter min-filter
