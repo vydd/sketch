@@ -146,6 +146,8 @@
            ;; Resources
            :load-resource
            :image
+           :image-width
+           :image-height
            :crop
            :with-uv-rect
            :save-png
@@ -164,4 +166,7 @@
            :canvas-image
            :canvas-lock
            :canvas-unlock
+           :canvas-width
+           :canvas-height
+           :draw-canvas
            ))

@@ -523,12 +523,7 @@ The generic function =(setup instance &key &allow-other-keys)= is a hook that ge
 
 =(canvas-unlock canvas)= allows the image of the canvas to be modified again.
 
-To draw the canvas:
-
-#+BEGIN_SRC lisp
-  (with-pen (make-pen :fill (canvas-image canvas))
-    (rect 0 0 (canvas-width canvas) (canvas-height canvas)))
-#+END_SRC
+=(draw-canvas canvas &key (x 0) (y 0) (width nil) (height nil)= draws the canvas; by default, the original width and height of the canvas are used, but these can be overridden.
 
 Example: [[https://github.com/vydd/sketch/blob/master/examples/stars.lisp][stars.lisp]].
 
