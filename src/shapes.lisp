@@ -101,7 +101,11 @@
   (let ((vertices (mix-lists (ngon-vertices n cx cy ra ra (+ 90 angle))
                              (ngon-vertices n cx cy rb rb (- (+ 90 angle) (/ 180 n))))))
     (lambda ()
-      (draw-shape :triangle-fan vertices vertices))))
+      (draw-shape :triangle-fan
+                  (list* (list cx cy)
+                         (car (last vertices))
+                         vertices)
+                  vertices))))
 
 (defun star (n cx cy ra rb &optional (angle 0))
   (declare (type fixnum n)
