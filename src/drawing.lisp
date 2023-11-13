@@ -109,29 +109,24 @@
   ;; TODO: Drawing in event handlers could be useful with COPY-PIXELS set to to T.
   (warn "Can't draw from current context (e.g. an event handler)."))
 
-(defun draw-polygon (coordinates)
-  (let ((tobj (make-instance 'polygon-tessellator))
-        (coord-pairs (group coordinates))
-        (dlist-ref (gl:gen-lists 1)))
+(defun draw-polygon (points)
+  (let ((tobj (make-instance 'polygon-tessellator)))
     (glu:tess-property tobj :winding-rule :positive)
-    ;; This doesn't make sense, we have to store it for later.
-    (gl:with-new-list (dlist-ref :compile)
-      (gl:shade-model :flat)
-      (glu:with-tess-polygon (tobj)
-        (glu:with-tess-contour tobj
-          ;; Interface seems to expect coordinates to be 3-dimensional.
-          (loop for pair in coord-pairs
-                do (glu:tess-vertex tobj pair pair)))))
-    (glu:tess-delete tobj)
-    (gl:call-list dlist-ref))
+    (glu:with-tess-polygon (tobj)
+      (glu:with-tess-contour tobj
+        (loop for xy in points
+              ;; Expects 3d coordinates.
+              for coord-3d = (append xy '(0))
+              do (glu:tess-vertex tobj coord-3d coord-3d))))
+    (glu:tess-delete tobj))
   ;; Let DRAW-SHAPE handle drawing the stroke, if any.
-  (draw-shape nil nil (group coordinates)))
+  (draw-shape nil nil points))
 
 (defclass polygon-tessellator (glu:tessellator)
   ())
 
 (defmethod glu:vertex-data-callback ((tess polygon-tessellator) vertex-data polygon-data)
-    (gl:vertex (first vertex-data) (second vertex-data)))
+  (gl:vertex (first vertex-data) (second vertex-data) (third vertex-data)))
 
 (defmethod glu:error-data-callback ((tess polygon-tessellator) error-num polygon-data)
   (error (format nil "Tessellation error: ~a" error-num)))

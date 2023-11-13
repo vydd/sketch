@@ -130,7 +130,7 @@
    (group coordinates)))
 
 (defun polygon (&rest coordinates)
-  (draw-polygon coordinates))
+  (draw-polygon (group coordinates)))
 
 (defun quadratic-bezier-point (v a b c)
   (let* ((d (lerp-lists v a b))
