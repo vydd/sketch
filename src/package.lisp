@@ -170,5 +170,4 @@
            :canvas-unlock
            :canvas-width
            :canvas-height
-           :draw-canvas
            ))

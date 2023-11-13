@@ -66,7 +66,7 @@
 
 (defmethod draw ((canvas canvas)
                  &key (x 0) (y 0)
-                   (width nil) (height nil)
+                   width height
                    (min-filter :linear)
                    (mag-filter :linear))
   "Draws a canvas with its top-left corner at co-ordinates X & Y. By default,
@@ -80,8 +80,8 @@ CANVAS-LOCK is being used, then MIN-FILTER and MAG-FILTER should be passed
 there instead.
 
 See: https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexParameter.xhtml"
-  ;; TODO: refactor to call the DRAW interface for images.
-  (with-pen (make-pen :fill (canvas-image canvas
-                                          :min-filter min-filter
-                                          :mag-filter mag-filter))
-    (rect x y (or width (canvas-width canvas)) (or height (canvas-height canvas)))))
+  (draw (canvas-image canvas :min-filter min-filter :mag-filter mag-filter)
+        :x 0
+        :y 0
+        :width (or width (canvas-width canvas))
+        :height (or height (canvas-height canvas))))
