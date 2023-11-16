@@ -28,11 +28,11 @@
 		   :align (or align :left))))
 
 (defmacro with-font (font &body body)
-  (alexandria:once-only (font)
-    (alexandria:with-gensyms (previous-font)
-      `(let ((,previous-font (env-font *env*)))
-         (setf (env-font *env*) ,font)
-         ,@body
+  (alexandria:with-gensyms (previous-font)
+    `(let ((,previous-font (env-font *env*)))
+       (unwind-protect (progn
+                         (setf (env-font *env*) ,font)
+                         ,@body)
          (setf (env-font *env*) ,previous-font)))))
 
 (defun set-font (font)
