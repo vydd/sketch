@@ -10,7 +10,7 @@
 
 ;;; Mouse
 
-(defparameter *buttons* '(:left nil :middle nil :right nil))
+(defparameter *buttons* (list :left nil :middle nil :right nil))
 
 (defmethod on-click ((instance sketch) x y))
 (defmethod on-middle-click ((instance sketch) x y))
