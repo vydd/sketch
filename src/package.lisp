@@ -170,9 +170,9 @@
            :canvas-unlock
            :canvas-width
            :canvas-height
-	         
+
            ;; Controllers
-	         :on-click
-	         :on-middle-click
-	         :on-right-click
+	   :on-click
+           :on-middle-click
+	   :on-right-click
            ))
