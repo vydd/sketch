@@ -81,15 +81,11 @@
          (theta (/ +tau+ n))
          (tangential (tan theta))
          (radial (cos theta))
-         (x (* (cos angle) rx))
-         (y (* (sin angle) ry))
-         (y-mul (/ ry rx))
-         (vertices (list)))
-    (dotimes (i n)
-      (psetf vertices (cons `(,(+ x cx) ,(+ (* y-mul y) cy)) vertices)
-             x (* radial (- x (* (- y) tangential)))
-             y (* radial (- y (* x tangential)))))
-    (nreverse vertices)))
+         (y-mul (/ ry rx)))
+    (loop repeat n
+          for x = (* (cos angle) rx) then (* radial (- x (* (- y) tangential)))
+          and y = (* (sin angle) ry) then (* radial (- y (* x tangential)))
+          collect `(,(+ x cx) ,(+ (* y-mul y) cy)))))
 
 (defun make-ngon (n cx cy rx ry &optional (angle 0))
   (let ((vertices (ngon-vertices n cx cy rx ry angle)))
@@ -105,7 +101,11 @@
   (let ((vertices (mix-lists (ngon-vertices n cx cy ra ra (+ 90 angle))
                              (ngon-vertices n cx cy rb rb (- (+ 90 angle) (/ 180 n))))))
     (lambda ()
-      (draw-shape :triangle-fan vertices vertices))))
+      (draw-shape :triangle-fan
+                  (list* (list cx cy)
+                         (car (last vertices))
+                         vertices)
+                  vertices))))
 
 (defun star (n cx cy ra rb &optional (angle 0))
   (declare (type fixnum n)

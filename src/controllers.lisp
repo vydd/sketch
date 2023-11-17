@@ -10,6 +10,21 @@
 
 ;;; Mouse
 
+(defparameter *buttons* (list :left nil :middle nil :right nil))
+
+(defmethod on-click ((instance sketch) x y))
+(defmethod on-middle-click ((instance sketch) x y))
+(defmethod on-right-click ((instance sketch) x y))
+
+(defmethod kit.sdl2:mousebutton-event ((instance sketch) state timestamp button x y)
+  (let ((button (elt (list nil :left :middle :right) button))
+	(method (elt (list nil #'on-click #'on-middle-click #'on-right-click) button)))
+    (when (equal state :mousebuttondown)
+      (setf (getf *buttons* button) t))
+    (when (and (equal state :mousebuttonup) (getf *buttons* button))
+      (setf (getf *buttons* button) nil)
+      (funcall method instance x y))))
+
 (defmethod kit.sdl2:mousemotion-event :after ((instance sketch)
                                               timestamp button-mask x y xrel yrel)
   (out :mouse (cons x y)

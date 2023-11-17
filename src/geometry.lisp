@@ -76,17 +76,12 @@
                           (apply #'2d-geometry:make-polygon-from-coords polygon))))))
 
 (defun bounding-box (vertices)
-  (let ((min-x) (min-y) (max-x) (max-y))
-    (dolist (vertex vertices)
-      (when (or (not min-x) (< (first vertex) min-x))
-        (setf min-x (first vertex)))
-      (when (or (not max-x) (> (first vertex) max-x))
-        (setf max-x (first vertex)))
-      (when (or (not min-y) (< (second vertex) min-y))
-        (setf min-y (second vertex)))
-      (when (or (not max-y) (> (second vertex) max-y))
-        (setf max-y (second vertex))))
-    (list (list min-x min-y) (list max-x max-y))))
+  (loop for (x y) in vertices
+        minimize x into min-x
+        maximize x into max-x
+        minimize y into min-y
+        maximize y into max-y
+        finally (return (list (list min-x min-y) (list max-x max-y)))))
 
 (defun normalize-to-bounding-box (vertices)
   (let ((box (bounding-box vertices)))
