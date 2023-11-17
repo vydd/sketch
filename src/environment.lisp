@@ -51,15 +51,15 @@
     (kit.gl.shader:use-program (env-programs env) :fill-shader)))
 
 (defun initialize-view-matrix (w)
-  (with-slots ((env %env) width height y-axis %viewport-changed) w
+  (with-slots ((env %env) window-width window-height y-axis %viewport-changed) w
     (setf (env-view-matrix env) (if (eq y-axis :down)
-                                    (kit.glm:ortho-matrix 0 width height 0 -1 1)
-                                    (kit.glm:ortho-matrix 0 width 0 height -1 1))
+                                    (kit.glm:ortho-matrix 0 window-width window-height 0 -1 1)
+                                    (kit.glm:ortho-matrix 0 window-width 0 window-height -1 1))
           (env-y-axis-sgn env) (if (eq y-axis :down) +1 -1)
           %viewport-changed t)))
 
 (defun initialize-gl (w)
-  (with-slots ((env %env) width height) w
+  (with-slots ((env %env)) w
     (handler-case (sdl2:gl-set-swap-interval 1)
       ;; Some OpenGL drivers do not allow to control swapping.
       ;; In this case SDL2 sets an error that needs to be cleared.

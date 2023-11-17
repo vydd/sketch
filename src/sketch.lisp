@@ -62,12 +62,12 @@
 (define-sketch-writer title
   (sdl2:set-window-title win value))
 
-(define-sketch-writer width
-  (sdl2:set-window-size win value (sketch-height instance))
+(define-sketch-writer window-width
+  (sdl2:set-window-size win value (sketch-window-height instance))
   (initialize-view-matrix instance))
 
-(define-sketch-writer height
-  (sdl2:set-window-size win (sketch-width instance) value)
+(define-sketch-writer window-height
+  (sdl2:set-window-size win (sketch-window-width instance) value)
   (initialize-view-matrix instance))
 
 (define-sketch-writer fullscreen
@@ -149,11 +149,11 @@ used for drawing, 60fps.")
   (end-draw))
 
 (defmethod kit.sdl2:render ((instance sketch))
-  (with-slots (%env %restart width height copy-pixels %viewport-changed) instance
+  (with-slots (%env %restart window-width window-height copy-pixels %viewport-changed) instance
     (when %viewport-changed
       (kit.gl.shader:uniform-matrix
        (env-programs %env) :view-m 4 (vector (env-view-matrix %env)))
-      (gl:viewport 0 0 width height)
+      (gl:viewport 0 0 window-width window-height)
       (setf %viewport-changed nil))
     (with-environment %env
       (with-pen (make-default-pen)
@@ -180,9 +180,9 @@ used for drawing, 60fps.")
 ;;; Support for resizable windows
 
 (defmethod kit.sdl2:window-event :before ((instance sketch) (type (eql :size-changed)) timestamp data1 data2)
-  (with-slots ((env %env) width height y-axis) instance
-    (setf width data1
-          height data2)
+  (with-slots ((env %env) window-width window-height y-axis) instance
+    (setf window-width data1
+          window-height data2)
     (initialize-view-matrix instance))
   (kit.sdl2:render instance))
 

@@ -29,23 +29,23 @@ are set to the width & height of the image if not provided."
   (cropped-image-from-image image-resource x y w h))
 
 (defun save-png (pathname)
-  (let ((width (sketch-width *sketch*))
-        (height (sketch-height *sketch*)))
+  (let ((window-width (sketch-window-width *sketch*))
+        (window-height (sketch-window-height *sketch*)))
     (flet ((ptr (vec offset)
              (static-vectors:static-vector-pointer vec :offset offset))
            (from (row col width)
              (+ col (* row (* 4 width))))
            (to (row col width height)
              (+ col (* (- height row 1) 4 width))))
-      (static-vectors:with-static-vector (buffer (* 4 width height))
-        (%gl:read-pixels 0 0 width height :rgba :unsigned-byte (ptr buffer 0))
-        (dotimes (row (truncate height 2))
-          (dotimes (col (* 4 width))
-            (rotatef (cffi:mem-aref (ptr buffer (from row col width)) :uint8)
-                     (cffi:mem-aref (ptr buffer (to row col width height)) :uint8))))
+      (static-vectors:with-static-vector (buffer (* 4 window-width window-height))
+        (%gl:read-pixels 0 0 window-width window-height :rgba :unsigned-byte (ptr buffer 0))
+        (dotimes (row (truncate window-height 2))
+          (dotimes (col (* 4 window-width))
+            (rotatef (cffi:mem-aref (ptr buffer (from row col window-width)) :uint8)
+                     (cffi:mem-aref (ptr buffer (to row col window-width window-height)) :uint8))))
         (let ((png (make-instance 'zpng:png
-                                  :width width
-                                  :height height
+                                  :width window-width
+                                  :height window-height
                                   :color-type :truecolor-alpha
                                   :image-data buffer)))
           (zpng:write-png png pathname))))))
