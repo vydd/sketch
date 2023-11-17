@@ -206,6 +206,11 @@ used for drawing, 60fps.")
     (initialize-view-matrix instance))
   (kit.sdl2:render instance))
 
+(defmethod draw :before ((instance sketch) &key &allow-other-keys)
+  (with-slots (width height window-width window-height resizable) instance
+    (when (member resizable '(:contain :cover :scale-down :fill))
+      (fit width height window-width window-height :mode resizable))))
+
 ;;; Default events
 
 (defmethod kit.sdl2:keyboard-event :before ((instance sketch) state timestamp repeatp keysym)
