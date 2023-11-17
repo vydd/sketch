@@ -19,6 +19,8 @@
            :sketch-title
            :sketch-width
            :sketch-height
+           :sketch-window-width
+           :sketch-window-height
            :sketch-fullscreen
            :sketch-resizable
            :sketch-copy-pixels
@@ -27,6 +29,8 @@
            :title
            :width
            :height
+           :window-width
+           :window-height
            :fullscreen
            :resizable
            :copy-pixels
@@ -34,6 +38,8 @@
 
            :*default-width*
            :*default-height*
+           :*default-window-width*
+           :*default-window-height*
 
            ;; Math
            :clamp-1

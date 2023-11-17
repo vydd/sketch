@@ -22,15 +22,22 @@
   "The current sketch instance.")
 
 (defparameter *default-width* 400
-  "The default width of sketch window")
+  "The default width of the sketch drawing area")
 (defparameter *default-height* 400
-  "The default height of sketch window")
+  "The default height of the sketch drawing area")
+
+(defparameter *default-window-width* 400
+  "The default width of the sketch window")
+(defparameter *default-window-height* 400
+  "The default height of the sketch window")
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *default-slots*
     '((title :initform "Sketch" :accessor sketch-title :initarg :title)
       (width :initform *default-width* :accessor sketch-width :initarg :width)
       (height :initform *default-height* :accessor sketch-height :initarg :height)
+      (window-width :initform *default-window-width* :accessor sketch-window-width :initarg :window-width)
+      (window-height :initform *default-window-height* :accessor sketch-window-height :initarg :window-height)
       (fullscreen :initform nil :accessor sketch-fullscreen :initarg :fullscreen)
       (resizable :initform nil :accessor sketch-resizable :initarg :resizable)
       (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :copy-pixels)
