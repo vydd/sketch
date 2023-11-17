@@ -64,11 +64,25 @@
 
 (define-sketch-writer window-width
   (sdl2:set-window-size win value (sketch-window-height instance))
+  (when (member (sketch-resizable instance) '(t :none nil))
+    (setf (slot-value instance 'width) value))
   (initialize-view-matrix instance))
 
 (define-sketch-writer window-height
   (sdl2:set-window-size win (sketch-window-width instance) value)
+  (when (member (sketch-resizable instance) '(t :none nil))
+    (setf (slot-value instance 'height) value))
   (initialize-view-matrix instance))
+
+(define-sketch-writer width
+  (declare (ignore win))
+  (when (member (sketch-resizable instance) '(t :none nil))
+    (setf (sketch-window-width instance) value)))
+
+(define-sketch-writer height
+  (declare (ignore win))
+  (when (member (sketch-resizable instance) '(t :none nil))
+    (setf (sketch-window-height instance) value)))
 
 (define-sketch-writer fullscreen
   (sdl2:set-window-fullscreen win value))
@@ -76,7 +90,10 @@
 (define-sketch-writer resizable
   (sdl2-ffi.functions:sdl-set-window-resizable
    win
-   (if value sdl2-ffi:+true+ sdl2-ffi:+false+)))
+   (if value sdl2-ffi:+true+ sdl2-ffi:+false+))
+  (when (member value '(t :none nil))
+    (setf (slot-value instance 'width) (sketch-window-width instance)
+          (slot-value instance 'height) (sketch-window-height instance))))
 
 (define-sketch-writer y-axis
   (declare (ignore win))
@@ -180,9 +197,12 @@ used for drawing, 60fps.")
 ;;; Support for resizable windows
 
 (defmethod kit.sdl2:window-event :before ((instance sketch) (type (eql :size-changed)) timestamp data1 data2)
-  (with-slots ((env %env) window-width window-height y-axis) instance
+  (with-slots ((env %env) window-width window-height width height resizable y-axis) instance
     (setf window-width data1
           window-height data2)
+    (when (member resizable '(t :none nil))
+      (setf width data1
+            height data2))
     (initialize-view-matrix instance))
   (kit.sdl2:render instance))
 
