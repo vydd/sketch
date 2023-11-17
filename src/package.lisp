@@ -22,7 +22,7 @@
            :sketch-window-width
            :sketch-window-height
            :sketch-fullscreen
-           :sketch-resizable
+           :sketch-resize
            :sketch-copy-pixels
            :sketch-y-axis
 
@@ -32,7 +32,7 @@
            :window-width
            :window-height
            :fullscreen
-           :resizable
+           :resize
            :copy-pixels
            :y-axis
 

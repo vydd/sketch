@@ -39,7 +39,7 @@
       (window-width :initform *default-window-width* :accessor sketch-window-width :initarg :window-width)
       (window-height :initform *default-window-height* :accessor sketch-window-height :initarg :window-height)
       (fullscreen :initform nil :accessor sketch-fullscreen :initarg :fullscreen)
-      (resizable :initform nil :accessor sketch-resizable :initarg :resizable)
+      (resize :initform nil :accessor sketch-resize :initarg :resize)
       (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :copy-pixels)
       (y-axis :initform :down :accessor sketch-y-axis :initarg :y-axis))))
 
@@ -64,30 +64,30 @@
 
 (define-sketch-writer window-width
   (sdl2:set-window-size win value (sketch-window-height instance))
-  (when (member (sketch-resizable instance) '(t :none nil))
+  (when (member (sketch-resize instance) '(t :none nil))
     (setf (slot-value instance 'width) value))
   (initialize-view-matrix instance))
 
 (define-sketch-writer window-height
   (sdl2:set-window-size win (sketch-window-width instance) value)
-  (when (member (sketch-resizable instance) '(t :none nil))
+  (when (member (sketch-resize instance) '(t :none nil))
     (setf (slot-value instance 'height) value))
   (initialize-view-matrix instance))
 
 (define-sketch-writer width
   (declare (ignore win))
-  (when (member (sketch-resizable instance) '(t :none nil))
+  (when (member (sketch-resize instance) '(t :none nil))
     (setf (sketch-window-width instance) value)))
 
 (define-sketch-writer height
   (declare (ignore win))
-  (when (member (sketch-resizable instance) '(t :none nil))
+  (when (member (sketch-resize instance) '(t :none nil))
     (setf (sketch-window-height instance) value)))
 
 (define-sketch-writer fullscreen
   (sdl2:set-window-fullscreen win value))
 
-(define-sketch-writer resizable
+(define-sketch-writer resize
   (sdl2-ffi.functions:sdl-set-window-resizable
    win
    (if value sdl2-ffi:+true+ sdl2-ffi:+false+))
@@ -197,19 +197,19 @@ used for drawing, 60fps.")
 ;;; Support for resizable windows
 
 (defmethod kit.sdl2:window-event :before ((instance sketch) (type (eql :size-changed)) timestamp data1 data2)
-  (with-slots ((env %env) window-width window-height width height resizable y-axis) instance
+  (with-slots ((env %env) window-width window-height width height resize y-axis) instance
     (setf window-width data1
           window-height data2)
-    (when (member resizable '(t :none nil))
+    (when (member resize '(t :none nil))
       (setf width data1
             height data2))
     (initialize-view-matrix instance))
   (kit.sdl2:render instance))
 
 (defmethod draw :before ((instance sketch) &key &allow-other-keys)
-  (with-slots (width height window-width window-height resizable) instance
-    (when (member resizable '(:contain :cover :scale-down :fill))
-      (fit width height window-width window-height :mode resizable))))
+  (with-slots (width height window-width window-height resize) instance
+    (when (member resize '(:contain :cover :scale-down :fill))
+      (fit width height window-width window-height :mode resize))))
 
 ;;; Default events
 
