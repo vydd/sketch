@@ -8,14 +8,20 @@
 ;;  | || |  | |/ ___ \ |_| | |___ ___) |
 ;; |___|_|  |_/_/   \_\____|_____|____/
 
-(defun image (image-resource x y &optional width height)
-  (with-pen (make-pen :fill image-resource
+(defmethod draw ((image image) &key (x 0) (y 0) width height)
+  "Draws an image, X and Y values are 0 by default, while WIDTH and HEIGHT
+are set to the width & height of the image if not provided."
+  (with-pen (make-pen :fill image
                       :stroke (pen-stroke (env-pen *env*))
                       :weight (pen-weight (env-pen *env*)))
        (rect x
              y
-             (or (abs-or-rel width (image-width image-resource)))
-             (or (abs-or-rel height (image-height image-resource))))))
+             (or (abs-or-rel width (image-width image)))
+             (or (abs-or-rel height (image-height image))))))
+
+(defun image (image-resource x y &optional width height)
+  "***Deprecated***, use the DRAW method."
+  (draw image-resource :x x :y y :width width :height height))
 
 (defmethod crop ((image-resource image) x y w h)
   "Generate a cropped image resource from IMAGE-RESOURCE, limiting how much of the image is drawn

@@ -418,12 +418,13 @@ Use =(text text-string x y &optional width height)= to draw text, where =x= and 
 #+END_SRC
 
 *** Images
-First =(load-resource filename ...)= to load the image from a given file, then =(image image-resource x y &optional width height)= to draw the image with its top-left corner at =(x, y)= and with the given =width= and =height=.
+First =(load-resource filename ...)= to load the image from a given file, then =(draw image &key x y width height)= to draw the image with its top-left corner at =(x, y)= and with the given =width= and =height=. If not provided, default =(x,y)= is =(0,0)= and =width= & =height= are taken from the image.
 
 #+BEGIN_SRC lisp
   (defsketch image-test
-     ((title "Hello, image!"))
-    (image (load-resource "/path/to/img.png") 10 10 200 200))
+     ((title "Hello, image!")
+      (pic (load-resource "/path/to/img.png")))
+    (draw pic :x 10 :y 10 :width 200 :height 200))
 #+END_SRC
 
 Note that =load-resource= automatically caches the resource when it is called inside a valid sketch environment (i.e. inside the defsketch's body), so it is not inefficient to call it in every loop. It is important to release resources using =sketch::free-resource=; this is done automatically for resources in the sketch environment when the sketch window is closed. Finally, to avoid caching and to reload the resource every time, the parameter =:force-reload-p= can be passed to =load-resource=.
