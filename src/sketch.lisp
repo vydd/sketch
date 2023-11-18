@@ -203,7 +203,7 @@
 
 (defclass binding ()
   ((name :initarg :name :accessor binding-name)
-   (sketch-name :initarg :sketch-name :accessor binding-sketch-name)
+   (prefix :initarg :prefix :accessor binding-prefix)
    (initform :initarg :initform :accessor binding-initform)
    (defaultp :initarg :defaultp :accessor binding-defaultp)
    (initarg :initarg :initarg :accessor binding-initarg)
@@ -211,14 +211,14 @@
    (channelp :initarg :channelp :accessor binding-channelp)
    (channel-name :initarg :channel-name :accessor binding-channel-name)))
 
-(defun make-binding (name &key (sketch-name 'sketch)
+(defun make-binding (name &key (prefix 'sketch)
                                (defaultp nil)
                                (initform nil)
                                (initarg (alexandria:make-keyword name))
-                               (accessor (alexandria:symbolicate sketch-name '#:- name))
+                               (accessor (alexandria:symbolicate prefix '#:- name))
                                (channel-name nil channel-name-p))
   (make-instance 'binding :name name
-                          :sketch-name sketch-name
+                          :prefix prefix
                           :defaultp defaultp
                           :initform initform
                           :initarg initarg
@@ -232,7 +232,7 @@
         do (push (apply #'make-binding name :defaultp t args) parsed-bindings))
   parsed-bindings)
 
-(defun parse-bindings (sketch-name bindings)
+(defun parse-bindings (prefix bindings)
   (add-default-bindings
    (loop for (name value . args) in (alexandria:ensure-list bindings)
          for default-slot-p = (assoc name *default-slots*)
@@ -249,7 +249,7 @@
                         :initform value
                         (if default-slot-p
                             (cdddr default-slot-p)
-                            (list* :sketch-name sketch-name args))))))
+                            (list* :prefix prefix args))))))
 
 ;;; DEFSKETCH channels
 
@@ -268,7 +268,7 @@
 (defun define-sketch-defclass (name bindings)
   `(defclass ,name (sketch)
      (,@(loop for b in bindings
-              unless (eq 'sketch (binding-sketch-name b))
+              unless (eq 'sketch (binding-prefix b))
               collect `(,(binding-name b)
                         :initarg ,(binding-initarg b)
                         :accessor ,(binding-accessor b))))))
