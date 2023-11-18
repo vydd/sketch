@@ -11,7 +11,7 @@
 (defclass figure ()
   ((draws :initarg :draws)))
 
-(defmethod draw ((figure figure) &key &allow-other-keys)
+(defmethod draw-figure ((figure figure))
   (symbol-macrolet ((position (env-buffer-position *env*)))
     (with-slots (draws) figure
       (kit.gl.shader:uniform-matrix (env-programs *env*) :model-m 4
@@ -43,5 +43,5 @@
      (let ((figure (make-instance 'figure :draws *draw-sequence*)))
        (defun ,name (x y)
          (translate x y)
-         (draw figure)
+         (draw-figure figure)
          (translate (- x) (- y))))))

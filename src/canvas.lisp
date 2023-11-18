@@ -64,11 +64,11 @@
 (defmethod canvas-unlock ((canvas canvas))
   (setf (%canvas-locked canvas) nil))
 
-(defmethod draw ((canvas canvas)
-                 &key (x 0) (y 0)
-                   width height
+(defmethod draw ((canvas canvas) x y
+		 &key width height mode
                    (min-filter :linear)
-                   (mag-filter :linear))
+                   (mag-filter :linear)
+		 &allow-other-keys)
   "Draws a canvas with its top-left corner at co-ordinates X & Y. By default,
 uses the width and height that the canvas was created with, but these can be
 overwritten by parameters WIDTH and HEIGHT.
@@ -80,8 +80,9 @@ CANVAS-LOCK is being used, then MIN-FILTER and MAG-FILTER should be passed
 there instead.
 
 See: https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexParameter.xhtml"
+  (declare (ignore mode))
   (draw (canvas-image canvas :min-filter min-filter :mag-filter mag-filter)
-        :x 0
-        :y 0
+        0
+        0
         :width (or width (canvas-width canvas))
         :height (or height (canvas-height canvas))))

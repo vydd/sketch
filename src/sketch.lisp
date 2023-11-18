@@ -84,10 +84,12 @@
   (:documentation "Called before creating the sketch window.")
   (:method ((instance sketch) &key &allow-other-keys) ()))
 
-(defgeneric draw (instance &key &allow-other-keys)
-  (:documentation "Called repeatedly after creating the sketch window,
-used for drawing, 60fps.")
-  (:method ((instance sketch) &key &allow-other-keys) ()))
+(defgeneric draw (instance x y &key width height mode &allow-other-keys)
+  (:documentation "Draws the instance with set position, dimensions, and scaling mode.")
+  (:method ((instance sketch) x y &key width height mode &allow-other-keys)
+    "Called repeatedly after creating the sketch window, 60fps."
+    (declare (ignore x y width height mode))
+    ()))
 
 ;;; Initialization
 
@@ -138,7 +140,7 @@ used for drawing, 60fps.")
 
 (defun draw-window (window)
   (start-draw)
-  (draw window)
+  (draw window 0 0)
   (end-draw))
 
 (defmethod kit.sdl2:render ((instance sketch))
@@ -272,7 +274,8 @@ used for drawing, 60fps.")
                         :accessor ,(binding-accessor b))))))
 
 (defun define-draw-method (name bindings body)
-  `(defmethod draw ((*sketch* ,name) &key &allow-other-keys)
+  `(defmethod draw ((*sketch* ,name) x y &key width height mode &allow-other-keys)
+     (declare (ignore x y width height mode))
      (with-accessors (,@(loop for b in bindings
                               collect `(,(binding-name b) ,(binding-accessor b))))
          *sketch*
