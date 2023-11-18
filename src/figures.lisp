@@ -33,7 +33,13 @@
             (setf position (+ position length))
             (%gl:unmap-buffer :array-buffer)))))))
 
-(defmacro deffigure (name &body body)
+(defmacro deffigure (name &optional ((&whole opt &optional w h &rest r) '(nil nil)) &body body)
+  (declare (ignore r))
+  (unless (and (numberp w) (numberp h))
+    (warn "Defining a figure with deffigure without specifying dimensions is deprecated.")
+    (setf w nil
+	  h nil
+	  body (cons opt body)))
   `(let ((*draw-sequence* nil))
      (let ((*env* (make-env))
            (*draw-mode* :figure))
@@ -41,7 +47,14 @@
          ,@body))
      (setf *draw-sequence* (nreverse *draw-sequence*))
      (let ((figure (make-instance 'figure :draws *draw-sequence*)))
-       (defun ,name (x y)
-         (translate x y)
-         (draw-figure figure)
-         (translate (- x) (- y))))))
+       ,(if (numberp w)
+	    `(defun ,name (x y &optional (w ,w) (h ,h))
+	       (with-current-matrix
+		 (translate x y)
+		 (scale (/ w ,w) (/ h ,h))
+		 (draw-figure figure)))
+	    (progn
+	      `(defun ,name (x y)
+		 (with-current-matrix
+		   (translate x y)
+		   (draw-figure figure))))))))
