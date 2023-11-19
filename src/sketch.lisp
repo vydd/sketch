@@ -26,26 +26,19 @@
 (defparameter *default-height* 400
   "The default height of sketch window")
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defparameter *default-slots*
-    '((title :initform "Sketch" :accessor sketch-title :initarg :title)
-      (width :initform *default-width* :accessor sketch-width :initarg :width)
-      (height :initform *default-height* :accessor sketch-height :initarg :height)
-      (fullscreen :initform nil :accessor sketch-fullscreen :initarg :fullscreen)
-      (resizable :initform nil :accessor sketch-resizable :initarg :resizable)
-      (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :copy-pixels)
-      (y-axis :initform :down :accessor sketch-y-axis :initarg :y-axis))))
+(defclass sketch (kit.sdl2:gl-window)
+  ((%env :initform (make-env))
+   (%restart :initform t)
+   (%viewport-changed :initform t)
+   (title :initform "Sketch" :accessor sketch-title :initarg :title)
+   (width :initform *default-width* :accessor sketch-width :initarg :width)
+   (height :initform *default-height* :accessor sketch-height :initarg :height)
+   (fullscreen :initform nil :accessor sketch-fullscreen :initarg :fullscreen)
+   (resizable :initform nil :accessor sketch-resizable :initarg :resizable)
+   (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :copy-pixels)
+   (y-axis :initform :down :accessor sketch-y-axis :initarg :y-axis)))
 
-(defmacro define-sketch-class ()
-  `(defclass sketch (kit.sdl2:gl-window)
-     ((%env :initform (make-env))
-      (%restart :initform t)
-      (%viewport-changed :initform t)
-      ,@*default-slots*)))
-
-(define-sketch-class)
-
-;;; Non trivial sketch writers
+ ;;; Non trivial sketch writers
 
 (defmacro define-sketch-writer (slot &body body)
   `(defmethod (setf ,(alexandria:symbolicate 'sketch- slot)) :after (value (instance sketch))
@@ -199,58 +192,6 @@
     (sdl2-ttf:quit)
     (kit.sdl2:quit)))
 
-;;; DEFSKETCH bindings
-
-(defclass binding ()
-  ((name :initarg :name :accessor binding-name)
-   (sketch-name :initarg :sketch-name :accessor binding-sketch-name)
-   (initform :initarg :initform :accessor binding-initform)
-   (defaultp :initarg :defaultp :accessor binding-defaultp)
-   (initarg :initarg :initarg :accessor binding-initarg)
-   (accessor :initarg :accessor :accessor binding-accessor)
-   (channelp :initarg :channelp :accessor binding-channelp)
-   (channel-name :initarg :channel-name :accessor binding-channel-name)))
-
-(defun make-binding (name &key (sketch-name 'sketch)
-                               (defaultp nil)
-                               (initform nil)
-                               (initarg (alexandria:make-keyword name))
-                               (accessor (alexandria:symbolicate sketch-name '#:- name))
-                               (channel-name nil channel-name-p))
-  (make-instance 'binding :name name
-                          :sketch-name sketch-name
-                          :defaultp defaultp
-                          :initform initform
-                          :initarg initarg
-                          :accessor accessor
-                          :channel-name channel-name
-                          :channelp channel-name-p))
-
-(defun add-default-bindings (parsed-bindings)
-  (loop for (name . args) in (reverse *default-slots*)
-        unless (member name parsed-bindings :key #'binding-name)
-        do (push (apply #'make-binding name :defaultp t args) parsed-bindings))
-  parsed-bindings)
-
-(defun parse-bindings (sketch-name bindings)
-  (add-default-bindings
-   (loop for (name value . args) in (alexandria:ensure-list bindings)
-         for default-slot-p = (assoc name *default-slots*)
-         ;; If a VALUE is of form (IN CHANNEL-NAME DEFAULT-VALUE) it
-         ;; is recognized as a channel. We should pass additional
-         ;; :channel-name parameter to MAKE-BINDING and set the VALUE
-         ;; to the DEFAULT-VALUE.
-         when (and (consp value)
-                   (eq 'in (car value)))
-           do (setf args (list* :channel-name (second value) args)
-                    value (third value))
-         collect (apply #'make-binding
-                        name
-                        :initform value
-                        (if default-slot-p
-                            (cdddr default-slot-p)
-                            (list* :sketch-name sketch-name args))))))
-
 ;;; DEFSKETCH channels
 
 (defun define-channel-observers (bindings)
@@ -268,7 +209,7 @@
 (defun define-sketch-defclass (name bindings)
   `(defclass ,name (sketch)
      (,@(loop for b in bindings
-              unless (eq 'sketch (binding-sketch-name b))
+              unless (eq 'sketch (binding-prefix b))
               collect `(,(binding-name b)
                         :initarg ,(binding-initarg b)
                         :accessor ,(binding-accessor b))))))
@@ -293,8 +234,9 @@
                    collect `(,(binding-accessor b) *sketch*)
                    collect (binding-name b)))))
 
-(defmacro defsketch (sketch-name bindings &body body)
-  (let ((bindings (parse-bindings sketch-name bindings)))
+(defmacro defsketch (sketch-name binding-forms &body body)
+  (let ((bindings (parse-bindings sketch-name binding-forms
+				  (class-bindings (find-class 'sketch)))))
     `(progn
        ,(define-sketch-defclass sketch-name bindings)
        ,@(define-channel-observers bindings)

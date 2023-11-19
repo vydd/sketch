@@ -6,6 +6,7 @@
   :license "MIT"
   :depends-on (#:alexandria
                #:cl-geometry
+	       #:closer-mop
                #:glkit
                #:mathkit
                #:md5
@@ -35,6 +36,7 @@
                (:file "image")
                (:file "shapes")
                (:file "transforms")
+	       (:file "bindings")
                (:file "sketch")
                (:file "figures")
                (:file "controllers")
