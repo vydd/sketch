@@ -134,6 +134,10 @@
            :with-rotate
            :with-scale
 
+           ;; Complex transforms
+           :fit
+           :with-fit
+
            ;; Channels
            :register-input
            :in
