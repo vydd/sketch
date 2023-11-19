@@ -8,6 +8,11 @@
 ;;; | |_) | || |\  | |_| | || |\  | |_| |___) |
 ;;; |____/___|_| \_|____/___|_| \_|\____|____/
 
+;;; TODO:
+;;; - Replace defaultp naming (hopefully the logic as well)
+;;;   with something less brittle.
+
+
 (defclass binding ()
   ((name :initarg :name :accessor binding-name)
    (prefix :initarg :prefix :accessor binding-prefix)
@@ -34,21 +39,55 @@
                           :channel-name channel-name
                           :channelp channel-name-p))
 
-(defun parse-bindings (prefix bindings &optional custom-name-prefix-alist)
-  (loop for (name value . args) in (alexandria:ensure-list bindings)
-        for name-prefix = (or (cdr (assoc name custom-name-prefix-alist))
-			      prefix)
-        ;; If a VALUE is of form (IN CHANNEL-NAME DEFAULT-VALUE) it
-        ;; is recognized as a channel. We should pass additional
-        ;; :channel-name parameter to MAKE-BINDING and set the VALUE
-        ;; to the DEFAULT-VALUE.
-        when (and (consp value)
-                  (eq 'in (car value)))
-          do (setf args (list* :channel-name (second value) args)
-                   value (third value))
-        collect (apply #'make-binding
-		       (list*
-			name
-			name-prefix
-			:initform value
-			args))))
+(defun copy-binding (binding
+		     &key
+		       (name (binding-name binding))
+		       (prefix (binding-prefix binding))
+		       (initform (binding-initform binding))
+		       (defaultp (binding-defaultp binding))
+		       (initarg (binding-initarg binding))
+		       (accessor (binding-accessor binding))
+		       (channel-name (binding-channel-name binding))
+		       (channelp (and channel-name t)))
+  (make-instance 'binding
+		 :name name :prefix prefix :initform initform
+		 :defaultp defaultp :initarg initarg :accessor accessor
+		 :channelp channelp :channel-name channel-name))
+
+(defun class-bindings (class &optional (mark-default-p t))
+  (loop for slot in (closer-mop:class-direct-slots class)
+	for name = (closer-mop:slot-definition-name slot)
+	for initform = (closer-mop:slot-definition-initform slot)
+	unless (char= #\% (char (symbol-name name) 0))
+	  collect (make-binding
+		   name
+		   (class-name class)
+		   :defaultp mark-default-p
+		   :initform initform)))
+
+(defun parse-bindings (prefix binding-forms &optional existing-bindings)
+  (loop for (name value . args) in (alexandria:ensure-list binding-forms)
+	for channel-name = (when (channel-value-p value) (second value))
+	for existing = (car (member name existing-bindings :key #'binding-name))
+	when channel-name
+	  do (setf value (third value)) ; default channel value
+	if existing
+	  collect (copy-binding
+		   existing
+		   :initform value
+		   :channel-name channel-name
+		   :defaultp nil)
+	    into created
+	    and collect existing into overriden
+	else
+	  collect (apply #'make-binding (list* name prefix :initform value args)) into created
+	finally
+	   (let ((remaining-existing
+		   (remove-if (lambda (b) (member b overriden))
+			      existing-bindings)))
+	     (return (append remaining-existing created)))))
+
+(defun channel-value-p (value)
+  "If a VALUE is of form (IN CHANNEL-NAME DEFAULT-VALUE)
+it is recognized as a channel."
+  (and (consp value) (eq 'in (car value))))

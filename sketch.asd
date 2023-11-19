@@ -6,6 +6,7 @@
   :license "MIT"
   :depends-on (#:alexandria
                #:cl-geometry
+	       #:closer-mop
                #:glkit
                #:mathkit
                #:md5

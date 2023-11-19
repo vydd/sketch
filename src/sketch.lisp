@@ -26,26 +26,19 @@
 (defparameter *default-height* 400
   "The default height of sketch window")
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defparameter *default-slots*
-    '((title :initform "Sketch" :accessor sketch-title :initarg :title)
-      (width :initform *default-width* :accessor sketch-width :initarg :width)
-      (height :initform *default-height* :accessor sketch-height :initarg :height)
-      (fullscreen :initform nil :accessor sketch-fullscreen :initarg :fullscreen)
-      (resizable :initform nil :accessor sketch-resizable :initarg :resizable)
-      (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :copy-pixels)
-      (y-axis :initform :down :accessor sketch-y-axis :initarg :y-axis))))
+(defclass sketch (kit.sdl2:gl-window)
+  ((%env :initform (make-env))
+   (%restart :initform t)
+   (%viewport-changed :initform t)
+   (title :initform "Sketch" :accessor sketch-title :initarg :title)
+   (width :initform *default-width* :accessor sketch-width :initarg :width)
+   (height :initform *default-height* :accessor sketch-height :initarg :height)
+   (fullscreen :initform nil :accessor sketch-fullscreen :initarg :fullscreen)
+   (resizable :initform nil :accessor sketch-resizable :initarg :resizable)
+   (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :copy-pixels)
+   (y-axis :initform :down :accessor sketch-y-axis :initarg :y-axis)))
 
-(defmacro define-sketch-class ()
-  `(defclass sketch (kit.sdl2:gl-window)
-     ((%env :initform (make-env))
-      (%restart :initform t)
-      (%viewport-changed :initform t)
-      ,@*default-slots*)))
-
-(define-sketch-class)
-
-;;; Non trivial sketch writers
+ ;;; Non trivial sketch writers
 
 (defmacro define-sketch-writer (slot &body body)
   `(defmethod (setf ,(alexandria:symbolicate 'sketch- slot)) :after (value (instance sketch))
@@ -199,14 +192,6 @@
     (sdl2-ttf:quit)
     (kit.sdl2:quit)))
 
-;;; DEFSKETCH bindings
-
-(defun add-default-bindings (parsed-bindings)
-  (loop for (name . args) in (reverse *default-slots*)
-        unless (member name parsed-bindings :key #'binding-name)
-        do (push (apply #'make-binding name 'sketch :defaultp t args) parsed-bindings))
-  parsed-bindings)
-
 ;;; DEFSKETCH channels
 
 (defun define-channel-observers (bindings)
@@ -249,11 +234,9 @@
                    collect `(,(binding-accessor b) *sketch*)
                    collect (binding-name b)))))
 
-(defmacro defsketch (sketch-name bindings &body body)
-  (let ((bindings (add-default-bindings
-		   (parse-bindings sketch-name bindings
-				   (mapcar (lambda (s) (cons (car s) 'sketch))
-					   *default-slots*)))))
+(defmacro defsketch (sketch-name binding-forms &body body)
+  (let ((bindings (parse-bindings sketch-name binding-forms
+				  (class-bindings (find-class 'sketch)))))
     `(progn
        ,(define-sketch-defclass sketch-name bindings)
        ,@(define-channel-observers bindings)
