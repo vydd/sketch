@@ -45,11 +45,15 @@
 
 (defun define-entity-draw-method (name bindings body)
   `(defmethod draw ((*entity* ,name) x y &key width height mode &allow-other-keys)
-     (declare (ignore x y width height mode))
-     (with-accessors (,@(loop for b in bindings
-                              collect `(,(binding-name b) ,(binding-accessor b))))
-         *entity*
-       ,@body)))
+     (declare (ignore mode))
+     (let ((from-width width)
+	   (from-height height))
+       (with-accessors (,@(loop for b in bindings
+				collect `(,(binding-name b) ,(binding-accessor b))))
+           *entity*
+	 (with-translate (x y)
+	   (with-fit (width height from-width from-height)
+	     ,@body))))))
 
 (defun define-entity-prepare-method (name bindings)
   `(defmethod prepare ((*entity* ,name)
