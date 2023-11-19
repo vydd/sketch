@@ -202,19 +202,7 @@
     (sdl2-ttf:quit)
     (kit.sdl2:quit)))
 
-;;; DEFSKETCH channels
-
-(defun define-channel-observers (bindings)
-  (loop for b in bindings
-        when (binding-channelp b)
-        collect `(define-channel-observer
-                   (let ((win (kit.sdl2:last-window)))
-                     (when win
-                       (setf (,(binding-accessor b) win)
-                             (in ,(binding-channel-name b)
-                                 ,(binding-initform b))))))))
-
-;;; DEFSKETCH macro
+;;; DEFSKETCH macro
 
 (defun define-sketch-defclass (name bindings)
   `(defclass ,name (sketch)
@@ -224,7 +212,18 @@
                         :initarg ,(binding-initarg b)
                         :accessor ,(binding-accessor b))))))
 
-(defun define-draw-method (name bindings body)
+(defun define-sketch-channel-observers (bindings)
+  (loop for b in bindings
+        when (binding-channelp b)
+        collect `(define-channel-observer
+		   ; TODO: Should this really depend on kit.sdl2?
+                   (let ((win (kit.sdl2:last-window)))
+                     (when win
+                       (setf (,(binding-accessor b) win)
+                             (in ,(binding-channel-name b)
+                                 ,(binding-initform b))))))))
+
+(defun define-sketch-draw-method (name bindings body)
   `(defmethod draw ((*sketch* ,name) x y &key width height mode &allow-other-keys)
      (declare (ignore x y width height mode))
      (with-accessors (,@(loop for b in bindings
@@ -232,7 +231,7 @@
          *sketch*
        ,@body)))
 
-(defun define-prepare-method (name bindings)
+(defun define-sketch-prepare-method (name bindings)
   `(defmethod prepare ((*sketch* ,name)
                        &key ,@(loop for b in bindings
                                     collect `((,(binding-initarg b) ,(binding-name b))
@@ -249,9 +248,9 @@
 				  (class-bindings (find-class 'sketch)))))
     `(progn
        ,(define-sketch-defclass sketch-name bindings)
-       ,@(define-channel-observers bindings)
-       ,(define-prepare-method sketch-name bindings)
-       ,(define-draw-method sketch-name bindings body)
+       ,@(define-sketch-channel-observers bindings)
+       ,(define-sketch-prepare-method sketch-name bindings)
+       ,(define-sketch-draw-method sketch-name bindings body)
 
        (make-instances-obsolete ',sketch-name)
        (find-class ',sketch-name))))

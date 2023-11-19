@@ -38,6 +38,7 @@
                (:file "transforms")
                (:file "complex-transforms")
                (:file "bindings")
+	       (:file "entities")
                (:file "sketch")
                (:file "figures")
                (:file "controllers")
