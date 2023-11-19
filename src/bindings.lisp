@@ -34,9 +34,10 @@
                           :channel-name channel-name
                           :channelp channel-name-p))
 
-(defun parse-bindings (prefix bindings &optional default-slots)
+(defun parse-bindings (prefix bindings &optional custom-name-prefix-alist)
   (loop for (name value . args) in (alexandria:ensure-list bindings)
-        for default-slot-p = (assoc name default-slots)
+        for name-prefix = (or (cdr (assoc name custom-name-prefix-alist))
+			      prefix)
         ;; If a VALUE is of form (IN CHANNEL-NAME DEFAULT-VALUE) it
         ;; is recognized as a channel. We should pass additional
         ;; :channel-name parameter to MAKE-BINDING and set the VALUE
@@ -48,6 +49,6 @@
         collect (apply #'make-binding
 		       (list*
 			name
-			(if default-slot-p 'sketch prefix)
+			name-prefix
 			:initform value
-			(if default-slot-p (cdddr default-slot-p) args)))))
+			args))))

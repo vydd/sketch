@@ -251,7 +251,9 @@
 
 (defmacro defsketch (sketch-name bindings &body body)
   (let ((bindings (add-default-bindings
-		   (parse-bindings sketch-name bindings *default-slots*))))
+		   (parse-bindings sketch-name bindings
+				   (mapcar (lambda (s) (cons (car s) 'sketch))
+					   *default-slots*)))))
     `(progn
        ,(define-sketch-defclass sketch-name bindings)
        ,@(define-channel-observers bindings)
