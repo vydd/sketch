@@ -16,6 +16,10 @@
 (defmethod on-middle-click ((instance sketch) x y))
 (defmethod on-right-click ((instance sketch) x y))
 
+(defmethod on-click :around ((*sketch* sketch) x y) (call-next-method))
+(defmethod on-middle-click :around ((*sketch* sketch) x y) (call-next-method))
+(defmethod on-right-click :around ((*sketch* sketch) x y) (call-next-method))
+
 (defmethod kit.sdl2:mousebutton-event ((instance sketch) state timestamp button x y)
   (let ((button (elt (list nil :left :middle :right) button))
 	(method (elt (list nil #'on-click #'on-middle-click #'on-right-click) button)))
