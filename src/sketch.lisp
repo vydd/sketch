@@ -201,55 +201,11 @@
 
 ;;; DEFSKETCH bindings
 
-(defclass binding ()
-  ((name :initarg :name :accessor binding-name)
-   (prefix :initarg :prefix :accessor binding-prefix)
-   (initform :initarg :initform :accessor binding-initform)
-   (defaultp :initarg :defaultp :accessor binding-defaultp)
-   (initarg :initarg :initarg :accessor binding-initarg)
-   (accessor :initarg :accessor :accessor binding-accessor)
-   (channelp :initarg :channelp :accessor binding-channelp)
-   (channel-name :initarg :channel-name :accessor binding-channel-name)))
-
-(defun make-binding (name &key (prefix 'sketch)
-                               (defaultp nil)
-                               (initform nil)
-                               (initarg (alexandria:make-keyword name))
-                               (accessor (alexandria:symbolicate prefix '#:- name))
-                               (channel-name nil channel-name-p))
-  (make-instance 'binding :name name
-                          :prefix prefix
-                          :defaultp defaultp
-                          :initform initform
-                          :initarg initarg
-                          :accessor accessor
-                          :channel-name channel-name
-                          :channelp channel-name-p))
-
 (defun add-default-bindings (parsed-bindings)
   (loop for (name . args) in (reverse *default-slots*)
         unless (member name parsed-bindings :key #'binding-name)
-        do (push (apply #'make-binding name :defaultp t args) parsed-bindings))
+        do (push (apply #'make-binding name 'sketch :defaultp t args) parsed-bindings))
   parsed-bindings)
-
-(defun parse-bindings (prefix bindings)
-  (add-default-bindings
-   (loop for (name value . args) in (alexandria:ensure-list bindings)
-         for default-slot-p = (assoc name *default-slots*)
-         ;; If a VALUE is of form (IN CHANNEL-NAME DEFAULT-VALUE) it
-         ;; is recognized as a channel. We should pass additional
-         ;; :channel-name parameter to MAKE-BINDING and set the VALUE
-         ;; to the DEFAULT-VALUE.
-         when (and (consp value)
-                   (eq 'in (car value)))
-           do (setf args (list* :channel-name (second value) args)
-                    value (third value))
-         collect (apply #'make-binding
-                        name
-                        :initform value
-                        (if default-slot-p
-                            (cdddr default-slot-p)
-                            (list* :prefix prefix args))))))
 
 ;;; DEFSKETCH channels
 
@@ -294,7 +250,8 @@
                    collect (binding-name b)))))
 
 (defmacro defsketch (sketch-name bindings &body body)
-  (let ((bindings (parse-bindings sketch-name bindings)))
+  (let ((bindings (add-default-bindings
+		   (parse-bindings sketch-name bindings *default-slots*))))
     `(progn
        ,(define-sketch-defclass sketch-name bindings)
        ,@(define-channel-observers bindings)
