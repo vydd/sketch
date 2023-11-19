@@ -4,11 +4,8 @@
 
 ;;; FIT, WITH-FIT
 ;;; Modes were taken from GTK, see https://docs.gtk.org/gtk4/enum.ContentFit.html
-(defun fit (to-width to-height from-width from-height
-            &key (to-x 0) (to-y 0) (from-x 0) (from-y 0)
-                 (mode :contain))
-  (declare (type (member :contain :cover :scale-down :fill) mode))
-  (translate from-x from-y)
+(defun fit (to-width to-height from-width from-height &key (mode :contain))
+  (check-type mode (member :contain :cover :scale-down :fill))
   (ecase mode
     ((:contain :cover :scale-down)
      (flet ((%fit-scale (scale)
@@ -31,16 +28,10 @@
                             1))))))
     (:fill
      (scale (/ from-width to-width)
-            (/ from-height to-height))))
-  (translate (- to-x) (- to-y)))
+            (/ from-height to-height)))))
 
-(defmacro with-fit (((  to-width   to-height &optional (  to-x 0) (  to-y 0))
-                     (from-width from-height &optional (from-x 0) (from-y 0))
-                     &key (mode :contain))
+(defmacro with-fit ((to-width to-height from-width from-height &key (mode :contain))
                     &body body)
-  (alexandria:once-only (to-width to-height to-x to-y from-width from-height from-x from-y mode)
-    `(with-current-matrix
-       (fit ,to-width ,to-height ,from-width ,from-height
-            :to-x ,to-x :to-y ,to-y :from-x ,from-x :from-y ,from-y
-            :mode ,mode)
-       ,@body)))
+  `(with-current-matrix
+       (fit ,to-width ,to-height ,from-width ,from-height :mode ,mode)
+     ,@body))
