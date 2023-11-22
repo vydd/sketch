@@ -7,4 +7,5 @@
            :life
            :sinewave
            :stars
+	   :indigo
            ))

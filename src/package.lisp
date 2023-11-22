@@ -95,6 +95,8 @@
            :+orange+
            :+white+
            :+black+
+	   :+gray+
+	   :+indigo+
 
            ;; Pen
            :pen

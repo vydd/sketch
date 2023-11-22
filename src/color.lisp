@@ -231,3 +231,5 @@
 (defparameter +orange+ (rgb 1.0 0.5 0.0))
 (defparameter +white+ (gray 1))
 (defparameter +black+ (gray 0))
+(defparameter +gray+ (gray 0.5))
+(defparameter +indigo+ (hex-to-color "#4b0082"))
