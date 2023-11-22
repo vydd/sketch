@@ -151,6 +151,11 @@
            ;; Figures
            :deffigure
 
+	   ;; Entities
+	   :defentity
+           :entity-width
+           :entity-height
+
            ;; Resources
            :load-resource
            :image

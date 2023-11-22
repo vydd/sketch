@@ -33,13 +33,14 @@
               unless (eq 'entity (binding-prefix b))
 		collect `(,(binding-name b)
                           :initarg ,(binding-initarg b)
-                          :accessor ,(binding-accessor b))))))
+                          :accessor ,(binding-accessor b)
+			  ,@(when (binding-channelp b) '(:allocation :class)))))))
 
-(defun define-entity-channel-observers (bindings)
+(defun define-entity-channel-observers (entity-name bindings)
   (loop for b in bindings
         when (binding-channelp b)
         collect `(define-channel-observer
-                   (setf (,(binding-accessor b) win)
+                   (setf (,(binding-accessor b) (default-entity-instance ',entity-name))
                          (in ,(binding-channel-name b)
                              ,(binding-initform b))))))
 
@@ -52,7 +53,8 @@
 				collect `(,(binding-name b) ,(binding-accessor b))))
            *entity*
 	 (with-translate (x y)
-	   (with-fit (width height from-width from-height)
+	   (with-fit (width height from-width from-height :mode :contain)
+	     (break)
 	     ,@body))))))
 
 (defun define-entity-prepare-method (name bindings)
@@ -72,9 +74,15 @@
 				  (class-bindings (find-class 'entity)))))
     `(progn
        ,(define-entity-defclass entity-name bindings)
-       ,@(define-entity-channel-observers bindings)
+       (let ((saved nil))
+	 (defmethod default-entity-instance ((instance (eql ',entity-name)))
+	   (unless saved
+	     (setf saved (make-instance ',entity-name)))
+	   saved))
        ,(define-entity-prepare-method entity-name bindings)
        ,(define-entity-draw-method entity-name bindings body)
+
+       ,@(define-entity-channel-observers entity-name bindings)
 
        (make-instances-obsolete ',entity-name)
        (find-class ',entity-name))))
