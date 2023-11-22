@@ -27,7 +27,7 @@
   "The default height of sketch window")
 
 (defclass sketch (kit.sdl2:gl-window)
-  ((%env :initform (make-env))
+  ((%env :initform (make-env) :reader sketch-%env)
    (%restart :initform t)
    (%viewport-changed :initform t)
    (title :initform "Sketch" :accessor sketch-title :initarg :title)
@@ -136,6 +136,13 @@
   (draw window 0 0)
   (end-draw))
 
+(defmacro with-sketch ((sketch) &body body)
+  `(with-environment (sketch-%env ,sketch)
+     (with-pen (make-default-pen)
+       (with-font (make-default-font)
+	 (with-identity-matrix
+	   ,@body)))))
+
 (defmethod kit.sdl2:render ((instance sketch))
   (with-slots (%env %restart width height copy-pixels %viewport-changed) instance
     (when %viewport-changed
@@ -143,27 +150,24 @@
        (env-programs %env) :view-m 4 (vector (env-view-matrix %env)))
       (gl:viewport 0 0 width height)
       (setf %viewport-changed nil))
-    (with-environment %env
-      (with-pen (make-default-pen)
-        (with-font (make-default-font)
-          (with-identity-matrix
-            (unless copy-pixels
-              (background (gray 0.4)))
-            ;; Restart sketch on setup and when recovering from an error.
-            (when %restart
-              (gl-catch (rgb 1 1 0.3)
-                (setup instance))
-              (setf (slot-value instance '%restart) nil))
-            ;; If we're in the debug mode, we exit from it immediately,
-            ;; so that the restarts are shown only once. Afterwards, we
-            ;; continue presenting the user with the red screen, waiting for
-            ;; the error to be fixed, or for the debug key to be pressed again.
-            (if (debug-mode-p)
-                (progn
-                  (exit-debug-mode)
-                  (draw-window instance))
-                (gl-catch (rgb 0.7 0 0)
-                  (draw-window instance)))))))))
+    (with-sketch (instance)
+      (unless copy-pixels
+        (background (gray 0.4)))
+      ;; Restart sketch on setup and when recovering from an error.
+      (when %restart
+        (gl-catch (rgb 1 1 0.3)
+          (setup instance))
+        (setf (slot-value instance '%restart) nil))
+      ;; If we're in the debug mode, we exit from it immediately,
+      ;; so that the restarts are shown only once. Afterwards, we
+      ;; continue presenting the user with the red screen, waiting for
+      ;; the error to be fixed, or for the debug key to be pressed again.
+      (if (debug-mode-p)
+          (progn
+            (exit-debug-mode)
+            (draw-window instance))
+          (gl-catch (rgb 0.7 0 0)
+            (draw-window instance))))))
 
 ;;; Support for resizable windows
 

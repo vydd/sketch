@@ -105,6 +105,10 @@
                 :length (length vertices))
           *draw-sequence*)))
 
+(defmethod push-vertices (vertices color texture primitive (draw-mode null))
+  ;; TODO: Drawing in event handlers could be useful with COPY-PIXELS set to to T.
+  (warn "Can't draw from current context (e.g. an event handler)."))
+
 (defun transform-vertex (vertex matrix)
   (let* ((vector (sb-cga:vec
                   (coerce (car vertex) 'single-float)
