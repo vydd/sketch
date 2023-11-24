@@ -50,7 +50,9 @@
                              ,(binding-initform b))))))
 
 (defun define-entity-draw-method (name bindings body)
-  `(defmethod draw ((*entity* ,name) x y &key width height mode &allow-other-keys)
+  `(defmethod draw ((*entity* ,name) x y
+		    &key (width (entity-width *entity*)) (height (entity-height *entity*)) mode
+		    &allow-other-keys)
      (declare (ignore mode))
      (let ((from-width width)
 	   (from-height height)

@@ -118,7 +118,8 @@
     ((instance sketch) added-slots discarded-slots property-list &rest initargs)
   (declare (ignore added-slots discarded-slots property-list))
   (apply #'prepare instance initargs)
-  (setf (slot-value instance '%restart) *restart-frames*))
+  (setf (slot-value instance '%restart) *restart-frames*)
+  (setf (slot-value instance '%entities) (make-hash-table)))
 
 ;;; Rendering
 
