@@ -12,7 +12,7 @@
   ;; Drawing
   (pen nil)
   (programs nil)
-  (model-matrix (sb-cga:identity-matrix))
+  (model-matrix (sb-cga:identity-matrix)) ; TODO: sb-cga shouldn't be used directly from here
   (view-matrix nil)
   (matrix-stack nil)
   (y-axis-sgn +1)

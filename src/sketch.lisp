@@ -32,6 +32,7 @@
   ((%env :initform (make-env) :reader sketch-%env)
    (%restart :initform *restart-frames*)
    (%viewport-changed :initform t)
+   (%entities :initform (make-hash-table) :accessor sketch-%entities)
    (title :initform "Sketch" :accessor sketch-title :initarg :title)
    (width :initform *default-width* :accessor sketch-width :initarg :width)
    (height :initform *default-height* :accessor sketch-height :initarg :height)

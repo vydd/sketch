@@ -16,19 +16,35 @@
 (defmethod on-middle-click ((instance sketch) x y))
 (defmethod on-right-click ((instance sketch) x y))
 
+;;; TODO: Make sane:
+(defmethod on-click ((instance entity) x y))
+(defmethod on-middle-click ((instance entity) x y))
+(defmethod on-right-click ((instance entity) x y))
+
+(defun click-on-entity (sketch x y f)
+  (loop
+    for entity being the hash-key of (sketch-%entities sketch)
+    for (im x1 y1 x2 y2) being the hash-value of (sketch-%entities sketch)
+    for (ix iy) = (transform-vertex (list x y) im)
+    when (and (< x1 x x2) (< y1 y y2))
+      do (funcall f entity ix iy)))
+
 (defmethod on-click :around ((*sketch* sketch) x y)
   (with-sketch (*sketch*)
     (let ((*draw-mode* nil))
+      (click-on-entity *sketch* x y #'on-click)
       (call-next-method))))
 
 (defmethod on-middle-click :around ((*sketch* sketch) x y)
   (with-sketch (*sketch*)
     (let ((*draw-mode* nil))
+      (click-on-entity *sketch* x y #'on-middle-click)
       (call-next-method))))
 
 (defmethod on-right-click :around ((*sketch* sketch) x y)
   (with-sketch (*sketch*)
     (let ((*draw-mode* nil))
+      (click-on-entity *sketch* x y #'on-right-click)
       (call-next-method))))
 
 (defmethod kit.sdl2:mousebutton-event ((instance sketch) state timestamp button x y)

@@ -19,6 +19,11 @@
   ((width :initform 100 :accessor entity-width :initarg :width)
    (height :initform 100 :accessor entity-height :initarg :height)))
 
+(defmethod register-entity ((sketch sketch) (entity entity) box)
+  (setf (gethash entity (sketch-%entities sketch))
+	;; TODO: sb-cga shouldn't be used directly from here.
+	(cons (sb-cga:inverse-matrix (env-model-matrix (sketch-%env sketch))) box)))
+
 (defmethod initialize-instance :after ((instance entity) &rest initargs &key &allow-other-keys)
   (apply #'prepare instance initargs))
 
@@ -48,13 +53,14 @@
   `(defmethod draw ((*entity* ,name) x y &key width height mode &allow-other-keys)
      (declare (ignore mode))
      (let ((from-width width)
-	   (from-height height))
+	   (from-height height)
+	   (bounds (absolute-bounds x y width height)))
        (with-accessors (,@(loop for b in bindings
 				collect `(,(binding-name b) ,(binding-accessor b))))
            *entity*
 	 (with-translate (x y)
 	   (with-fit (width height from-width from-height :mode :contain)
-	     (break)
+	     (register-entity *sketch* *entity* bounds)
 	     ,@body))))))
 
 (defun define-entity-prepare-method (name bindings)
