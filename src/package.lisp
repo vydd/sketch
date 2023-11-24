@@ -186,4 +186,7 @@
 	   :on-click
            :on-middle-click
 	   :on-right-click
+	   :on-hover
+	   :on-enter
+	   :on-leave
            ))
