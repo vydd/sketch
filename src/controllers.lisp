@@ -49,6 +49,9 @@
 
 (defmethod on-hover :around ((entity entity) ix iy)
   (let ((*draw-mode* nil))
+    (when (and *current-entity* (not (eql *current-entity* entity)))
+      (on-leave *current-entity*)
+      (setf *current-entity* nil))
     (when (null *current-entity*)
       (setf *current-entity* entity)
       (on-enter entity))
