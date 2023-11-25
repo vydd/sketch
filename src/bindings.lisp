@@ -29,7 +29,8 @@
 		       (initform nil)
 		       (initarg (alexandria:make-keyword name))
 		       (accessor (alexandria:symbolicate prefix '#:- name))
-		       (channel-name nil channel-name-p))
+		       (channel-name nil)
+		       (channelp (and channel-name t)))
   (make-instance 'binding :name name
                           :prefix prefix
                           :defaultp defaultp
@@ -37,7 +38,7 @@
                           :initarg initarg
                           :accessor accessor
                           :channel-name channel-name
-                          :channelp channel-name-p))
+                          :channelp channelp))
 
 (defun copy-binding (binding
 		     &key
@@ -80,7 +81,11 @@
 	    into created
 	    and collect existing into overriden
 	else
-	  collect (apply #'make-binding (list* name prefix :initform value args)) into created
+	  collect (apply #'make-binding (list* name prefix
+					       :initform value
+					       :channel-name channel-name
+					       args))
+	    into created
 	finally
 	   (let ((remaining-existing
 		   (remove-if (lambda (b) (member b overriden))

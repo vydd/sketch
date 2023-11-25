@@ -109,16 +109,6 @@
   ;; TODO: Drawing in event handlers could be useful with COPY-PIXELS set to to T.
   (warn "Can't draw from current context (e.g. an event handler)."))
 
-(defun transform-vertex (vertex matrix)
-  (let* ((vector (sb-cga:vec
-                  (coerce (car vertex) 'single-float)
-                  (coerce (cadr vertex) 'single-float)
-                  0.0))
-         (transformed (sb-cga:transform-point vector matrix)))
-    ;; TODO: This is painfully inelegant.
-    ;; No consing should happen at this point.
-    (list (elt transformed 0) (elt transformed 1))))
-
 (defun fit-uv-to-rect (uv)
   (if *uv-rect*
       (destructuring-bind (u-in v-in) uv
