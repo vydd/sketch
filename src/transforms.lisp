@@ -73,13 +73,3 @@
     ;; TODO: This is painfully inelegant.
     ;; No consing should happen at this point.
     (list (elt transformed 0) (elt transformed 1))))
-
-(defun absolute-bounds (x y w h)
-  ;; TODO: Unify with TRANSFORM-VERTEX
-  (flet ((sf (a) (coerce a 'single-float)))
-    (multiple-value-bind (min max)
-	(sb-cga:transform-bounds (sb-cga:vec (sf x) (sf y) 0.0)
-				 (sb-cga:vec (sf (+ x w)) (sf (+ y h)) 0.0)
-				 (env-model-matrix *env*))
-      (list (aref min 0) (aref min 1)
-	    (aref max 0) (aref max 1)))))
