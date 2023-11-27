@@ -24,9 +24,9 @@
 (defun propagate-to-entity (sketch x y f)
   (loop
     for entity being the hash-key of (sketch-%entities sketch)
-    for (im x1 y1 x2 y2) being the hash-value of (sketch-%entities sketch)
+    for (im iw ih) being the hash-value of (sketch-%entities sketch)
     for (ix iy) = (transform-vertex (list x y) im)
-    when (and (< x1 x x2) (< y1 y y2))
+    when (and (< 0 ix iw) (< 0 iy ih))
       do (funcall f entity ix iy)))
 
 (defmethod on-click :around ((*sketch* sketch) x y)
@@ -67,9 +67,9 @@
 (defmethod kit.sdl2:mousemotion-event ((instance sketch) timestamp button-mask x y xrel yrel)
   (unless
       (loop for entity being the hash-key of (sketch-%entities instance)
-	    for (im x1 y1 x2 y2) being the hash-value of (sketch-%entities instance)
+	    for (im iw ih) being the hash-value of (sketch-%entities instance)
 	    for (ix iy) = (transform-vertex (list x y) im)
-	    when (and (< x1 x x2) (< y1 y y2))
+	    when (and (< 0 ix iw) (< 0 iy ih))
 	      do (on-hover entity ix iy)
 		 (return t))
     (when *current-entity*

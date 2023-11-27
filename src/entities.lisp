@@ -55,14 +55,13 @@
 		    &allow-other-keys)
      (declare (ignore mode))
      (let ((from-width width)
-	   (from-height height)
-	   (bounds (absolute-bounds x y width height)))
+	   (from-height height))
        (with-accessors (,@(loop for b in bindings
 				collect `(,(binding-name b) ,(binding-accessor b))))
            *entity*
 	 (with-translate (x y)
 	   (with-fit (width height from-width from-height :mode :contain)
-	     (register-entity *sketch* *entity* bounds)
+	     (register-entity *sketch* *entity* (list width height))
 	     ,@body))))))
 
 (defun define-entity-prepare-method (name bindings)
