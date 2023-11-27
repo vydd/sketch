@@ -145,8 +145,8 @@
   `(with-environment (sketch-%env ,sketch)
      (with-pen (make-default-pen)
        (with-font (make-default-font)
-	 (with-identity-matrix
-	   ,@body)))))
+         (with-identity-matrix
+           ,@body)))))
 
 (defmethod kit.sdl2:render ((instance sketch))
   (with-slots (%env %restart width height copy-pixels %viewport-changed) instance
@@ -157,15 +157,15 @@
       (setf %viewport-changed nil))
     (with-sketch (instance)
       (unless copy-pixels
-	(background (gray 0.4)))
+        (background (gray 0.4)))
       ;; Restart sketch on setup and when recovering from an error.
       (when (> %restart 0)
-	(decf %restart)
+        (decf %restart)
         (when (zerop %restart)
-	  (gl-catch (rgb 1 1 0.3)
-	    (start-draw)
+          (gl-catch (rgb 1 1 0.3)
+            (start-draw)
             (setup instance)
-	    (end-draw))))
+            (end-draw))))
       ;; If we're in the debug mode, we exit from it immediately,
       ;; so that the restarts are shown only once. Afterwards, we
       ;; continue presenting the user with the red screen, waiting for
@@ -218,7 +218,7 @@
   (loop for b in bindings
         when (binding-channelp b)
         collect `(define-channel-observer
-		   ; TODO: Should this really depend on kit.sdl2?
+                   ; TODO: Should this really depend on kit.sdl2?
                    (let ((win (kit.sdl2:last-window)))
                      (when win
                        (setf (,(binding-accessor b) win)
@@ -247,7 +247,7 @@
 
 (defmacro defsketch (sketch-name binding-forms &body body)
   (let ((bindings (parse-bindings sketch-name binding-forms
-				  (class-bindings (find-class 'sketch)))))
+                                  (class-bindings (find-class 'sketch)))))
     `(progn
        ,(define-sketch-defclass sketch-name bindings)
        ,@(define-sketch-channel-observers bindings)

@@ -21,8 +21,8 @@
 
 (defmethod register-entity ((sketch sketch) (entity entity) box)
   (setf (gethash entity (sketch-%entities sketch))
-	;; TODO: sb-cga shouldn't be used directly from here.
-	(cons (sb-cga:inverse-matrix (env-model-matrix (sketch-%env sketch))) box)))
+        ;; TODO: sb-cga shouldn't be used directly from here.
+        (cons (sb-cga:inverse-matrix (env-model-matrix (sketch-%env sketch))) box)))
 
 (defmethod initialize-instance :after ((instance entity) &rest initargs &key &allow-other-keys)
   (apply #'prepare instance initargs))
@@ -36,10 +36,10 @@
   `(defclass ,name (entity)
      (,@(loop for b in bindings
               unless (eq 'entity (binding-prefix b))
-		collect `(,(binding-name b)
+                collect `(,(binding-name b)
                           :initarg ,(binding-initarg b)
                           :accessor ,(binding-accessor b)
-			  ,@(when (binding-channelp b) '(:allocation :class)))))))
+                          ,@(when (binding-channelp b) '(:allocation :class)))))))
 
 (defun define-entity-channel-observers (entity-name bindings)
   (loop for b in bindings
@@ -51,18 +51,18 @@
 
 (defun define-entity-draw-method (name bindings body)
   `(defmethod draw ((*entity* ,name) x y
-		    &key (width (entity-width *entity*)) (height (entity-height *entity*)) mode
-		    &allow-other-keys)
+                    &key (width (entity-width *entity*)) (height (entity-height *entity*)) mode
+                    &allow-other-keys)
      (declare (ignore mode))
      (let ((from-width width)
-	   (from-height height))
+           (from-height height))
        (with-accessors (,@(loop for b in bindings
-				collect `(,(binding-name b) ,(binding-accessor b))))
+                                collect `(,(binding-name b) ,(binding-accessor b))))
            *entity*
-	 (with-translate (x y)
-	   (with-fit (width height from-width from-height :mode :contain)
-	     (register-entity *sketch* *entity* (list width height))
-	     ,@body))))))
+         (with-translate (x y)
+           (with-fit (width height from-width from-height :mode :contain)
+             (register-entity *sketch* *entity* (list width height))
+             ,@body))))))
 
 (defun define-entity-prepare-method (name bindings)
   `(defmethod prepare ((*entity* ,name)
@@ -78,14 +78,14 @@
 
 (defmacro defentity (entity-name binding-forms &body body)
   (let ((bindings (parse-bindings entity-name binding-forms
-				  (class-bindings (find-class 'entity)))))
+                                  (class-bindings (find-class 'entity)))))
     `(progn
        ,(define-entity-defclass entity-name bindings)
        (let ((saved nil))
-	 (defmethod default-entity-instance ((instance (eql ',entity-name)))
-	   (unless saved
-	     (setf saved (make-instance ',entity-name)))
-	   saved))
+         (defmethod default-entity-instance ((instance (eql ',entity-name)))
+           (unless saved
+             (setf saved (make-instance ',entity-name)))
+           saved))
        ,(define-entity-prepare-method entity-name bindings)
        ,(define-entity-draw-method entity-name bindings body)
 

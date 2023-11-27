@@ -13,9 +13,9 @@
 (defun pad-list (list pad length)
   (let ((pad-length (- length (length list))))
     (if (> pad-length 0)
-	(append (make-list pad-length :initial-element pad)
-		list)
-	list)))
+        (append (make-list pad-length :initial-element pad)
+                list)
+        list)))
 
 (defun group (list &optional (group-length 2))
   (loop with list = (copy-list list)

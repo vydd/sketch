@@ -57,7 +57,7 @@
 
 (defmethod kit.sdl2:mousebutton-event ((instance sketch) state timestamp button x y)
   (let ((button (elt (list nil :left :middle :right) button))
-	(method (elt (list nil #'on-click #'on-middle-click #'on-right-click) button)))
+        (method (elt (list nil #'on-click #'on-middle-click #'on-right-click) button)))
     (when (equal state :mousebuttondown)
       (setf (getf *buttons* button) t))
     (when (and (equal state :mousebuttonup) (getf *buttons* button))
@@ -67,11 +67,11 @@
 (defmethod kit.sdl2:mousemotion-event ((instance sketch) timestamp button-mask x y xrel yrel)
   (unless
       (loop for entity being the hash-key of (sketch-%entities instance)
-	    for (im iw ih) being the hash-value of (sketch-%entities instance)
-	    for (ix iy) = (transform-vertex (list x y) im)
-	    when (and (< 0 ix iw) (< 0 iy ih))
-	      do (on-hover entity ix iy)
-		 (return t))
+            for (im iw ih) being the hash-value of (sketch-%entities instance)
+            for (ix iy) = (transform-vertex (list x y) im)
+            when (and (< 0 ix iw) (< 0 iy ih))
+              do (on-hover entity ix iy)
+                 (return t))
     (when *current-entity*
       (on-leave *current-entity*)
       (setf *current-entity* nil))))

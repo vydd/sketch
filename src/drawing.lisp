@@ -113,20 +113,20 @@
   (if *uv-rect*
       (destructuring-bind (u-in v-in) uv
         (destructuring-bind (u1 v1 u-range v-range) *uv-rect*
-            (list (+ u1 (* u-range u-in))
-                  (+ v1 (* v-range v-in)))))
+          (list (+ u1 (* u-range u-in))
+                (+ v1 (* v-range v-in)))))
       uv))
 
 (defun fill-buffer (buffer-pointer vertices color)
   (loop
-     for idx from 0 by *vertex-attributes*
-     for (x y) in vertices
-     for (tx ty) in (mapcar #'fit-uv-to-rect (normalize-to-bounding-box vertices))
-     do (setf (cffi:mem-aref buffer-pointer :float idx) (coerce-float x)
-              (cffi:mem-aref buffer-pointer :float (+ idx 1)) (coerce-float y)
-              (cffi:mem-aref buffer-pointer :float (+ idx 2)) (coerce-float tx)
-              (cffi:mem-aref buffer-pointer :float (+ idx 3)) (coerce-float (* ty (env-y-axis-sgn *env*)))
-              (cffi:mem-aref buffer-pointer :uint8 (* 4 (+ idx 4))) (aref color 0)
-              (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 1)) (aref color 1)
-              (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 2)) (aref color 2)
-              (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 3)) (aref color 3))))
+    for idx from 0 by *vertex-attributes*
+    for (x y) in vertices
+    for (tx ty) in (mapcar #'fit-uv-to-rect (normalize-to-bounding-box vertices))
+    do (setf (cffi:mem-aref buffer-pointer :float idx) (coerce-float x)
+             (cffi:mem-aref buffer-pointer :float (+ idx 1)) (coerce-float y)
+             (cffi:mem-aref buffer-pointer :float (+ idx 2)) (coerce-float tx)
+             (cffi:mem-aref buffer-pointer :float (+ idx 3)) (coerce-float (* ty (env-y-axis-sgn *env*)))
+             (cffi:mem-aref buffer-pointer :uint8 (* 4 (+ idx 4))) (aref color 0)
+             (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 1)) (aref color 1)
+             (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 2)) (aref color 2)
+             (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 3)) (aref color 3))))

@@ -28,5 +28,5 @@
   (background +indigo+)
   (with-slots (inc lx ly) indigo
     (setf inc (+ (random 100) 1)
-	  lx (+ (random 100) 100)
-	  ly (+ (random 100) 100))))
+          lx (+ (random 100) 100)
+          ly (+ (random 100) 100))))

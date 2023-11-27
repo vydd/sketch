@@ -43,10 +43,10 @@
         (unless (and (< 40 x 60)
                      (< 40 y 60)))
         (canvas-paint canvas (if bw
-				 (gray-255 (+ 200 (random 55)))
-				 (if (< (random 3) 1)
-				     +magenta+
-				     +cyan+))
+                                 (gray-255 (+ 200 (random 55)))
+                                 (if (< (random 3) 1)
+                                     +magenta+
+                                     +cyan+))
                       x y)))
     (canvas-lock canvas)
     canvas))

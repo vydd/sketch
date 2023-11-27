@@ -95,8 +95,8 @@
            :+orange+
            :+white+
            :+black+
-	   :+gray+
-	   :+indigo+
+           :+gray+
+           :+indigo+
 
            ;; Pen
            :pen
@@ -151,8 +151,8 @@
            ;; Figures
            :deffigure
 
-	   ;; Entities
-	   :defentity
+           ;; Entities
+           :defentity
            :entity-width
            :entity-height
 
@@ -183,10 +183,10 @@
            :canvas-height
 
            ;; Controllers
-	   :on-click
+           :on-click
            :on-middle-click
-	   :on-right-click
-	   :on-hover
-	   :on-enter
-	   :on-leave
+           :on-right-click
+           :on-hover
+           :on-enter
+           :on-leave
            ))

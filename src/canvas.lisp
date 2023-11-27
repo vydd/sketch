@@ -36,9 +36,9 @@
       (setf (cffi:mem-aref ptr :uint8 (+ pos i)) (elt vec i)))))
 
 (defmethod canvas-image ((canvas canvas)
-			 &key (min-filter :linear)
+                         &key (min-filter :linear)
                               (mag-filter :linear)
-			 &allow-other-keys)
+                         &allow-other-keys)
   (if (%canvas-locked canvas)
       (%canvas-image canvas)
       (make-image-from-surface
@@ -53,22 +53,22 @@
        :mag-filter mag-filter)))
 
 (defmethod canvas-lock ((canvas canvas)
-			&key (min-filter :linear)
-			     (mag-filter :linear)
-			&allow-other-keys)
+                        &key (min-filter :linear)
+                             (mag-filter :linear)
+                        &allow-other-keys)
   (setf (%canvas-image canvas) (canvas-image canvas
-					     :min-filter min-filter
-					     :mag-filter mag-filter)
+                                             :min-filter min-filter
+                                             :mag-filter mag-filter)
         (%canvas-locked canvas) t))
 
 (defmethod canvas-unlock ((canvas canvas))
   (setf (%canvas-locked canvas) nil))
 
 (defmethod draw ((canvas canvas) x y
-		 &key width height mode
+                 &key width height mode
                    (min-filter :linear)
                    (mag-filter :linear)
-		 &allow-other-keys)
+                 &allow-other-keys)
   "Draws a canvas with its top-left corner at co-ordinates X & Y. By default,
 uses the width and height that the canvas was created with, but these can be
 overwritten by parameters WIDTH and HEIGHT.

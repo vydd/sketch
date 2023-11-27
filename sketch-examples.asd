@@ -14,5 +14,5 @@
                (:file "brownian")
                (:file "hello-world")
                (:file "stars")
-	       (:file "indigo")
+               (:file "indigo")
                ))

@@ -6,7 +6,7 @@
   :license "MIT"
   :depends-on (#:alexandria
                #:cl-geometry
-	       #:closer-mop
+               #:closer-mop
                #:glkit
                #:mathkit
                #:md5
@@ -39,7 +39,7 @@
                (:file "drawing")
                (:file "bindings")
                (:file "sketch")
-	       (:file "entities")
+               (:file "entities")
                (:file "figures")
                (:file "controllers")
                (:file "canvas")))
