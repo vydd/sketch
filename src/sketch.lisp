@@ -256,3 +256,11 @@
 
        (make-instances-obsolete ',sketch-name)
        (find-class ',sketch-name))))
+
+;;; Control flow
+
+(defun loop-no ()
+  (setf (sdl2.kit:idle-render *sketch*) nil))
+
+(defun loop-yes ()
+  (setf (sdl2.kit:idle-render *sketch*) t))

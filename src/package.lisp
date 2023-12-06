@@ -189,4 +189,8 @@
            :on-hover
            :on-enter
            :on-leave
+
+           ;; Control flow
+           :loop-yes
+           :loop-no
            ))
