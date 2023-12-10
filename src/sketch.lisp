@@ -259,8 +259,8 @@
 
 ;;; Control flow
 
-(defun loop-no ()
+(defun stop-loop ()
   (setf (sdl2.kit:idle-render *sketch*) nil))
 
-(defun loop-yes ()
+(defun start-loop ()
   (setf (sdl2.kit:idle-render *sketch*) t))

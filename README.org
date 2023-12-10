@@ -538,9 +538,9 @@ Here is an example usage of =setup= from [[https://github.com/vydd/sketch/blob/m
 Example: [[https://github.com/vydd/sketch/blob/master/examples/stars.lisp][stars.lisp]].
 
 *** Control flow
-=(loop-no)= from within a sketch body or within an event handler to disable the drawing loop.
+=(stop-loop)= from within a sketch body or within an event handler to disable the drawing loop.
 
-=(loop-yes)= to start the drawing loop again.
+=(start-loop)= to start the drawing loop again.
 
 This can be used, for example, to draw a static sketch and then disable the drawing loop so as to not burn up your CPU. It can also be used to regenerate the sketch with each mouseclick.
 
