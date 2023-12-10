@@ -126,11 +126,7 @@
 (defun make-polygon (&rest coordinates)
   (list
    :triangles
-   (if (= 3 (/ (length coordinates) 2))
-       ;; Special case, it's just a single triangle, don't need
-       ;; to triangulate it.
-       (group coordinates)
-       (triangulate coordinates))
+   (triangulate coordinates)
    (group coordinates)))
 
 (defun polygon (&rest coordinates)
