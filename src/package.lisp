@@ -191,6 +191,6 @@
            :on-leave
 
            ;; Control flow
-           :loop-yes
-           :loop-no
+           :start-loop
+           :stop-loop
            ))
