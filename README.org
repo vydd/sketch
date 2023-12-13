@@ -104,9 +104,6 @@ TUTORIAL> ;; ready
 #+END_SRC
 
 ** Tutorial
-/NOTE: This tutorial is using the revised/ =DEFSKETCH= /macro, introduced in May 2016. Until this release hits Quicklisp, you'll have to install Sketch manually to your/ =local-projects= /directory, along with https://github.com/lispgames/cl-sdl2 and
-https://github.com/lispgames/sdl2kit. More about this [[https://github.com/vydd/sketch/issues/12][here]]./
-
 Defining sketches is done with the =DEFSKETCH= macro, that wraps =DEFCLASS=. Using =DEFCLASS= is still possible, but =DEFSKETCH= makes everything so much easier, and in these examples, we're going to pretend that's the only way.
 
 #+BEGIN_SRC lisp
@@ -432,9 +429,16 @@ Note that =load-resource= automatically caches the resource when it is called in
 Images can be cropped using =(crop (image-resource image) x y w h)=, where =x= and =y= indicate the top-left corner of the cropping rectangle and =w= and =h= indicate the width & height. Image flipping can be accomplished by using negative =w= and =h= values.
 
 *** Input
-Input is handled by overriding methods provided by [[https://github.com/lispgames/sdl2kit/#Windows][sdl2kit]]; the sketch window is a subclass of the =WINDOW= class provided by =sdl2kit=, which provides these generic functions for handling input. Drawing functions cannot be called from these methods, only from the body of =defsketch=.
+Input is handled by defining implementations of the methods listed below. Currently, it is not possible to call drawing functions from these methods, though this can be worked around by saving the input somewhere and then doing the drawing from the sketch body, as demonstrated in the examples to follow.
 
-In this example, we draw a new rectangle every time there is a click. The important parameters of the event method: =state= is a keyword symbol indicating the state of the mouse, =ts= is a timestamp, =x= and =y= are the coordinates of the mouse click.
+- =(on-click instance x y)= is called when there's a left click. =x= and =y= give the coordinates of the click.
+- =(on-middle-click instance x y)= and =(on-right-click instance x y)= for middle and right clicks.
+- =(on-click-release instance x y)=, =(on-middle-click-release instance x y)= and =(on-right-click-release instance x y)= are called when the corresponding mouse button is released.
+- =(on-hover instance x y)= is called when the mouse moves, =x= and =y= give its coordinates.
+- =(on-text instance text)= is called when a single character is entered, =text= is a string consisting of just this character.
+- =(on-button instance button state)= is called when a button is pressed. =button= is a keyword symbol denoting which button was pressed/released (like =:space= or =:left=; for now, the names are based on SDL2 scancodes, see [[https://wiki.libsdl.org/SDL2/SDL_Scancode][here]] for the full list), and =state= is a keyword symbol denoting whether the button was pressed (=:keyup=) or released (=:keydown=).
+
+In this example, we draw a new rectangle every time there is a click.
 
 #+BEGIN_SRC lisp
   (defsketch input-test
@@ -442,22 +446,21 @@ In this example, we draw a new rectangle every time there is a click. The import
       (rectangles nil))
    (loop for (x y) in rectangles
          do (rect x y 50 50)))
-  (defmethod kit.sdl2:mousebutton-event ((window input-test) state ts b x y)
+  (defmethod on-click ((window input-test) x y)
     (with-slots (rectangles) window
-      (when (eq state :mousebuttondown)
-        (push (list x y) rectangles))))
+      (push (list x y) rectangles)))
 #+END_SRC
 
-In this example, all keyboard text input is echoed to the screen. =text= is a string / character array containing a single character.
+In this example, all keyboard text input is echoed to the screen.
 
 #+BEGIN_SRC lisp
-  (defsketch input-test
+  (defsketch text-test
      ((title "Hello, input")
       (text-to-write nil))
     (loop for s in text-to-write
           do (text s 0 0 20 20)
           do (translate 20 0)))
-  (defmethod kit.sdl2:textinput-event ((window input-test) ts text)
+  (defmethod on-text ((window text-test) text)
     (with-slots (text-to-write) window
       (setf text-to-write (nconc text-to-write (list text)))))
 #+END_SRC
@@ -465,7 +468,7 @@ In this example, all keyboard text input is echoed to the screen. =text= is a st
 Finally, here is an example where a pair of eyes follow the mouse (the pupils are restricted to a rectangle, it would look better if they were restricted to a circle).
 
 #+BEGIN_SRC lisp
-  (defsketch input-test
+  (defsketch hover-test
      ((looking-at (list 0 0))
       (cx (/ width 2))
       (cy (/ height 2)))
@@ -484,13 +487,13 @@ Finally, here is an example where a pair of eyes follow the mouse (the pupils ar
                              (* (signum diff) 10))))))
           (circle (move-towards cx-1 mx) (move-towards cy my) 10)
           (circle (move-towards cx-2 mx) (move-towards cy my) 10)))))
-  (defmethod kit.sdl2:mousemotion-event ((window input-test) ts bm x y xrel yrel)
+  (defmethod on-hover ((window hover-test) x y)
     (with-slots (looking-at) window
       (setf (car looking-at) x
             (cadr looking-at) y)))
 #+END_SRC
 
-See also: [[https://github.com/vydd/sketch/blob/master/examples/life.lisp][life.lisp]] and [[https://github.com/vydd/sketch/blob/master/examples/input.lisp][input.lisp]].
+See also: [[https://github.com/vydd/sketch/blob/master/examples/life.lisp][life.lisp]].
 
 *** Setup
 The generic function =(setup instance &key &allow-other-keys)= is a hook that gets called once on every "restart" of the sketch. That is:
@@ -519,7 +522,7 @@ Here is an example usage of =setup= from [[https://github.com/vydd/sketch/blob/m
     (when should-save
       (setf should-save nil)
       (save-png "/tmp/my-sketch.png")))
-  (defmethod kit.sdl2:textinput-event ((window save-test) ts text)
+  (defmethod on-text ((window save-test) text)
     (when (string= text "s")
       (setf (slot-value window 'should-save) t)))
 #+END_SRC

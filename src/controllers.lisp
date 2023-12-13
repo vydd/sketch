@@ -16,10 +16,12 @@
 (defmethod on-click (instance x y))
 (defmethod on-middle-click (instance x y))
 (defmethod on-right-click (instance x y))
+(defmethod on-click-release (instance x y))
+(defmethod on-middle-click-release (instance x y))
+(defmethod on-right-click-release (instance x y))
 (defmethod on-hover (instance x y))
 (defmethod on-enter (instance))
 (defmethod on-leave (instance))
-
 
 (defun propagate-to-entity (sketch x y f)
   (loop
@@ -47,6 +49,10 @@
       (propagate-to-entity *sketch* x y #'on-right-click)
       (call-next-method))))
 
+(defmethod on-hover :around ((*sketch* sketch) x y)
+  (with-sketch (*sketch*)
+    (call-next-method)))
+
 (defmethod on-hover :around ((entity entity) ix iy)
   (let ((*draw-mode* nil))
     (unless (eql *current-entity* entity)
@@ -57,14 +63,17 @@
 
 (defmethod kit.sdl2:mousebutton-event ((instance sketch) state timestamp button x y)
   (let ((button (elt (list nil :left :middle :right) button))
-        (method (elt (list nil #'on-click #'on-middle-click #'on-right-click) button)))
+        (click-method (elt (list nil #'on-click #'on-middle-click #'on-right-click) button))
+        (release-method (elt (list nil #'on-click-release #'on-middle-click-release #'on-right-click-release) button)))
     (when (equal state :mousebuttondown)
-      (setf (getf *buttons* button) t))
+      (setf (getf *buttons* button) t)
+      (funcall click-method instance x y))
     (when (and (equal state :mousebuttonup) (getf *buttons* button))
       (setf (getf *buttons* button) nil)
-      (funcall method instance x y))))
+      (funcall release-method instance x y))))
 
 (defmethod kit.sdl2:mousemotion-event ((instance sketch) timestamp button-mask x y xrel yrel)
+  (on-hover instance x y)
   (unless
       (loop for entity being the hash-key of (sketch-%entities instance)
             for (im iw ih) being the hash-value of (sketch-%entities instance)
@@ -99,5 +108,28 @@
 
 ;;; Keyboard
 
-(defmethod keyboard-event :after ((instance sketch)
-                                  state timestamp repeatp keysym))
+(defconstant +scancode-prefix-length+ 9)
+
+(defmethod on-text (instance text))
+(defmethod on-button (instance button state))
+
+(defmethod on-text :around ((*sketch* sketch) text)
+  (with-sketch (*sketch*)
+    (call-next-method)))
+
+(defmethod on-button :around ((*sketch* sketch) button state)
+  (with-sketch (*sketch*)
+    (call-next-method)))
+
+(defmethod kit.sdl2:textinput-event :after ((instance sketch) timestamp text)
+  (on-text instance text))
+
+(defmethod kit.sdl2:keyboard-event :after ((instance sketch) state timestamp repeat-p keysym)
+  (when (not repeat-p)
+    (on-button instance
+               ;; Removing the ugly "SCANCODE-" prefix from the keyword
+               ;; symbol that denotes the button.
+               (intern (subseq (symbol-name (sdl2:scancode keysym))
+                               +scancode-prefix-length+)
+                       (find-package "KEYWORD"))
+               state)))

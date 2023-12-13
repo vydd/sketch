@@ -186,9 +186,14 @@
            :on-click
            :on-middle-click
            :on-right-click
+           :on-click-release
+           :on-middle-click-release
+           :on-right-click-release
            :on-hover
            :on-enter
            :on-leave
+           :on-text
+           :on-button
 
            ;; Control flow
            :start-loop
