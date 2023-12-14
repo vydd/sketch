@@ -111,13 +111,13 @@
 (defconstant +scancode-prefix-length+ 9)
 
 (defmethod on-text (instance text))
-(defmethod on-button (instance button state))
+(defmethod on-key (instance key state))
 
 (defmethod on-text :around ((*sketch* sketch) text)
   (with-sketch (*sketch*)
     (call-next-method)))
 
-(defmethod on-button :around ((*sketch* sketch) button state)
+(defmethod on-key :around ((*sketch* sketch) key state)
   (with-sketch (*sketch*)
     (call-next-method)))
 
@@ -126,10 +126,11 @@
 
 (defmethod kit.sdl2:keyboard-event :after ((instance sketch) state timestamp repeat-p keysym)
   (when (not repeat-p)
-    (on-button instance
-               ;; Removing the ugly "SCANCODE-" prefix from the keyword
-               ;; symbol that denotes the button.
-               (intern (subseq (symbol-name (sdl2:scancode keysym))
-                               +scancode-prefix-length+)
-                       (find-package "KEYWORD"))
-               state)))
+    (on-key instance
+            ;; Removing the ugly "SCANCODE-" prefix from the keyword
+            ;; symbol that denotes the button.
+            (intern (subseq (symbol-name (sdl2:scancode keysym))
+                            +scancode-prefix-length+)
+                    (find-package "KEYWORD"))
+            state)))
+
