@@ -69,13 +69,19 @@
     (append (cdr polygon) (list (car polygon)))))
 
 (defun triangulate (polygon)
-  (if (= 3 (/ (length polygon) 2))
-      (group polygon)       ;; No need to triangulate - it's a triangle.
-      (mapcar (lambda (point) (list (2d-geometry:x point) (2d-geometry:y point)))
-              (apply #'append
-                     (mapcar #'2d-geometry:point-list
-                             (2d-geometry:decompose-complex-polygon-triangles
-                              (apply #'2d-geometry:make-polygon-from-coords polygon)))))))
+  (let ((num-vertices (/ (length polygon) 2)))
+    (case num-vertices
+      (3 (group polygon)) ; No need to triangulate - it's a triangle.
+      (4 (destructuring-bind (p1 p2 p3 p4) (group polygon)
+           ;; Quadrilateral, simple to divide it up into 2 triangles.
+           (list p1 p2 p3 p1 p3 p4)))
+      (t
+       (mapcar
+        (lambda (point) (list (2d-geometry:x point) (2d-geometry:y point)))
+        (apply #'append
+               (mapcar #'2d-geometry:point-list
+                       (2d-geometry:decompose-complex-polygon-triangles
+                        (apply #'2d-geometry:make-polygon-from-coords polygon)))))))))
 
 (defun bounding-box (vertices)
   (loop for (x y) in vertices

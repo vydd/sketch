@@ -159,6 +159,9 @@ Let's draw something!
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
+    ;; Note: The sides of polygons must be non-self-intersecting, and if
+    ;; there are more than 4 sides then the coordinates must be rationals and
+    ;; not floats.
     (polygon 100 100 200 150 300 100 200 200))
 #+END_SRC
 
