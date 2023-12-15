@@ -15,12 +15,13 @@
   (curve-steps 100))
 
 (defmacro with-pen (pen &body body)
-  (alexandria:with-gensyms (previous-pen)
-    `(let ((,previous-pen (env-pen *env*)))
-       (unwind-protect (progn
-                         (setf (env-pen *env*) ,pen)
-                         ,@body)
-         (setf (env-pen *env*) ,previous-pen)))))
+  (with-shorthand (pen make-pen)
+    (alexandria:with-gensyms (previous-pen)
+      `(let ((,previous-pen (env-pen *env*)))
+         (unwind-protect (progn
+                           (setf (env-pen *env*) ,pen)
+                           ,@body)
+           (setf (env-pen *env*) ,previous-pen))))))
 
 (defun set-pen (pen)
   "Sets environment pen to PEN."
