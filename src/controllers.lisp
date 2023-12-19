@@ -16,9 +16,9 @@
 (defmethod on-click (instance x y))
 (defmethod on-middle-click (instance x y))
 (defmethod on-right-click (instance x y))
-(defmethod on-click-release (instance x y))
-(defmethod on-middle-click-release (instance x y))
-(defmethod on-right-click-release (instance x y))
+(defmethod on-click-press (instance x y))
+(defmethod on-middle-click-press (instance x y))
+(defmethod on-right-click-press (instance x y))
 (defmethod on-hover (instance x y))
 (defmethod on-enter (instance))
 (defmethod on-leave (instance))
@@ -31,27 +31,20 @@
     when (and (< 0 ix iw) (< 0 iy ih))
       do (funcall f entity ix iy)))
 
-(defmethod on-click :around ((*sketch* sketch) x y)
-  (with-sketch (*sketch*)
-    (let ((*draw-mode* nil))
-      (propagate-to-entity *sketch* x y #'on-click)
-      (call-next-method))))
+(defmacro def-xy-event-method (method-name)
+  `(defmethod ,method-name :around ((*sketch* sketch) x y)
+     (with-sketch (*sketch*)
+       (let ((*draw-mode* nil))
+         (propagate-to-entity *sketch* x y #',method-name)
+         (call-next-method)))))
 
-(defmethod on-middle-click :around ((*sketch* sketch) x y)
-  (with-sketch (*sketch*)
-    (let ((*draw-mode* nil))
-      (propagate-to-entity *sketch* x y #'on-middle-click)
-      (call-next-method))))
-
-(defmethod on-right-click :around ((*sketch* sketch) x y)
-  (with-sketch (*sketch*)
-    (let ((*draw-mode* nil))
-      (propagate-to-entity *sketch* x y #'on-right-click)
-      (call-next-method))))
-
-(defmethod on-hover :around ((*sketch* sketch) x y)
-  (with-sketch (*sketch*)
-    (call-next-method)))
+(def-xy-event-method on-click)
+(def-xy-event-method on-middle-click)
+(def-xy-event-method on-right-click)
+(def-xy-event-method on-click-press)
+(def-xy-event-method on-middle-click-press)
+(def-xy-event-method on-right-click-press)
+(def-xy-event-method on-hover)
 
 (defmethod on-hover :around ((entity entity) ix iy)
   (let ((*draw-mode* nil))
@@ -63,8 +56,8 @@
 
 (defmethod kit.sdl2:mousebutton-event ((instance sketch) state timestamp button x y)
   (let ((button (elt (list nil :left :middle :right) button))
-        (click-method (elt (list nil #'on-click #'on-middle-click #'on-right-click) button))
-        (release-method (elt (list nil #'on-click-release #'on-middle-click-release #'on-right-click-release) button)))
+        (click-method (elt (list nil #'on-click-press #'on-middle-click-press #'on-right-click-press) button))
+        (release-method (elt (list nil #'on-click #'on-middle-click #'on-right-click) button)))
     (when (equal state :mousebuttondown)
       (setf (getf *buttons* button) t)
       (funcall click-method instance x y))
@@ -108,18 +101,20 @@
 
 ;;; Keyboard
 
-(defconstant +scancode-prefix-length+ 9)
+(defconstant +scancode-prefix-length+ (length "scancode-"))
 
 (defmethod on-text (instance text))
 (defmethod on-key (instance key state))
 
 (defmethod on-text :around ((*sketch* sketch) text)
   (with-sketch (*sketch*)
-    (call-next-method)))
+    (let ((*draw-mode* nil))
+      (call-next-method))))
 
 (defmethod on-key :around ((*sketch* sketch) key state)
   (with-sketch (*sketch*)
-    (call-next-method)))
+    (let ((*draw-mode* nil))
+      (call-next-method))))
 
 (defmethod kit.sdl2:textinput-event :after ((instance sketch) timestamp text)
   (on-text instance text))

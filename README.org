@@ -433,7 +433,7 @@ Input is handled by defining implementations of the methods listed below. Curren
 
 - =(on-click instance x y)= is called when there's a left click. =x= and =y= give the coordinates of the click.
 - =(on-middle-click instance x y)= and =(on-right-click instance x y)= for middle and right clicks.
-- =(on-click-release instance x y)=, =(on-middle-click-release instance x y)= and =(on-right-click-release instance x y)= are called when the corresponding mouse button is released.
+- =(on-click-press instance x y)=, =(on-middle-click-press instance x y)= and =(on-right-click-press instance x y)= are specifically called when the corresponding mouse button is initially pressed down.
 - =(on-hover instance x y)= is called when the mouse moves, =x= and =y= give its coordinates.
 - =(on-text instance text)= is called when a single character is entered, =text= is a string consisting of just this character.
 - =(on-key instance key state)= is called when a key is pressed. =key= is a keyword symbol denoting which key was pressed/released (like =:space= or =:left=; for now, the names are based on SDL2 scancodes, see [[https://wiki.libsdl.org/SDL2/SDL_Scancode][here]] for the full list), and =state= is a keyword symbol denoting whether the key was pressed (=:keyup=) or released (=:keydown=).
