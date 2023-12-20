@@ -28,7 +28,8 @@
                        (defaultp nil)
                        (initform nil)
                        (initarg (alexandria:make-keyword name))
-                       (accessor (alexandria:symbolicate prefix '#:- name))
+                       (accessor (intern (symbol-name (alexandria:symbolicate prefix '#:- name))
+                                         (symbol-package prefix)))
                        (channel-name nil)
                        (channelp (and channel-name t)))
   (make-instance 'binding :name name
