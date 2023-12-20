@@ -16,6 +16,7 @@
 (defclass binding ()
   ((name :initarg :name :accessor binding-name)
    (prefix :initarg :prefix :accessor binding-prefix)
+   (package :intiarg :package :accessor binding-package)
    (initform :initarg :initform :accessor binding-initform)
    (defaultp :initarg :defaultp :accessor binding-defaultp)
    (initarg :initarg :initarg :accessor binding-initarg)
@@ -25,11 +26,11 @@
 
 (defun make-binding (name prefix
                      &key
-                       (defaultp nil)
+                       (package nil)
                        (initform nil)
+                       (defaultp nil)
                        (initarg (alexandria:make-keyword name))
-                       (accessor (intern (symbol-name (alexandria:symbolicate prefix '#:- name))
-                                         (symbol-package prefix)))
+                       (accessor (make-accessor name prefix package))
                        (channel-name nil)
                        (channelp (and channel-name t)))
   (make-instance 'binding :name name
@@ -40,6 +41,12 @@
                           :accessor accessor
                           :channel-name channel-name
                           :channelp channelp))
+
+(defun make-accessor (name prefix package)
+  (let ((symbol (alexandria:symbolicate prefix '#:- name)))
+    (if package
+        (intern (symbol-name symbol) (symbol-package prefix))
+        symbol)))
 
 (defun copy-binding (binding
                      &key
@@ -64,6 +71,7 @@
           collect (make-binding
                    name
                    (class-name class)
+                   :package (symbol-package (class-name class))
                    :defaultp mark-default-p
                    :initform initform)))
 
