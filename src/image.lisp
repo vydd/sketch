@@ -8,7 +8,7 @@
 ;;  | || |  | |/ ___ \ |_| | |___ ___) |
 ;; |___|_|  |_/_/   \_\____|_____|____/
 
-(defmethod draw ((image image) x y &key width height mode &allow-other-keys)
+(defmethod draw ((image image) &key (x 0) (y 0) width height mode &allow-other-keys)
   "Draws an image, X and Y values are 0 by default, while WIDTH and HEIGHT
 are set to the width & height of the image if not provided."
   (declare (ignore mode))
@@ -22,7 +22,7 @@ are set to the width & height of the image if not provided."
 
 (defun image (image-resource x y &optional width height)
   "***Deprecated***, use the DRAW method."
-  (draw image-resource x y :width width :height height))
+  (draw image-resource :x x :y y :width width :height height))
 
 (defmethod crop ((image-resource image) x y w h)
   "Generate a cropped image resource from IMAGE-RESOURCE, limiting how much of the image is drawn

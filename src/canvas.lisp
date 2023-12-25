@@ -64,8 +64,8 @@
 (defmethod canvas-unlock ((canvas canvas))
   (setf (%canvas-locked canvas) nil))
 
-(defmethod draw ((canvas canvas) x y
-                 &key width height mode
+(defmethod draw ((canvas canvas)
+                 &key (x 0) (y 0) width height mode
                    (min-filter :linear)
                    (mag-filter :linear)
                  &allow-other-keys)
@@ -82,7 +82,7 @@ there instead.
 See: https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexParameter.xhtml"
   (declare (ignore mode))
   (draw (canvas-image canvas :min-filter min-filter :mag-filter mag-filter)
-        0
-        0
+        :x x
+        :y y
         :width (or width (canvas-width canvas))
         :height (or height (canvas-height canvas))))
