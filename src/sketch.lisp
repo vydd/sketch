@@ -80,9 +80,9 @@
   (:documentation "Called before creating the sketch window.")
   (:method ((instance sketch) &key &allow-other-keys) ()))
 
-(defgeneric draw (instance x y &key width height mode &allow-other-keys)
+(defgeneric draw (instance &key x y width height mode &allow-other-keys)
   (:documentation "Draws the instance with set position, dimensions, and scaling mode.")
-  (:method ((instance sketch) x y &key width height mode &allow-other-keys)
+  (:method ((instance sketch) &key x y width height mode &allow-other-keys)
     "Called repeatedly after creating the sketch window, 60fps."
     (declare (ignore x y width height mode))
     ()))
@@ -138,7 +138,7 @@
 
 (defun draw-window (window)
   (start-draw)
-  (draw window 0 0)
+  (draw window)
   (end-draw))
 
 (defmacro with-sketch ((sketch) &body body)
@@ -226,7 +226,7 @@
                                  ,(binding-initform b))))))))
 
 (defun define-sketch-draw-method (name bindings body)
-  `(defmethod draw ((*sketch* ,name) x y &key width height mode &allow-other-keys)
+  `(defmethod draw ((*sketch* ,name) &key x y width height mode &allow-other-keys)
      (declare (ignore x y width height mode))
      (with-accessors (,@(loop for b in bindings
                               collect `(,(binding-name b) ,(binding-accessor b))))
