@@ -186,9 +186,9 @@
            :on-click
            :on-middle-click
            :on-right-click
-           :on-click-press
-           :on-middle-click-press
-           :on-right-click-press
+           :on-press
+           :on-middle-press
+           :on-right-press
            :on-hover
            :on-enter
            :on-leave
