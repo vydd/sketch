@@ -54,15 +54,14 @@
     (when running
       (setf front (mod (1+ front) 2)))))
 
-(defmethod kit.sdl2:textinput-event ((window life) ts text)
-  (with-slots (running) window
+(defmethod on-text ((instance life) text)
+  (with-slots (running) instance
     (setf running (not running))))
 
-(defmethod kit.sdl2:mousebutton-event ((window life) state ts b x y)
-  (when (eq state :mousebuttondown)
-    (with-slots (cells front running cell-size) window
-      (when (not running)
-        (let ((cy (1+ (truncate (/ y cell-size))))
-              (cx (1+ (truncate (/ x cell-size)))))
-          (setf (aref cells cy cx front)
-                (mod (1+ (aref cells cy cx front)) 2)))))))
+(defmethod on-click ((instance life) x y)
+  (with-slots (cells front running cell-size) instance
+    (when (not running)
+      (let ((cy (1+ (truncate (/ y cell-size))))
+            (cx (1+ (truncate (/ x cell-size)))))
+        (setf (aref cells cy cx front)
+              (mod (1+ (aref cells cy cx front)) 2))))))
