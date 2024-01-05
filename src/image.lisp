@@ -13,8 +13,8 @@
 are set to the width & height of the image if not provided."
   (declare (ignore mode))
   (with-pen (make-pen :fill image
-                      :stroke (pen-stroke (env-pen *env*))
-                      :weight (pen-weight (env-pen *env*)))
+                      :stroke 0
+                      :weight 0)
     (rect x
           y
           (or (abs-or-rel width (image-width image)))
