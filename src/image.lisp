@@ -12,9 +12,7 @@
   "Draws an image, X and Y values are 0 by default, while WIDTH and HEIGHT
 are set to the width & height of the image if not provided."
   (declare (ignore mode))
-  (with-pen (make-pen :fill image
-                      :stroke nil
-                      :weight nil)
+  (with-pen (make-pen :fill image :stroke nil)
     (rect x
           y
           (or (abs-or-rel width (image-width image)))
