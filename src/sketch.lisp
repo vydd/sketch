@@ -28,7 +28,7 @@
 
 (defparameter *restart-frames* 2)
 
-(defclass sketch (kit.sdl2:gl-window)
+(defclass sketch ()
   ((%env :initform (make-env) :reader sketch-%env)
    (%restart :initform *restart-frames*)
    (%viewport-changed :initform t)
@@ -39,14 +39,22 @@
    (fullscreen :initform nil :accessor sketch-fullscreen :initarg :fullscreen)
    (resizable :initform nil :accessor sketch-resizable :initarg :resizable)
    (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :copy-pixels)
-   (y-axis :initform :down :accessor sketch-y-axis :initarg :y-axis)))
+   (y-axis :initform :down :accessor sketch-y-axis :initarg :y-axis)
+   (window :initform nil :accessor sketch-window :initarg :window)))
+
+(defclass sketch-window (kit.sdl2:gl-window)
+  ((sketch
+    :initarg :sketch
+    :accessor sketch
+    :documentation "The sketch associated with this window.")))
 
  ;;; Non trivial sketch writers
 
 (defmacro define-sketch-writer (slot &body body)
   `(defmethod (setf ,(alexandria:symbolicate 'sketch- slot)) :after (value (instance sketch))
-     (let ((win (kit.sdl2:sdl-window instance)))
-       ,@body)))
+     (when (sketch-window instance)
+       (let ((win (kit.sdl2:sdl-window (sketch-window instance))))
+         ,@body))))
 
 (define-sketch-writer title
   (sdl2:set-window-title win value))
@@ -110,8 +118,18 @@
   (kit.sdl2:start))
 
 (defmethod initialize-instance :after ((instance sketch) &rest initargs &key &allow-other-keys)
-  (initialize-environment instance)
   (apply #'prepare instance initargs)
+  (setf (sketch-window instance)
+        (make-instance 'sketch-window
+                       :title (sketch-title instance)
+                       :w (sketch-width instance)
+                       :h (sketch-height instance)
+                       :fullscreen (sketch-fullscreen instance)
+                       :resizable (if (sketch-resizable instance)
+                                      sdl2-ffi:+true+
+                                      sdl2-ffi:+false+)
+                       :sketch *sketch*))
+  (initialize-environment instance)
   (initialize-gl instance))
 
 (defmethod update-instance-for-redefined-class :after
@@ -136,9 +154,9 @@
          (setf %restart *restart-frames*
                (env-red-screen *env*) t)))))
 
-(defun draw-window (window)
+(defun draw-sketch (sketch)
   (start-draw)
-  (draw window)
+  (draw sketch)
   (end-draw))
 
 (defmacro with-sketch ((sketch) &body body)
@@ -148,7 +166,10 @@
          (with-identity-matrix
            ,@body)))))
 
-(defmethod kit.sdl2:render ((instance sketch))
+(defmethod kit.sdl2:render ((instance sketch-window))
+  (render (sketch instance)))
+
+(defmethod render ((instance sketch))
   (with-slots (%env %restart width height copy-pixels %viewport-changed) instance
     (when %viewport-changed
       (kit.gl.shader:uniform-matrix
@@ -173,33 +194,34 @@
       (if (debug-mode-p)
           (progn
             (exit-debug-mode)
-            (draw-window instance))
+            (draw-sketch instance))
           (gl-catch (rgb 0.7 0 0)
-            (draw-window instance))))))
+            (draw-sketch instance))))))
 
 ;;; Support for resizable windows
 
-(defmethod kit.sdl2:window-event :before ((instance sketch) (type (eql :size-changed)) timestamp data1 data2)
-  (with-slots ((env %env) width height y-axis) instance
-    (setf width data1
-          height data2)
-    (initialize-view-matrix instance))
+(defmethod kit.sdl2:window-event :before ((instance sketch-window) (type (eql :size-changed)) timestamp data1 data2)
+  (with-slots (sketch) instance
+    (with-slots ((env %env) width height y-axis) sketch
+      (setf width data1
+            height data2)
+      (initialize-view-matrix sketch)))
   (kit.sdl2:render instance))
 
 ;;; Default events
 
-(defmethod kit.sdl2:keyboard-event :before ((instance sketch) state timestamp repeatp keysym)
+(defmethod kit.sdl2:keyboard-event :before ((instance sketch-window) state timestamp repeatp keysym)
   (declare (ignorable timestamp repeatp))
   (when (and (eql state :keyup)
              (sdl2:scancode= (sdl2:scancode-value keysym) :scancode-escape))
     (kit.sdl2:close-window instance)))
 
-(defmethod close-window :before ((instance sketch))
-  (with-environment (slot-value instance '%env)
+(defmethod close-window :before ((instance sketch-window))
+  (with-environment (slot-value (sketch instance) '%env)
     (loop for resource being the hash-values of (env-resources *env*)
        do (free-resource resource))))
 
-(defmethod close-window :after ((instance sketch))
+(defmethod close-window :after ((instance sketch-window))
   (when (and *build* (not (kit.sdl2:all-windows)))
     (sdl2-ttf:quit)
     (kit.sdl2:quit)))
@@ -221,7 +243,7 @@
                    ; TODO: Should this really depend on kit.sdl2?
                    (let ((win (kit.sdl2:last-window)))
                      (when win
-                       (setf (,(binding-accessor b) win)
+                       (setf (,(binding-accessor b) (sketch win))
                              (in ,(binding-channel-name b)
                                  ,(binding-initform b))))))))
 
@@ -260,7 +282,7 @@
 ;;; Control flow
 
 (defun stop-loop ()
-  (setf (sdl2.kit:idle-render *sketch*) nil))
+  (setf (sdl2.kit:idle-render (sketch-window *sketch*)) nil))
 
 (defun start-loop ()
-  (setf (sdl2.kit:idle-render *sketch*) t))
+  (setf (sdl2.kit:idle-render (sketch-window *sketch*)) t))
