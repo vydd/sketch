@@ -128,7 +128,7 @@
                        :resizable (if (sketch-resizable instance)
                                       sdl2-ffi:+true+
                                       sdl2-ffi:+false+)
-                       :sketch *sketch*))
+                       :sketch instance))
   (initialize-environment instance)
   (initialize-gl instance))
 
