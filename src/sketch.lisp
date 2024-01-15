@@ -118,19 +118,20 @@
   (kit.sdl2:start))
 
 (defmethod initialize-instance :after ((instance sketch) &rest initargs &key &allow-other-keys)
-  (apply #'prepare instance initargs)
-  (setf (sketch-window instance)
-        (make-instance 'sketch-window
-                       :title (sketch-title instance)
-                       :w (sketch-width instance)
-                       :h (sketch-height instance)
-                       :fullscreen (sketch-fullscreen instance)
-                       :resizable (if (sketch-resizable instance)
-                                      sdl2-ffi:+true+
-                                      sdl2-ffi:+false+)
-                       :sketch instance))
-  (initialize-environment instance)
-  (initialize-gl instance))
+  (sdl2:in-main-thread ()
+    (apply #'prepare instance initargs)
+    (setf (sketch-window instance)
+          (make-instance 'sketch-window
+                         :title (sketch-title instance)
+                         :w (sketch-width instance)
+                         :h (sketch-height instance)
+                         :fullscreen (sketch-fullscreen instance)
+                         :resizable (if (sketch-resizable instance)
+                                        sdl2-ffi:+true+
+                                        sdl2-ffi:+false+)
+                         :sketch instance))
+    (initialize-environment instance)
+    (initialize-gl instance)))
 
 (defmethod update-instance-for-redefined-class :after
     ((instance sketch) added-slots discarded-slots property-list &rest initargs)
