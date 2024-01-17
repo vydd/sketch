@@ -27,7 +27,8 @@
   (resources (make-hash-table))
   ;; Debugging
   (debug-key-pressed nil)
-  (red-screen nil))
+  (red-screen nil)
+  (delayed-resource-creation-funs nil))
 
 (defparameter *env* nil)
 
@@ -59,7 +60,7 @@
           %viewport-changed t)))
 
 (defun initialize-gl (sketch)
-  (with-slots ((w window)) sketch
+  (with-slots ((w %window)) sketch
     (handler-case (sdl2:gl-set-swap-interval 1)
       ;; Some OpenGL drivers do not allow to control swapping.
       ;; In this case SDL2 sets an error that needs to be cleared.

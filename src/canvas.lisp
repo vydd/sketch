@@ -53,13 +53,16 @@
        :mag-filter mag-filter)))
 
 (defmethod canvas-lock ((canvas canvas)
+                        &rest r
                         &key (min-filter :linear)
                              (mag-filter :linear)
                         &allow-other-keys)
-  (setf (%canvas-image canvas) (canvas-image canvas
-                                             :min-filter min-filter
-                                             :mag-filter mag-filter)
-        (%canvas-locked canvas) t))
+  (if (delay-init-p)
+      (add-delayed-init-fun! (lambda () (apply #'canvas-lock canvas r)))
+      (setf (%canvas-image canvas) (canvas-image canvas
+                                                 :min-filter min-filter
+                                                 :mag-filter mag-filter)
+            (%canvas-locked canvas) t)))
 
 (defmethod canvas-unlock ((canvas canvas))
   (setf (%canvas-locked canvas) nil))

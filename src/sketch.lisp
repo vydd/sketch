@@ -33,14 +33,15 @@
    (%restart :initform *restart-frames*)
    (%viewport-changed :initform t)
    (%entities :initform (make-hash-table) :accessor sketch-%entities)
+   (%window :initform nil :accessor sketch-%window :initarg :window)
+   (%delayed-init-funs :initform nil :accessor sketch-%delayed-init-funs)
    (title :initform "Sketch" :accessor sketch-title :initarg :title)
    (width :initform *default-width* :accessor sketch-width :initarg :width)
    (height :initform *default-height* :accessor sketch-height :initarg :height)
    (fullscreen :initform nil :accessor sketch-fullscreen :initarg :fullscreen)
    (resizable :initform nil :accessor sketch-resizable :initarg :resizable)
    (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :copy-pixels)
-   (y-axis :initform :down :accessor sketch-y-axis :initarg :y-axis)
-   (window :initform nil :accessor sketch-window :initarg :window)))
+   (y-axis :initform :down :accessor sketch-y-axis :initarg :y-axis)))
 
 (defclass sketch-window (kit.sdl2:gl-window)
   ((sketch
@@ -52,8 +53,8 @@
 
 (defmacro define-sketch-writer (slot &body body)
   `(defmethod (setf ,(alexandria:symbolicate 'sketch- slot)) :after (value (instance sketch))
-     (when (sketch-window instance)
-       (let ((win (kit.sdl2:sdl-window (sketch-window instance))))
+     (when (sketch-%window instance)
+       (let ((win (kit.sdl2:sdl-window (sketch-%window instance))))
          ,@body))))
 
 (define-sketch-writer title
@@ -120,7 +121,7 @@
 
 (defmethod initialize-instance :after ((instance sketch) &rest initargs &key &allow-other-keys)
   (apply #'prepare instance initargs)
-  (setf (sketch-window instance)
+  (setf (sketch-%window instance)
         (make-instance 'sketch-window
                        :title (sketch-title instance)
                        :w (sketch-width instance)
@@ -131,7 +132,11 @@
                                       sdl2-ffi:+false+)
                        :sketch instance))
   (initialize-environment instance)
-  (initialize-gl instance))
+  (initialize-gl instance)
+  ;; These will have been added in the call to PREPARE.
+  (loop for f in (sketch-%delayed-init-funs instance)
+        do (funcall f))
+  (setf (sketch-%delayed-init-funs instance) nil))
 
 (defmethod update-instance-for-redefined-class :after
     ((instance sketch) added-slots discarded-slots property-list &rest initargs)
@@ -283,7 +288,21 @@
 ;;; Control flow
 
 (defun stop-loop ()
-  (setf (sdl2.kit:idle-render (sketch-window *sketch*)) nil))
+  (setf (sdl2.kit:idle-render (sketch-%window *sketch*)) nil))
 
 (defun start-loop ()
-  (setf (sdl2.kit:idle-render (sketch-window *sketch*)) t))
+  (setf (sdl2.kit:idle-render (sketch-%window *sketch*)) t))
+
+;;; Resource-handling
+
+(defun delay-init-p ()
+  "This checks whether the OpenGL context has been created yet. If not,
+we need to wait before initializing certain resources."
+  (and *sketch*
+       (null (sketch-%window *sketch*))))
+
+(defun add-delayed-init-fun! (f)
+  "F should be a function with no arguments."
+  (setf (sketch-%delayed-init-funs *sketch*)
+        (append (sketch-%delayed-init-funs *sketch*)
+                (list f))))

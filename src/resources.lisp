@@ -31,11 +31,19 @@
           (coerce-float (/ h height)))))
 
 (defun cropped-image-from-image (image x y w h)
-  (make-instance 'cropped-image
-                 :texture (image-texture image)
-                 :width w
-                 :height h
-                 :uv-rect (pixel-uv-rect image x y w h)))
+  (let* ((cropped
+           (make-instance 'cropped-image
+                          :texture nil
+                          :width w
+                          :height h
+                          :uv-rect (pixel-uv-rect image x y w h)))
+         (set-texture-fun
+           (lambda () (setf (image-texture cropped) (image-texture image)))))
+    (if (delay-init-p)
+        ;; Image texture has not been initialized yet, delay copying it.
+        (add-delayed-init-fun! set-texture-fun)
+        (funcall set-texture-fun))
+    cropped))
 
 (defclass typeface (resource)
   ((filename :accessor typeface-filename :initarg :filename)
@@ -81,6 +89,44 @@
 (defun make-image-from-surface (surface &key (free-surface t)
                                              (min-filter :linear)
                                              (mag-filter :linear))
+  (let ((image (make-instance 'image
+                              :width (sdl2:surface-width surface)
+                              :height (sdl2:surface-height surface)
+                              :texture nil)))
+    (init-image-texture! image
+                         surface
+                         :free-surface free-surface
+                         :min-filter min-filter
+                         :mag-filter mag-filter)
+    image))
+
+(defmethod load-typed-resource (filename (type (eql :image))
+                                &key (min-filter :linear)
+                                     (mag-filter :linear)
+                                     (x nil)
+                                     (y nil)
+                                     (w nil)
+                                     (h nil)
+                                &allow-other-keys)
+  (let* ((surface (cut-surface (sdl2-image:load-image filename) x y w h))
+         (img (make-instance 'image
+                             :width (sdl2:surface-width surface)
+                             :height (sdl2:surface-height surface)
+                             :texture nil))
+         (set-texture-fun
+           (lambda () (init-image-texture! img
+                                           surface
+                                           :min-filter min-filter
+                                           :mag-filter mag-filter))))
+    (if (delay-init-p)
+        (add-delayed-init-fun! set-texture-fun)
+        (funcall set-texture-fun))
+    img))
+
+(defun init-image-texture! (image surface &key (free-surface t)
+                                            (min-filter :linear)
+                                            (mag-filter :linear))
+  
   (let ((texture (car (gl:gen-textures 1)))
         (rgba-surface (if (eq (sdl2:surface-format-format surface) sdl2:+pixelformat-rgba32+)
                           surface
@@ -96,29 +142,12 @@
                      :rgba
                      :unsigned-byte (sdl2:surface-pixels rgba-surface))
     (gl:bind-texture :texture-2d 0)
-    (let ((image (make-instance 'image
-                                :width (sdl2:surface-width rgba-surface)
-                                :height (sdl2:surface-height rgba-surface)
-                                :texture texture)))
-      (unless (eq rgba-surface surface) (sdl2:free-surface rgba-surface))
-      (when free-surface
-        (when (eq free-surface :font)
-          (tg:cancel-finalization surface))
-        (sdl2:free-surface surface))
-      image)))
-
-(defmethod load-typed-resource (filename (type (eql :image))
-                                &key (min-filter :linear)
-                                     (mag-filter :linear)
-                                     (x nil)
-                                     (y nil)
-                                     (w nil)
-                                     (h nil)
-                                &allow-other-keys)
-  (let ((surface (sdl2-image:load-image filename)))
-    (make-image-from-surface (cut-surface surface x y w h)
-                             :min-filter min-filter
-                             :mag-filter mag-filter)))
+    (unless (eq rgba-surface surface) (sdl2:free-surface rgba-surface))
+    (when free-surface
+      (when (eq free-surface :font)
+        (tg:cancel-finalization surface))
+      (sdl2:free-surface surface))
+    (setf (image-texture image) texture)))
 
 (defun cut-surface (surface x y w h)
   (if (and x y w h)
