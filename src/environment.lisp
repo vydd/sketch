@@ -27,8 +27,7 @@
   (resources (make-hash-table))
   ;; Debugging
   (debug-key-pressed nil)
-  (red-screen nil)
-  (delayed-resource-creation-funs nil))
+  (red-screen nil))
 
 (defparameter *env* nil)
 
