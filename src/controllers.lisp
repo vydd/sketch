@@ -8,6 +8,7 @@
 ;;; | |__| |_| | |\  | | | |  _ <| |_| | |___| |___| |___|  _ < ___) |
 ;;;  \____\___/|_| \_| |_| |_| \_\\___/|_____|_____|_____|_| \_\____/
 
+
 ;;; Mouse
 
 (defparameter *buttons* (list :left nil :middle nil :right nil))
@@ -55,6 +56,8 @@
     (call-next-method)))
 
 (defmethod kit.sdl2:mousebutton-event ((instance sketch-window) state timestamp button x y)
+  ;; For backward compatibility.
+  (kit.sdl2:mousebutton-event (sketch instance) state timestamp button x y)
   (with-slots (sketch) instance
     (let ((button (elt (list nil :left :middle :right) button))
           (click-method (elt (list nil #'on-press #'on-middle-press #'on-right-press) button))
@@ -67,6 +70,8 @@
         (funcall release-method sketch x y)))))
 
 (defmethod kit.sdl2:mousemotion-event ((instance sketch-window) timestamp button-mask x y xrel yrel)
+  ;; For backward compatibility.
+  (kit.sdl2:mousemotion-event (sketch instance) timestamp button-mask x y xrel yrel)
   (with-slots (sketch) instance
     (on-hover sketch x y)
     (unless
@@ -130,3 +135,28 @@
                             +scancode-prefix-length+)
                     (find-package "KEYWORD"))
             state)))
+
+;;; Backward compatibility.
+;; Previously, the main `sketch` class inherited from
+;; `kit.sdl2:gl-window`, and input was handled by specialising on methods from
+;; sdl2kit. So we need to forward sdl2kit input calls to the `sketch` class for
+;; old sketches that rely on that approach.
+(defmacro define-sdl2-forward (name (&rest args) &optional already-defined?)
+  `(progn
+     ;; An empty method so we don't get an error if we try to forward
+     ;; when the user hasn't defined it.
+     (defmethod ,name ((w sketch) ,@args))
+     ,@(when (not already-defined?)
+         `((defmethod ,name ((w sketch-window) ,@args)
+             (,name (sketch w) ,@args)
+             (call-next-method))))))
+(define-sdl2-forward kit.sdl2:mousebutton-event (state timestamp button x y) t)
+(define-sdl2-forward kit.sdl2:mousemotion-event (timestamp button-mask x y xrel yrel) t)
+(define-sdl2-forward kit.sdl2:textinput-event (timestamp text))
+(define-sdl2-forward kit.sdl2:keyboard-event (state timestamp repeatp keysym))
+(define-sdl2-forward kit.sdl2:mousewheel-event (timestamp x y))
+(define-sdl2-forward kit.sdl2:window-event (type timestamp data1 data2))
+(define-sdl2-forward kit.sdl2:controller-added-event (c))
+(define-sdl2-forward kit.sdl2:controller-removed-event (c))
+(define-sdl2-forward kit.sdl2:controller-axis-motion-event (controller timestamp axis value))
+(define-sdl2-forward kit.sdl2:controller-button-event (controller state timestamp button))
