@@ -173,9 +173,9 @@
            ,@body)))))
 
 (defmethod kit.sdl2:render ((instance sketch-window))
-  (render (sketch instance)))
+  (kit.sdl2:render (sketch instance)))
 
-(defmethod render ((instance sketch))
+(defmethod kit.sdl2:render ((instance sketch))
   (with-slots (%env %restart width height copy-pixels %viewport-changed) instance
     (when %viewport-changed
       (kit.gl.shader:uniform-matrix

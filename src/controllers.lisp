@@ -152,6 +152,7 @@
              (call-next-method))))))
 (define-sdl2-forward kit.sdl2:mousebutton-event (state timestamp button x y) t)
 (define-sdl2-forward kit.sdl2:mousemotion-event (timestamp button-mask x y xrel yrel) t)
+(define-sdl2-forward kit.sdl2:close-window () t)
 (define-sdl2-forward kit.sdl2:textinput-event (timestamp text))
 (define-sdl2-forward kit.sdl2:keyboard-event (state timestamp repeatp keysym))
 (define-sdl2-forward kit.sdl2:mousewheel-event (timestamp x y))
