@@ -12,6 +12,7 @@
 
 (defparameter *buttons* (list :left nil :middle nil :right nil))
 (defparameter *current-entity* nil)
+(defparameter *current-sketch* nil)
 
 (defmethod on-click (instance x y))
 (defmethod on-middle-click (instance x y))
@@ -53,6 +54,13 @@
       (setf *current-entity* entity)
       (on-enter entity))
     (call-next-method)))
+
+(defmethod on-hover :around ((instance sketch) ix iy)
+  (unless (eql *current-sketch* instance)
+    (on-leave *current-sketch*)
+    (setf *current-sketch* instance)
+    (on-enter instance))
+  (call-next-method))
 
 (defmethod kit.sdl2:mousebutton-event ((instance sketch) state timestamp button x y)
   (let ((button (elt (list nil :left :middle :right) button))
