@@ -30,7 +30,8 @@
 
 (defclass sketch ()
   ((%env :initform (make-env) :reader sketch-%env)
-   (%restart :initform *restart-frames*)
+   (%restart :initform t)
+   (%restart-frames :initform 0)
    (%viewport-changed :initform t)
    (%entities :initform (make-hash-table) :accessor sketch-%entities)
    (%window :initform nil :accessor sketch-%window :initarg :window)
@@ -146,7 +147,8 @@
     ((instance sketch) added-slots discarded-slots property-list &rest initargs)
   (declare (ignore added-slots discarded-slots property-list))
   (apply #'prepare instance initargs)
-  (setf (slot-value instance '%restart) *restart-frames*)
+  (setf (slot-value instance '%restart) t
+        (slot-value instance '%restart-frames) 0)
   (setf (slot-value instance '%entities) (make-hash-table)))
 
 ;;; Rendering
@@ -161,7 +163,8 @@
          (with-font (make-error-font)
            (with-identity-matrix
              (text (format nil "ERROR~%---~%~a~%---~%Click for restarts." e) 20 20)))
-         (setf %restart *restart-frames*
+         (setf %restart t
+               %restart-frames *restart-frames*
                (env-red-screen *env*) t)))))
 
 (defun draw-sketch (sketch)
@@ -176,8 +179,17 @@
          (with-identity-matrix
            ,@body)))))
 
+(defmethod kit.sdl2:render :around ((win sketch-window) &aux (instance (%sketch win)))
+  (with-slots (%restart %restart-frames) instance
+    ;; When %RESTART is T and %RESTART-FRAMES is positive, don't start
+    ;; drawing the sketch at all.  An :AROUND method is needed to
+    ;; prevent kit.sdl2's call to SDL2:GL-SWAP-WINDOW.
+    (if (and %restart (plusp %restart-frames))
+        (decf %restart-frames)
+        (call-next-method))))
+
 (defmethod kit.sdl2:render ((win sketch-window) &aux (instance (%sketch win)))
-  (with-slots (%env %restart width height copy-pixels %viewport-changed) instance
+  (with-slots (%env %restart %restart-frames width height copy-pixels %viewport-changed) instance
     (when %viewport-changed
       (kit.gl.shader:uniform-matrix
        (env-programs %env) :view-m 4 (vector (env-view-matrix %env)))
@@ -187,13 +199,12 @@
       (unless copy-pixels
         (background (gray 0.4)))
       ;; Restart sketch on setup and when recovering from an error.
-      (when (> %restart 0)
-        (decf %restart)
-        (when (zerop %restart)
-          (gl-catch (rgb 1 1 0.3)
-            (start-draw)
-            (setup instance)
-            (end-draw))))
+      (when %restart
+        (setf %restart nil)
+        (gl-catch (rgb 1 1 0.3)
+          (start-draw)
+          (setup instance)
+          (end-draw)))
       ;; If we're in the debug mode, we exit from it immediately,
       ;; so that the restarts are shown only once. Afterwards, we
       ;; continue presenting the user with the red screen, waiting for
