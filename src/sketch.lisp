@@ -30,7 +30,7 @@
 
 (defclass sketch ()
   ((%env :initform (make-env) :reader sketch-%env)
-   (%restart :initform *restart-frames*)
+   (%restart :initform 1)
    (%viewport-changed :initform t)
    (%entities :initform (make-hash-table) :accessor sketch-%entities)
    (%window :initform nil :accessor sketch-%window :initarg :window)
@@ -146,7 +146,7 @@
     ((instance sketch) added-slots discarded-slots property-list &rest initargs)
   (declare (ignore added-slots discarded-slots property-list))
   (apply #'prepare instance initargs)
-  (setf (slot-value instance '%restart) *restart-frames*)
+  (setf (slot-value instance '%restart) 1)
   (setf (slot-value instance '%entities) (make-hash-table)))
 
 ;;; Rendering
