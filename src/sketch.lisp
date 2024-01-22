@@ -172,10 +172,7 @@
          (with-identity-matrix
            ,@body)))))
 
-(defmethod kit.sdl2:render ((instance sketch-window))
-  (kit.sdl2:render (sketch instance)))
-
-(defmethod kit.sdl2:render ((instance sketch))
+(defmethod kit.sdl2:render ((win sketch-window) &aux (instance (sketch win)))
   (with-slots (%env %restart width height copy-pixels %viewport-changed) instance
     (when %viewport-changed
       (kit.gl.shader:uniform-matrix
@@ -203,6 +200,9 @@
             (draw-sketch instance))
           (gl-catch (rgb 0.7 0 0)
             (draw-sketch instance))))))
+
+(defmethod kit.sdl2:render ((instance sketch))
+  (kit.sdl2:render (sketch-%window instance)))
 
 ;;; Support for resizable windows
 
@@ -292,6 +292,13 @@
 
 (defun start-loop ()
   (setf (sdl2.kit:idle-render (sketch-%window *sketch*)) t))
+
+;; For backward compatibility.
+(defmethod kit.sdl2:idle-render ((instance sketch))
+  (kit.sdl2:idle-render (sketch-%window instance)))
+
+(defmethod (setf kit.sdl2:idle-render) (value (instance sketch))
+  (setf (kit.sdl2:idle-render (sketch-%window instance)) value))
 
 ;;; Resource-handling
 
