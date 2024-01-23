@@ -105,13 +105,10 @@
                                      (w nil)
                                      (h nil)
                                 &allow-other-keys)
-  (let* ((surface (cut-surface (sdl2-image:load-image filename) x y w h))
-         (img (make-instance 'image
-                             :width (sdl2:surface-width surface)
-                             :height (sdl2:surface-height surface)
-                             :texture nil)))
-    (init-image-texture! img surface :min-filter min-filter :mag-filter mag-filter)
-    img))
+  (make-image-from-surface
+   (cut-surface (sdl2-image:load-image filename) x y w h)
+   :min-filter min-filter
+   :mag-filter mag-filter))
 
 (defun init-image-texture! (image surface &key (free-surface t)
                                             (min-filter :linear)

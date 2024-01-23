@@ -34,7 +34,8 @@
    (%viewport-changed :initform t)
    (%entities :initform (make-hash-table) :accessor sketch-%entities)
    (%window :initform nil :accessor sketch-%window :initarg :window)
-   (%delayed-init-funs :initform nil :accessor sketch-%delayed-init-funs)
+   (%delayed-init-funs :initform (make-array 0 :adjustable t :fill-pointer t)
+                       :accessor sketch-%delayed-init-funs)
    (title :initform "Sketch" :accessor sketch-title :initarg :title)
    (width :initform *default-width* :accessor sketch-width :initarg :width)
    (height :initform *default-height* :accessor sketch-height :initarg :height)
@@ -44,10 +45,11 @@
    (y-axis :initform :down :accessor sketch-y-axis :initarg :y-axis)))
 
 (defclass sketch-window (kit.sdl2:gl-window)
-  ((sketch
+  ((%sketch
     :initarg :sketch
-    :accessor sketch
-    :documentation "The sketch associated with this window.")))
+    :accessor %sketch
+    :documentation "The sketch associated with this window.")
+   (%closing :initform nil :accessor window-%closing)))
 
  ;;; Non trivial sketch writers
 
@@ -77,7 +79,7 @@
    (if value sdl2-ffi:+true+ sdl2-ffi:+false+)))
 
 (define-sketch-writer y-axis
-  (declare (ignore win))
+  (declare (ignorable win))
   (initialize-view-matrix instance))
 
 ;;; Generic functions
@@ -127,16 +129,18 @@
                        :w (sketch-width instance)
                        :h (sketch-height instance)
                        :fullscreen (sketch-fullscreen instance)
-                       :resizable (if (sketch-resizable instance)
-                                      sdl2-ffi:+true+
-                                      sdl2-ffi:+false+)
+                       :resizable (sketch-resizable instance)
                        :sketch instance))
   (initialize-environment instance)
   (initialize-gl instance)
   ;; These will have been added in the call to PREPARE.
-  (loop for f in (sketch-%delayed-init-funs instance)
-        do (funcall f))
-  (setf (sketch-%delayed-init-funs instance) nil))
+  (with-slots ((fs %delayed-init-funs)) instance
+    (loop for f across fs
+          do (funcall f))
+    ;; Make sure there's no garbage functions hanging around.
+    (loop while (not (zerop (length fs)))
+          do (vector-pop fs)
+          do (setf (aref fs (fill-pointer fs)) nil))))
 
 (defmethod update-instance-for-redefined-class :after
     ((instance sketch) added-slots discarded-slots property-list &rest initargs)
@@ -172,7 +176,7 @@
          (with-identity-matrix
            ,@body)))))
 
-(defmethod kit.sdl2:render ((win sketch-window) &aux (instance (sketch win)))
+(defmethod kit.sdl2:render ((win sketch-window) &aux (instance (%sketch win)))
   (with-slots (%env %restart width height copy-pixels %viewport-changed) instance
     (when %viewport-changed
       (kit.gl.shader:uniform-matrix
@@ -223,11 +227,11 @@
     (kit.sdl2:close-window instance)))
 
 (defmethod close-window :before ((instance sketch-window))
-  (with-environment (slot-value (sketch instance) '%env)
+  (with-environment (slot-value (%sketch instance) '%env)
     (loop for resource being the hash-values of (env-resources *env*)
        do (free-resource resource))))
 
-(defmethod close-window :after ((instance sketch-window))
+(defmethod close-window :after ((instance sketch))
   (when (and *build* (not (kit.sdl2:all-windows)))
     (sdl2-ttf:quit)
     (kit.sdl2:quit)))
@@ -249,7 +253,7 @@
                    ; TODO: Should this really depend on kit.sdl2?
                    (let ((win (kit.sdl2:last-window)))
                      (when win
-                       (setf (,(binding-accessor b) (sketch win))
+                       (setf (,(binding-accessor b) (%sketch win))
                              (in ,(binding-channel-name b)
                                  ,(binding-initform b))))))))
 
@@ -293,12 +297,68 @@
 (defun start-loop ()
   (setf (sdl2.kit:idle-render (sketch-%window *sketch*)) t))
 
-;; For backward compatibility.
+;;; Backward compatibility.
+;; Previously, the main `sketch` class inherited from
+;; `kit.sdl2:gl-window`, and input was handled by specialising on methods from
+;; sdl2kit. So we need to forward sdl2kit input calls to the `sketch` class for
+;; old sketches that rely on that approach.
+(defmacro define-sdl2-forward (name (&rest args) &optional already-defined?)
+  `(progn
+     ;; An empty method so we don't get an error if we try to forward
+     ;; when the user hasn't defined it.
+     (defmethod ,name ((w sketch) ,@args))
+     ,@(when (not already-defined?)
+         `((defmethod ,name ((w sketch-window) ,@args)
+             (,name (%sketch w) ,@args)
+             (call-next-method))))))
+(define-sdl2-forward kit.sdl2:mousebutton-event (state timestamp button x y) t)
+(define-sdl2-forward kit.sdl2:mousemotion-event (timestamp button-mask x y xrel yrel) t)
+(define-sdl2-forward kit.sdl2:textinput-event (timestamp text))
+(define-sdl2-forward kit.sdl2:keyboard-event (state timestamp repeatp keysym))
+(define-sdl2-forward kit.sdl2:mousewheel-event (timestamp x y))
+(define-sdl2-forward kit.sdl2:window-event (type timestamp data1 data2))
+(define-sdl2-forward kit.sdl2:controller-added-event (c))
+(define-sdl2-forward kit.sdl2:controller-removed-event (c))
+(define-sdl2-forward kit.sdl2:controller-axis-motion-event (controller timestamp axis value))
+(define-sdl2-forward kit.sdl2:controller-button-event (controller state timestamp button))
+
 (defmethod kit.sdl2:idle-render ((instance sketch))
   (kit.sdl2:idle-render (sketch-%window instance)))
 
 (defmethod (setf kit.sdl2:idle-render) (value (instance sketch))
   (setf (kit.sdl2:idle-render (sketch-%window instance)) value))
+
+(defmethod kit.sdl2:sdl-window ((instance sketch))
+  (kit.sdl2:sdl-window (sketch-%window instance)))
+
+(defmethod kit.sdl2:gl-context ((instance sketch))
+  (kit.sdl2:gl-context (sketch-%window instance)))
+
+(defmethod kit.sdl2:render-enabled ((instance sketch))
+  (kit.sdl2:render-enabled (sketch-%window instance)))
+
+(defmethod (setf kit.sdl2:render-enabled) (value (instance sketch))
+  (setf (kit.sdl2:render-enabled (sketch-%window instance)) value))
+
+;; KIT.SDL2:CLOSE-WINDOW is tricky: it should always be called on both
+;; the sketch and sketch's window; but it also can be first called on
+;; both the window or the sketch.
+;; It also should be called in sdl2's main thread, which is done by an
+;; :AROUND method defined on KIT.SDL2:WINDOW.
+;; The primary method defined on the SKETCH-WINDOW should
+;; (call-next-method) because there is a primary method defined on
+;; GL-WINDOW.
+;; Finally, the :AFTER method defined on SKETCH calls KIT.SDL2:QUIT and
+;; SDL2-TTF:QUIT.
+(defmethod kit.sdl2:close-window ((instance sketch))
+  (with-slots ((window %window)) instance
+    (setf (window-%closing window) t)
+    (kit.sdl2:close-window window)))
+
+(defmethod kit.sdl2:close-window :around ((instance sketch-window))
+  (if (window-%closing instance)
+      (call-next-method)
+      (kit.sdl2:close-window (%sketch instance))))
 
 ;;; Resource-handling
 
@@ -310,6 +370,4 @@ we need to wait before initializing certain resources."
 
 (defun add-delayed-init-fun! (f)
   "F should be a function with no arguments."
-  (setf (sketch-%delayed-init-funs *sketch*)
-        (append (sketch-%delayed-init-funs *sketch*)
-                (list f))))
+  (vector-push-extend f (sketch-%delayed-init-funs *sketch*)))
