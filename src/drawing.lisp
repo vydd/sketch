@@ -109,56 +109,6 @@
   ;; TODO: Drawing in event handlers could be useful with COPY-PIXELS set to to T.
   (warn "Can't draw from current context (e.g. an event handler)."))
 
-(defun draw-polygon (points)
-  (let ((tobj (make-instance 'polygon-tessellator)))
-    (glu:tess-property tobj :winding-rule :odd)
-    (glu:with-tess-polygon (tobj)
-      (glu:with-tess-contour tobj
-        (loop for (x y) in points
-              ;; Expects 3d coordinates.
-              do (glu:tess-vertex tobj (list x y 0) (list x y)))))
-    (glu:tess-delete tobj)
-    ;; Callbacks (BEGIN-DATA, VERTEX-DATA, END-DATA) store series of
-    ;; triangle primitives that should be used to draw the polygon.
-    ;; They are represented by cons pairs (PRIMITIVE . POINTS). By the
-    ;; end of tesselation they are stored in the SHAPES slot of the
-    ;; tesselator object.
-    ;;
-    ;; FIXME: texture coordinates are being calculated based on the
-    ;; bounding box. The bounding box might differ depending on how
-    ;; the polygon is tessellated, which makes it not possible to use
-    ;; textures as :FILL at the same time as drawing a POLYGON.
-    (loop for (primitive . points) in (pt-shapes tobj)
-          do (draw-shape primitive points nil))
-    ;; Draws the contour of the polygon.
-    (draw-shape nil nil points)))
-
-(defclass polygon-tessellator (glu:tessellator)
-  ((primitive :initform nil :accessor pt-primitive)
-   (points :initform nil :accessor pt-points)
-   (shapes :initform nil :accessor pt-shapes)))
-
-(defmethod glu:begin-data-callback ((tess polygon-tessellator) primitive pdata)
-  (declare (ignore pdata))
-  (setf (pt-primitive tess) primitive
-        (pt-points tess) nil))
-
-(defmethod glu:vertex-data-callback ((tess polygon-tessellator) vdata pdata)
-  (declare (ignore pdata))
-  (push vdata (pt-points tess)))
-
-(defmethod glu:end-data-callback ((tess polygon-tessellator) pdata)
-  (declare (ignore pdata))
-  (push (cons (pt-primitive tess) (nreverse (pt-points tess))) (pt-shapes tess))
-  (setf (pt-primitive tess) nil
-        (pt-points tess) nil))
-
-(defmethod glu:combine-data-callback ((tess polygon-tessellator) coords-gl-array vdata-array weight-array pdata)
-  (declare (ignore vdata-array weight-array pdata))
-  (let ((coords-array (gl::gl-array-pointer coords-gl-array)))
-    (list (cffi:mem-aref coords-array '%gl:double 0)
-          (cffi:mem-aref coords-array '%gl:double 1))))
-
 (defun fit-uv-to-rect (uv)
   (if *uv-rect*
       (destructuring-bind (u-in v-in) uv
