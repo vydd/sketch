@@ -111,25 +111,40 @@
 
 (defun draw-polygon (points)
   (let ((tobj (make-instance 'polygon-tessellator)))
-    (glu:tess-property tobj :winding-rule :positive)
+    (glu:tess-property tobj :winding-rule :odd)
     (glu:with-tess-polygon (tobj)
       (glu:with-tess-contour tobj
-        (loop for xy in points
+        (loop for (x y) in points
               ;; Expects 3d coordinates.
-              for coord-3d = (append xy '(0))
-              do (glu:tess-vertex tobj coord-3d coord-3d))))
-    (glu:tess-delete tobj))
-  ;; Let DRAW-SHAPE handle drawing the stroke, if any.
-  (draw-shape nil nil points))
+              do (glu:tess-vertex tobj (list x y 0) (list x y)))))
+    (glu:tess-delete tobj)
+    (loop for (primitive . points) in (pt-shapes tobj)
+          do (draw-shape primitive points nil))
+    (draw-shape nil nil points)))
 
 (defclass polygon-tessellator (glu:tessellator)
-  ())
+  ((primitive :initform nil :accessor pt-primitive)
+   (points :initform nil :accessor pt-points)
+   (shapes :initform nil :accessor pt-shapes)))
 
-(defmethod glu:vertex-data-callback ((tess polygon-tessellator) vertex-data polygon-data)
-  (gl:vertex (first vertex-data) (second vertex-data) (third vertex-data)))
+(defmethod glu:begin-data-callback ((tess polygon-tessellator) primitive pdata)
+  (declare (ignore pdata))
+  (setf (pt-primitive tess) primitive
+        (pt-points tess) nil))
 
-(defmethod glu:error-data-callback ((tess polygon-tessellator) error-num polygon-data)
-  (error (format nil "Tessellation error: ~a" error-num)))
+(defmethod glu:vertex-data-callback ((tess polygon-tessellator) vdata pdata)
+  (declare (ignore pdata))
+  (push vdata (pt-points tess)))
+
+(defmethod glu:end-data-callback ((tess polygon-tessellator) pdata)
+  (declare (ignore pdata))
+  (push (cons (pt-primitive tess) (pt-points tess)) (pt-shapes tess)))
+
+(defmethod glu:combine-data-callback ((tess polygon-tessellator) coords-gl-array vdata-array weight-array pdata)
+  (declare (ignore vdata-array weight-array pdata))
+  (let ((coords-array (gl::gl-array-pointer coords-gl-array)))
+    (list (cffi:mem-aref coords-array '%gl:double 0)
+          (cffi:mem-aref coords-array '%gl:double 1))))
 
 (defun fit-uv-to-rect (uv)
   (if *uv-rect*

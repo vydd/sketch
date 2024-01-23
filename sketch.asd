@@ -18,7 +18,8 @@
                #:split-sequence
                #:static-vectors
                #:trivial-garbage
-               #:zpng)
+               #:zpng
+               #:cl-glu)
   :pathname "src"
   :serial t
   :components ((:file "package")
