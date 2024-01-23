@@ -138,7 +138,9 @@
 
 (defmethod glu:end-data-callback ((tess polygon-tessellator) pdata)
   (declare (ignore pdata))
-  (push (cons (pt-primitive tess) (pt-points tess)) (pt-shapes tess)))
+  (push (cons (pt-primitive tess) (nreverse (pt-points tess))) (pt-shapes tess))
+  (setf (pt-primitive tess) nil
+        (pt-points tess) nil))
 
 (defmethod glu:combine-data-callback ((tess polygon-tessellator) coords-gl-array vdata-array weight-array pdata)
   (declare (ignore vdata-array weight-array pdata))
