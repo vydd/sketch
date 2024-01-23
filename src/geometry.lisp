@@ -68,15 +68,6 @@
                                 (edges polygon))))))
     (append (cdr polygon) (list (car polygon)))))
 
-(defun triangulate (polygon)
-  (if (= 3 (/ (length polygon) 2))
-      (group polygon)       ;; No need to triangulate - it's a triangle.
-      (mapcar (lambda (point) (list (2d-geometry:x point) (2d-geometry:y point)))
-              (apply #'append
-                     (mapcar #'2d-geometry:point-list
-                             (2d-geometry:decompose-complex-polygon-triangles
-                              (apply #'2d-geometry:make-polygon-from-coords polygon)))))))
-
 (defun bounding-box (vertices)
   (loop for (x y) in vertices
         minimize x into min-x

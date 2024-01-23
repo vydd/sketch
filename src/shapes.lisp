@@ -124,10 +124,8 @@
     (ellipse x y (abs r) (abs r))))
 
 (defun make-polygon (&rest coordinates)
-  (list
-   :triangles
-   (triangulate coordinates)
-   (group coordinates)))
+  (lambda ()
+    (draw-polygon (group coordinates))))
 
 (defun polygon (&rest coordinates)
   (draw-polygon (group coordinates)))

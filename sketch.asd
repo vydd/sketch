@@ -5,7 +5,6 @@
   :author "Danilo Vidovic (vydd)"
   :license "MIT"
   :depends-on (#:alexandria
-               #:cl-geometry
                #:closer-mop
                #:glkit
                #:mathkit
