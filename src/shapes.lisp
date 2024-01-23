@@ -149,36 +149,35 @@
     (list (cffi:mem-aref coords-array '%gl:double 0)
           (cffi:mem-aref coords-array '%gl:double 1))))
 
-(defun draw-polygon (points)
+(defun make-polygon (contours)
   (let ((tobj (make-instance 'polygon-tessellator)))
     (glu:tess-property tobj :winding-rule :odd)
     (glu:with-tess-polygon (tobj)
-      (glu:with-tess-contour tobj
-        (loop for (x y) in points
-              ;; Expects 3d coordinates.
-              do (glu:tess-vertex tobj (list x y 0) (list x y)))))
+      (dolist (points contours)
+        (glu:with-tess-contour tobj
+          (loop for (x y) in points
+                ;; Expects 3d coordinates.
+                do (glu:tess-vertex tobj (list x y 0) (list x y))))))
     (glu:tess-delete tobj)
-    ;; Callbacks (BEGIN-DATA, VERTEX-DATA, END-DATA) store series of
-    ;; triangle primitives that should be used to draw the polygon.
-    ;; They are represented by cons pairs (PRIMITIVE . POINTS). By the
-    ;; end of tesselation they are stored in the SHAPES slot of the
-    ;; tesselator object.
-    ;;
-    ;; FIXME: texture coordinates are being calculated based on the
-    ;; bounding box. The bounding box might differ depending on how
-    ;; the polygon is tessellated, which makes it not possible to use
-    ;; textures as :FILL at the same time as drawing a POLYGON.
-    (loop for (primitive . points) in (pt-shapes tobj)
-          do (draw-shape primitive points nil))
-    ;; Draws the contour of the polygon.
-    (draw-shape nil nil points)))
-
-(defun make-polygon (&rest coordinates)
-  (lambda ()
-    (draw-polygon (group coordinates))))
+    (lambda (&aux (shapes (pt-shapes tobj)))
+      ;; Callbacks (BEGIN-DATA, VERTEX-DATA, END-DATA) store series of
+      ;; triangle primitives that should be used to draw the polygon.
+      ;; They are represented by cons pairs (PRIMITIVE . POINTS). By the
+      ;; end of tesselation they are stored in the SHAPES slot of the
+      ;; tesselator object.
+      ;;
+      ;; FIXME: texture coordinates are being calculated based on the
+      ;; bounding box. The bounding box might differ depending on how
+      ;; the polygon is tessellated, which makes it not possible to use
+      ;; textures as :FILL at the same time as drawing a POLYGON.
+      (loop for (primitive . points) in shapes
+            do (draw-shape primitive points nil))
+      ;; Draws the contour of the polygon.
+      (dolist (points contours)
+        (draw-shape nil nil points)))))
 
 (defun polygon (&rest coordinates)
-  (draw-polygon (group coordinates)))
+  (funcall (make-polygon (list (group coordinates)))))
 
 (defun quadratic-bezier-point (v a b c)
   (let* ((d (lerp-lists v a b))
