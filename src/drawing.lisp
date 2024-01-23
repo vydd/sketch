@@ -118,8 +118,19 @@
               ;; Expects 3d coordinates.
               do (glu:tess-vertex tobj (list x y 0) (list x y)))))
     (glu:tess-delete tobj)
+    ;; Callbacks (BEGIN-DATA, VERTEX-DATA, END-DATA) store series of
+    ;; triangle primitives that should be used to draw the polygon.
+    ;; They are represented by cons pairs (PRIMITIVE . POINTS). By the
+    ;; end of tesselation they are stored in the SHAPES slot of the
+    ;; tesselator object.
+    ;;
+    ;; FIXME: texture coordinates are being calculated based on the
+    ;; bounding box. The bounding box might differ depending on how
+    ;; the polygon is tessellated, which makes it not possible to use
+    ;; textures as :FILL at the same time as drawing a POLYGON.
     (loop for (primitive . points) in (pt-shapes tobj)
           do (draw-shape primitive points nil))
+    ;; Draws the contour of the polygon.
     (draw-shape nil nil points)))
 
 (defclass polygon-tessellator (glu:tessellator)
