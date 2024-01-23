@@ -211,7 +211,7 @@
 ;;; Support for resizable windows
 
 (defmethod kit.sdl2:window-event :before ((instance sketch-window) (type (eql :size-changed)) timestamp data1 data2)
-  (with-slots (sketch) instance
+  (with-slots ((sketch %sketch)) instance
     (with-slots ((env %env) width height y-axis) sketch
       (setf width data1
             height data2)
