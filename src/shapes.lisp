@@ -149,7 +149,7 @@
     (list (cffi:mem-aref coords-array '%gl:double 0)
           (cffi:mem-aref coords-array '%gl:double 1))))
 
-(defun make-polygon (contours)
+(defun make-polygon (&rest contours)
   (let ((tobj (make-instance 'polygon-tessellator)))
     (glu:tess-property tobj :winding-rule :odd)
     (glu:with-tess-polygon (tobj)
@@ -177,7 +177,7 @@
         (draw-shape nil nil points)))))
 
 (defun polygon (&rest coordinates)
-  (funcall (make-polygon (list (group coordinates)))))
+  (funcall (make-polygon (group coordinates))))
 
 (defun quadratic-bezier-point (v a b c)
   (let* ((d (lerp-lists v a b))
