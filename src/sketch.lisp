@@ -210,10 +210,16 @@
             ;; That happens on setup or when recovering from an error.
             (when %restart
               (setf %restart nil)
-              (gl-catch (rgb 1 1 0.3)
-                (start-draw)
-                (setup instance)
-                (end-draw)))
+              (start-draw)
+              (if (debug-mode-p)
+                  (progn
+                    ;; If we're in debug mode, we exit from it immediately,
+                    ;; so that the restarts are shown only once.
+                    (exit-debug-mode)
+                    (setup instance))
+                  (gl-catch (rgb 1 1 0.3)
+                    (setup instance)))
+              (end-draw))
             (cond
               ;; If %RESTART is T, an error occured during SETUP.
               ;; Don't try calling DRAW, show an error screen instead.
