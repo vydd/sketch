@@ -18,7 +18,11 @@
    (height :accessor image-height :initarg :height)))
 
 (defclass cropped-image (image)
-  ((uv-rect :accessor cropped-image-uv-rect :initarg :uv-rect)))
+  ((uv-rect :accessor cropped-image-uv-rect :initarg :uv-rect)
+   (original-image :accessor original-image :initarg :original-image)))
+
+(defmethod image-texture ((instance cropped-image))
+  (image-texture (original-image instance)))
 
 (defun pixel-uv-rect (img x y w h)
   "Generate uv coordinates (0.0 to 1.0) for portion of IMG within
@@ -32,10 +36,11 @@
 
 (defun cropped-image-from-image (image x y w h)
   (make-instance 'cropped-image
-                 :texture (image-texture image)
+                 :texture nil
                  :width w
                  :height h
-                 :uv-rect (pixel-uv-rect image x y w h)))
+                 :uv-rect (pixel-uv-rect image x y w h)
+                 :original-image image))
 
 (defclass typeface (resource)
   ((filename :accessor typeface-filename :initarg :filename)
@@ -81,31 +86,16 @@
 (defun make-image-from-surface (surface &key (free-surface t)
                                              (min-filter :linear)
                                              (mag-filter :linear))
-  (let ((texture (car (gl:gen-textures 1)))
-        (rgba-surface (if (eq (sdl2:surface-format-format surface) sdl2:+pixelformat-rgba32+)
-                          surface
-                          (sdl2:convert-surface-format surface sdl2:+pixelformat-rgba32+))))
-    (gl:bind-texture :texture-2d texture)
-    (gl:tex-parameter :texture-2d :texture-min-filter min-filter)
-    (gl:tex-parameter :texture-2d :texture-mag-filter mag-filter)
-    (gl:pixel-store :unpack-row-length (/ (sdl2:surface-pitch rgba-surface) 4))
-    (gl:tex-image-2d :texture-2d 0 :rgba
-                     (sdl2:surface-width rgba-surface)
-                     (sdl2:surface-height rgba-surface)
-                     0
-                     :rgba
-                     :unsigned-byte (sdl2:surface-pixels rgba-surface))
-    (gl:bind-texture :texture-2d 0)
-    (let ((image (make-instance 'image
-                                :width (sdl2:surface-width rgba-surface)
-                                :height (sdl2:surface-height rgba-surface)
-                                :texture texture)))
-      (unless (eq rgba-surface surface) (sdl2:free-surface rgba-surface))
-      (when free-surface
-        (when (eq free-surface :font)
-          (tg:cancel-finalization surface))
-        (sdl2:free-surface surface))
-      image)))
+  (let ((image (make-instance 'image
+                              :width (sdl2:surface-width surface)
+                              :height (sdl2:surface-height surface)
+                              :texture nil)))
+    (init-image-texture! image
+                         surface
+                         :free-surface free-surface
+                         :min-filter min-filter
+                         :mag-filter mag-filter)
+    image))
 
 (defmethod load-typed-resource (filename (type (eql :image))
                                 &key (min-filter :linear)
@@ -115,10 +105,43 @@
                                      (w nil)
                                      (h nil)
                                 &allow-other-keys)
-  (let ((surface (sdl2-image:load-image filename)))
-    (make-image-from-surface (cut-surface surface x y w h)
-                             :min-filter min-filter
-                             :mag-filter mag-filter)))
+  (make-image-from-surface
+   (cut-surface (sdl2-image:load-image filename) x y w h)
+   :min-filter min-filter
+   :mag-filter mag-filter))
+
+(defun init-image-texture! (image surface &key (free-surface t)
+                                            (min-filter :linear)
+                                            (mag-filter :linear))
+  (if (delay-init-p)
+      (add-delayed-init-fun!
+       (lambda ()
+         (init-image-texture! image surface
+                              :free-surface free-surface
+                              :min-filter min-filter
+                              :mag-filter mag-filter)))
+      (let ((texture (car (gl:gen-textures 1)))
+            (rgba-surface
+              (if (eq (sdl2:surface-format-format surface) sdl2:+pixelformat-rgba32+)
+                  surface
+                  (sdl2:convert-surface-format surface sdl2:+pixelformat-rgba32+))))
+        (gl:bind-texture :texture-2d texture)
+        (gl:tex-parameter :texture-2d :texture-min-filter min-filter)
+        (gl:tex-parameter :texture-2d :texture-mag-filter mag-filter)
+        (gl:pixel-store :unpack-row-length (/ (sdl2:surface-pitch rgba-surface) 4))
+        (gl:tex-image-2d :texture-2d 0 :rgba
+                         (sdl2:surface-width rgba-surface)
+                         (sdl2:surface-height rgba-surface)
+                         0
+                         :rgba
+                         :unsigned-byte (sdl2:surface-pixels rgba-surface))
+        (gl:bind-texture :texture-2d 0)
+        (unless (eq rgba-surface surface) (sdl2:free-surface rgba-surface))
+        (when free-surface
+          (when (eq free-surface :font)
+            (tg:cancel-finalization surface))
+          (sdl2:free-surface surface))
+        (setf (image-texture image) texture))))
 
 (defun cut-surface (surface x y w h)
   (if (and x y w h)
