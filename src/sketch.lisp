@@ -137,10 +137,7 @@
   (with-slots ((fs %delayed-init-funs)) instance
     (loop for f across fs
           do (funcall f))
-    ;; Make sure there's no garbage functions hanging around.
-    (loop while (not (zerop (length fs)))
-          do (vector-pop fs)
-          do (setf (aref fs (fill-pointer fs)) nil))))
+    (setf fs (make-array 0 :adjustable t :fill-pointer t))))
 
 (defmethod update-instance-for-redefined-class :after
     ((instance sketch) added-slots discarded-slots property-list &rest initargs)
