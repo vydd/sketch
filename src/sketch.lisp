@@ -161,9 +161,16 @@
          (setf %restart *restart-frames*
                (env-red-screen *env*) t)))))
 
-(defun draw-sketch (sketch)
+(defmethod setup-sketch ((instance sketch))
   (start-draw)
-  (draw sketch)
+  (setup instance)
+  (end-draw))
+
+(defmethod draw-sketch ((instance sketch))
+  (start-draw)
+  (unless (sketch-copy-pixels instance)
+    (background (gray 0.4)))
+  (draw instance)
   (end-draw))
 
 (defmacro with-sketch ((sketch) &body body)
@@ -174,23 +181,15 @@
            ,@body)))))
 
 (defmethod kit.sdl2:render ((win sketch-window) &aux (instance (%sketch win)))
-  (with-slots (%env %restart width height copy-pixels %viewport-changed) instance
-    (when %viewport-changed
-      (kit.gl.shader:uniform-matrix
-       (env-programs %env) :view-m 4 (vector (env-view-matrix %env)))
-      (gl:viewport 0 0 width height)
-      (setf %viewport-changed nil))
-    (with-sketch (instance)
-      (unless copy-pixels
-        (background (gray 0.4)))
+  (handle-viewport-changed instance)
+  (with-sketch (instance)
+    (with-slots (%restart) instance
       ;; Restart sketch on setup and when recovering from an error.
       (when (> %restart 0)
         (decf %restart)
         (when (zerop %restart)
           (gl-catch (rgb 1 1 0.3)
-            (start-draw)
-            (setup instance)
-            (end-draw))))
+            (setup-sketch instance))))
       ;; If we're in the debug mode, we exit from it immediately,
       ;; so that the restarts are shown only once. Afterwards, we
       ;; continue presenting the user with the red screen, waiting for
@@ -204,6 +203,14 @@
 
 (defmethod kit.sdl2:render ((instance sketch))
   (kit.sdl2:render (sketch-%window instance)))
+
+(defmethod handle-viewport-changed ((instance sketch))
+  (with-slots (%env %viewport-changed width height) instance
+    (when %viewport-changed
+      (kit.gl.shader:uniform-matrix
+       (env-programs %env) :view-m 4 (vector (env-view-matrix %env)))
+      (gl:viewport 0 0 width height)
+      (setf %viewport-changed nil))))
 
 ;;; Support for resizable windows
 
