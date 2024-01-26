@@ -103,7 +103,8 @@
                                               state timestamp button x y)
   (with-slots (%env) (%sketch instance)
     (when (env-red-screen %env)
-      (setf (env-debug-key-pressed %env) t))))
+      (when (eq state :mousebuttonup)
+        (setf (env-debug-key-pressed %env) t)))))
 
 ;;; Keyboard
 
