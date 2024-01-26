@@ -203,7 +203,8 @@
             (exit-debug-mode)
             (draw-sketch instance))
           (gl-catch (rgb 0.7 0 0)
-            (draw-sketch instance))))))
+            (when (= %restart 0)
+              (draw-sketch instance)))))))
 
 (defmethod kit.sdl2:render ((instance sketch))
   (kit.sdl2:render (sketch-%window instance)))
