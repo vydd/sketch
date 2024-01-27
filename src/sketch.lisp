@@ -51,6 +51,14 @@
     :documentation "The sketch associated with this window.")
    (%closing :initform nil :accessor window-%closing)))
 
+;; Always enabled
+(defmethod kit.sdl2:render-enabled ((window sketch-window))
+  t)
+
+;; So don't do anything on SETF as well
+(defmethod (setf kit.sdl2:render-enabled) (value (window sketch-window))
+  value)
+
  ;;; Non trivial sketch writers
 
 (defmacro define-sketch-writer (slot &body body)
