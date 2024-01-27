@@ -76,8 +76,12 @@
         maximize y into max-y
         finally (return (list (list min-x min-y) (list max-x max-y)))))
 
+;; KLUDGE: This is an ugly hack to make GLU tessellated polygons work
+;; with :FILL being a texture (and not a color).
+(defvar *bounding-box* nil)
+
 (defun normalize-to-bounding-box (vertices)
-  (let ((box (bounding-box vertices)))
+  (let ((box (or *bounding-box* (bounding-box vertices))))
     (with-lines (box)
       (mapcar (lambda (vertex)
                 (list (normalize (first vertex) x1 x2)

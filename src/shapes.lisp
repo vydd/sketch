@@ -123,6 +123,7 @@
   (when (not (zerop r))
     (ellipse x y (abs r) (abs r))))
 
+;; FIXME: Replace deprecated GLU tesselator (preferably with a CL library).
 (defclass polygon-tessellator (glu:tessellator)
   ((primitive :initform nil :accessor pt-primitive)
    (points :initform nil :accessor pt-points)
@@ -159,7 +160,8 @@
                 ;; Expects 3d coordinates.
                 do (glu:tess-vertex tobj (list x y 0) (list x y))))))
     (glu:tess-delete tobj)
-    (lambda (&aux (shapes (pt-shapes tobj)))
+    (lambda (&aux (shapes (pt-shapes tobj))
+                  (box (bounding-box (reduce #'append (mapcar #'cdr shapes)))))
       ;; Callbacks (BEGIN-DATA, VERTEX-DATA, END-DATA) store series of
       ;; triangle primitives that should be used to draw the polygon.
       ;; They are represented by cons pairs (PRIMITIVE . POINTS). By the
@@ -170,8 +172,9 @@
       ;; bounding box. The bounding box might differ depending on how
       ;; the polygon is tessellated, which makes it not possible to use
       ;; textures as :FILL at the same time as drawing a POLYGON.
-      (loop for (primitive . points) in shapes
-            do (draw-shape primitive points nil))
+      (let ((*bounding-box* box))
+        (loop for (primitive . points) in shapes
+              do (draw-shape primitive points nil)))
       ;; Draws the contour of the polygon.
       (dolist (points contours)
         (draw-shape nil nil points)))))
