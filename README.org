@@ -549,6 +549,35 @@ This can be used, for example, to draw a static sketch and then disable the draw
 
 Example: [[https://github.com/vydd/sketch/blob/master/examples/control-flow.lisp][control-flow.lisp]].
 
+*** Sharing behaviour between sketches
+Let's say you want all your sketches to have a black background, but you don't want to have to reimplement that feature every time. The answer is to use `defsketchx`, which is like `defsketch` but allows you to specify extra superclasses for your sketch class.
+
+First, define a mixin class that implements the desired behaviour in the `draw` method (with the `:before` method specialiser):
+
+#+BEGIN_SRC lisp
+  (defclass black-background () ())
+  (defmethod draw :before ((instance black-background) &key &allow-other-keys)
+    (background +black+))
+#+END_SRC
+
+Then define your sketches using `defsketchx`:
+
+#+BEGIN_SRC lisp
+  (defsketchx moon (black-background)
+      ((width 200)
+       (height 200))
+    (circle 100 100 50))
+#+END_SRC
+
+And it should have a black background. Initialization/setup logic for `black-background`, and sketches inheriting from it, could be put in an `initialize-instance` or `setup` method:
+
+#+BEGIN_SRC lisp
+  (defmethod initialize-instance :before ((instance black-background) &key &allow-other-keys)
+    (format t "Initializing black background!"))
+  (defmethod setup :before ((instance black-background) &key &allow-other-keys)
+    (format t "Setting up black background!"))
+#+END_SRC
+
 ** Made with Sketch
 - [[https://vydd.itch.io/qelt][QELT]]
 - [[https://github.com/sjl/coding-math][sjl's implementation of coding math videos]]
