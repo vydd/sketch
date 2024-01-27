@@ -157,24 +157,26 @@
 (defvar *%unwind-and-call-on-error-function*)
 (defmacro unwind-and-call-on-error () `(funcall *%unwind-and-call-on-error-function*))
 
-(defmethod on-error-handler ((sketch sketch) where error)
+(defmethod on-error-handler ((sketch sketch) stage error)
+  (declare (ignorable sketch stage))
   (when (env-debug-key-pressed *env*)
     (with-simple-restart (:red-screen "Show red screen")
       (signal error)))
   (unwind-and-call-on-error))
 
-(defmethod on-error ((sketch sketch) where error)
-  (background (ecase where
+(defmethod on-error ((sketch sketch) stage error)
+  (declare (ignorable sketch))
+  (background (ecase stage
                 (:setup (rgb 0.4 0.2 0.1))
                 (:draw (rgb 0.7 0 0))))
   (with-font (make-error-font)
     (with-identity-matrix
-      (text (format nil "Error in ~A~%---~%~a~%---~%Click for restarts." where error) 20 20)))
+      (text (format nil "Error in ~A~%---~%~a~%---~%Click for restarts." stage error) 20 20)))
   (setf (env-red-screen *env*) t))
 
-(defmacro with-error-handling ((sketch %stage) &body body)
-  (alexandria:with-gensyms (%error)
-    `(let (,%error)
+(defmacro with-error-handling ((sketch) &body body)
+  (alexandria:with-gensyms (%error %stage)
+    `(let (,%error ,%stage)
        (tagbody
           (handler-bind ((error
                            (lambda (e)
@@ -184,7 +186,11 @@
                                (on-error-handler ,sketch
                                                  ,%stage
                                                  ,%error)))))
-            ,@body
+            (macrolet ((with-stage (stage &body body)
+                         `(progn
+                            (setf ,',%stage ,stage)
+                            ,@body)))
+              ,@body)
             (go :end))
         :error
           (on-error ,sketch ,%stage ,%error)
@@ -217,17 +223,16 @@
   (maybe-change-viewport sketch)
   (with-sketch (sketch)
     (with-gl-draw
-      (unless (sketch-copy-pixels sketch)
-        (background (gray 0.4)))
-      (let (%stage)
-        (with-error-handling (sketch %stage)
-          (when (or (env-red-screen *env*)
-                    (not (sketch-%setup-called sketch)))
-            (setf (env-red-screen *env*) nil
-                  (sketch-%setup-called sketch) t
-                  %stage :setup)
-            (setup sketch))
-          (setf %stage :draw)
+      (with-error-handling (sketch)
+        (unless (sketch-copy-pixels sketch)
+          (background (gray 0.4)))
+        (when (or (env-red-screen *env*)
+                  (not (sketch-%setup-called sketch)))
+          (setf (env-red-screen *env*) nil
+                (sketch-%setup-called sketch) t)
+          (with-stage :setup
+            (setup sketch)))
+        (with-stage :draw
           (draw sketch))))))
 
 (defmethod kit.sdl2:render ((instance sketch))
