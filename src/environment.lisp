@@ -75,14 +75,6 @@
     (gl:clear :color-buffer :depth-buffer)
     (gl:flush)))
 
-(defun debug-mode-p ()
-  (and (env-red-screen *env*)
-       (env-debug-key-pressed *env*)))
-
-(defun exit-debug-mode ()
-  (setf (env-red-screen *env*) nil
-        (env-debug-key-pressed *env*) nil))
-
 (defmacro with-environment (env &body body)
   `(let ((*env* ,env))
      ,@body))

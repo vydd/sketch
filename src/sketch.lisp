@@ -26,11 +26,9 @@
 (defparameter *default-height* 400
   "The default height of sketch window")
 
-(defparameter *restart-frames* 2)
-
 (defclass sketch ()
   ((%env :initform (make-env) :reader sketch-%env)
-   (%restart :initform *restart-frames*)
+   (%setup-called :initform nil :accessor sketch-%setup-called)
    (%viewport-changed :initform t)
    (%entities :initform (make-hash-table) :accessor sketch-%entities)
    (%window :initform nil :accessor sketch-%window :initarg :window)
@@ -151,28 +149,55 @@
     ((instance sketch) added-slots discarded-slots property-list &rest initargs)
   (declare (ignore added-slots discarded-slots property-list))
   (apply #'prepare instance initargs)
-  (setf (slot-value instance '%restart) *restart-frames*)
+  (setf (sketch-%setup-called instance) nil)
   (setf (slot-value instance '%entities) (make-hash-table)))
 
+;;; Error handling
+
+(defvar *%unwind-and-call-on-error-function*)
+(defmacro unwind-and-call-on-error () `(funcall *%unwind-and-call-on-error-function*))
+
+(defmethod on-error-handler ((sketch sketch) stage error)
+  (declare (ignorable sketch stage))
+  (when (env-debug-key-pressed *env*)
+    (with-simple-restart (:red-screen "Show red screen")
+      (signal error)))
+  (unwind-and-call-on-error))
+
+(defmethod on-error ((sketch sketch) stage error)
+  (declare (ignorable sketch))
+  (background (ecase stage
+                (:setup (rgb 0.4 0.2 0.1))
+                (:draw (rgb 0.7 0 0))))
+  (with-font (make-error-font)
+    (with-identity-matrix
+      (text (format nil "Error in ~A~%---~%~a~%---~%Click for restarts." stage error) 20 20)))
+  (setf (env-red-screen *env*) t))
+
+(defmacro with-error-handling ((sketch) &body body)
+  (alexandria:with-gensyms (%error %stage)
+    `(let (,%error ,%stage)
+       (tagbody
+          (handler-bind ((error
+                           (lambda (e)
+                             (setf ,%error e)
+                             (let ((*%unwind-and-call-on-error-function*
+                                     (lambda () (go :error))))
+                               (on-error-handler ,sketch
+                                                 ,%stage
+                                                 ,%error)))))
+            (macrolet ((with-stage (stage &body body)
+                         `(progn
+                            (setf ,',%stage ,stage)
+                            ,@body)))
+              ,@body)
+            (go :end))
+        :error
+          (on-error ,sketch ,%stage ,%error)
+        :end
+          (setf (env-debug-key-pressed *env*) nil)))))
+
 ;;; Rendering
-
-(defmacro gl-catch (error-color &body body)
-  `(handler-case
-       (progn
-         ,@body)
-     (error (e)
-       (progn
-         (background ,error-color)
-         (with-font (make-error-font)
-           (with-identity-matrix
-             (text (format nil "ERROR~%---~%~a~%---~%Click for restarts." e) 20 20)))
-         (setf %restart *restart-frames*
-               (env-red-screen *env*) t)))))
-
-(defun draw-sketch (sketch)
-  (start-draw)
-  (draw sketch)
-  (end-draw))
 
 (defmacro with-sketch ((sketch) &body body)
   `(with-environment (sketch-%env ,sketch)
@@ -181,34 +206,34 @@
          (with-identity-matrix
            ,@body)))))
 
-(defmethod kit.sdl2:render ((win sketch-window) &aux (instance (%sketch win)))
-  (with-slots (%env %restart width height copy-pixels %viewport-changed) instance
+(defmacro with-gl-draw (&body body)
+  `(progn
+     (start-draw)
+     ,@body
+     (end-draw)))
+
+(defun maybe-change-viewport (sketch)
+  (with-slots (%env %viewport-changed width height) sketch
     (when %viewport-changed
-      (kit.gl.shader:uniform-matrix
-       (env-programs %env) :view-m 4 (vector (env-view-matrix %env)))
+      (kit.gl.shader:uniform-matrix (env-programs %env) :view-m 4 (vector (env-view-matrix %env)))
       (gl:viewport 0 0 width height)
-      (setf %viewport-changed nil))
-    (with-sketch (instance)
-      (unless copy-pixels
-        (background (gray 0.4)))
-      ;; Restart sketch on setup and when recovering from an error.
-      (when (> %restart 0)
-        (decf %restart)
-        (when (zerop %restart)
-          (gl-catch (rgb 1 1 0.3)
-            (start-draw)
-            (setup instance)
-            (end-draw))))
-      ;; If we're in the debug mode, we exit from it immediately,
-      ;; so that the restarts are shown only once. Afterwards, we
-      ;; continue presenting the user with the red screen, waiting for
-      ;; the error to be fixed, or for the debug key to be pressed again.
-      (if (debug-mode-p)
-          (progn
-            (exit-debug-mode)
-            (draw-sketch instance))
-          (gl-catch (rgb 0.7 0 0)
-            (draw-sketch instance))))))
+      (setf %viewport-changed nil))))
+
+(defmethod kit.sdl2:render ((win sketch-window) &aux (sketch (%sketch win)))
+  (maybe-change-viewport sketch)
+  (with-sketch (sketch)
+    (with-gl-draw
+      (with-error-handling (sketch)
+        (unless (sketch-copy-pixels sketch)
+          (background (gray 0.4)))
+        (when (or (env-red-screen *env*)
+                  (not (sketch-%setup-called sketch)))
+          (setf (env-red-screen *env*) nil
+                (sketch-%setup-called sketch) t)
+          (with-stage :setup
+            (setup sketch)))
+        (with-stage :draw
+          (draw sketch))))))
 
 (defmethod kit.sdl2:render ((instance sketch))
   (kit.sdl2:render (sketch-%window instance)))
