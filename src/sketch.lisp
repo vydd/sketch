@@ -176,6 +176,30 @@
       (text (format nil "Error in ~A~%---~%~a~%---~%Click for restarts." where error) 20 20)))
   (setf (env-red-screen *env*) t))
 
+(defmethod on-error-handler ((sketch sketch) where error unwind-and-call-on-error)
+  (when (env-debug-key-pressed *env*)
+    (with-simple-restart (:red-screen "Show red screen")
+      (signal error)))
+  (funcall unwind-and-call-on-error))
+
+(defmacro with-error-handling ((sketch %stage) &body body)
+  (alexandria:with-gensyms (%error)
+    `(let (,%error)
+       (tagbody
+          (handler-bind ((error
+                           (lambda (e)
+                             (setf ,%error e)
+                             (on-error-handler ,sketch
+                                               ,%stage
+                                               ,%error
+                                               (lambda () (go :error))))))
+            ,@body
+            (go :end))
+        :error
+          (on-error ,sketch ,%stage ,%error)
+        :end
+          (setf (env-debug-key-pressed *env*) nil)))))
+
 (defun maybe-change-viewport (sketch)
   (with-slots (%env %viewport-changed width height) sketch
     (when %viewport-changed
@@ -189,27 +213,16 @@
     (with-gl-draw
       (unless (sketch-copy-pixels sketch)
         (background (gray 0.4)))
-      (let (where error)
-        (tagbody
-           (handler-bind ((error (lambda (e)
-                                   (setf error e)
-                                   (when (env-debug-key-pressed *env*)
-                                     (with-simple-restart (:red-screen "Show red screen")
-                                       (signal error)))
-                                   (go :error))))
-             (when (or (env-red-screen *env*)
-                       (not (sketch-%setup-called sketch)))
-               (setf (env-red-screen *env*) nil
-                     (sketch-%setup-called sketch) t
-                     where :setup)
-               (setup sketch))
-             (setf where :draw)
-             (draw sketch))
-           (go :end)
-         :error
-           (on-error sketch where error)
-         :end
-           (setf (env-debug-key-pressed *env*) nil))))))
+      (let (%stage)
+        (with-error-handling (sketch %stage)
+          (when (or (env-red-screen *env*)
+                    (not (sketch-%setup-called sketch)))
+            (setf (env-red-screen *env*) nil
+                  (sketch-%setup-called sketch) t
+                  %stage :setup)
+            (setup sketch))
+          (setf %stage :draw)
+          (draw sketch))))))
 
 (defmethod kit.sdl2:render ((instance sketch))
   (kit.sdl2:render (sketch-%window instance)))
