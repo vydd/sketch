@@ -152,6 +152,45 @@
   (setf (sketch-%setup-called instance) nil)
   (setf (slot-value instance '%entities) (make-hash-table)))
 
+;;; Error handling
+
+(defvar *%unwind-and-call-on-error-function*)
+(defmacro unwind-and-call-on-error () `(funcall *%unwind-and-call-on-error-function*))
+
+(defmethod on-error-handler ((sketch sketch) where error)
+  (when (env-debug-key-pressed *env*)
+    (with-simple-restart (:red-screen "Show red screen")
+      (signal error)))
+  (unwind-and-call-on-error))
+
+(defmethod on-error ((sketch sketch) where error)
+  (background (ecase where
+                (:setup (rgb 0.4 0.2 0.1))
+                (:draw (rgb 0.7 0 0))))
+  (with-font (make-error-font)
+    (with-identity-matrix
+      (text (format nil "Error in ~A~%---~%~a~%---~%Click for restarts." where error) 20 20)))
+  (setf (env-red-screen *env*) t))
+
+(defmacro with-error-handling ((sketch %stage) &body body)
+  (alexandria:with-gensyms (%error)
+    `(let (,%error)
+       (tagbody
+          (handler-bind ((error
+                           (lambda (e)
+                             (setf ,%error e)
+                             (let ((*%unwind-and-call-on-error-function*
+                                     (lambda () (go :error))))
+                               (on-error-handler ,sketch
+                                                 ,%stage
+                                                 ,%error)))))
+            ,@body
+            (go :end))
+        :error
+          (on-error ,sketch ,%stage ,%error)
+        :end
+          (setf (env-debug-key-pressed *env*) nil)))))
+
 ;;; Rendering
 
 (defmacro with-sketch ((sketch) &body body)
@@ -166,39 +205,6 @@
      (start-draw)
      ,@body
      (end-draw)))
-
-(defmethod on-error ((sketch sketch) where error)
-  (background (ecase where
-                (:setup (rgb 0.4 0.2 0.1))
-                (:draw (rgb 0.7 0 0))))
-  (with-font (make-error-font)
-    (with-identity-matrix
-      (text (format nil "Error in ~A~%---~%~a~%---~%Click for restarts." where error) 20 20)))
-  (setf (env-red-screen *env*) t))
-
-(defmethod on-error-handler ((sketch sketch) where error unwind-and-call-on-error)
-  (when (env-debug-key-pressed *env*)
-    (with-simple-restart (:red-screen "Show red screen")
-      (signal error)))
-  (funcall unwind-and-call-on-error))
-
-(defmacro with-error-handling ((sketch %stage) &body body)
-  (alexandria:with-gensyms (%error)
-    `(let (,%error)
-       (tagbody
-          (handler-bind ((error
-                           (lambda (e)
-                             (setf ,%error e)
-                             (on-error-handler ,sketch
-                                               ,%stage
-                                               ,%error
-                                               (lambda () (go :error))))))
-            ,@body
-            (go :end))
-        :error
-          (on-error ,sketch ,%stage ,%error)
-        :end
-          (setf (env-debug-key-pressed *env*) nil)))))
 
 (defun maybe-change-viewport (sketch)
   (with-slots (%env %viewport-changed width height) sketch
