@@ -108,8 +108,6 @@
 
 ;;; Keyboard
 
-(defconstant +scancode-prefix-length+ (length "scancode-"))
-
 (defmethod on-text (instance text))
 (defmethod on-key (instance key state))
 
@@ -129,9 +127,5 @@
 (defmethod kit.sdl2:keyboard-event :after ((instance sketch-window) state timestamp repeat-p keysym)
   (when (not repeat-p)
     (on-key (%sketch instance)
-            ;; Removing the ugly "SCANCODE-" prefix from the keyword
-            ;; symbol that denotes the button.
-            (intern (subseq (symbol-name (sdl2:scancode keysym))
-                            +scancode-prefix-length+)
-                    (find-package "KEYWORD"))
+            (without-sdl2-scancode-prefix keysym)
             state)))
