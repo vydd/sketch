@@ -105,6 +105,8 @@
            :pen-stroke
            :pen-fill
            :pen-weight
+           :pen-curve-steps
+           :pen-winding-rule
            :make-pen
            :set-pen
            :copy-pen
