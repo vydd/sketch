@@ -111,37 +111,34 @@
    :mag-filter mag-filter))
 
 (defun init-image-texture! (image surface &key (free-surface t)
-                                            (min-filter :linear)
-                                            (mag-filter :linear))
-  (if (delay-init-p)
-      (add-delayed-init-fun!
-       (lambda ()
-         (init-image-texture! image surface
-                              :free-surface free-surface
-                              :min-filter min-filter
-                              :mag-filter mag-filter)))
-      (let ((texture (car (gl:gen-textures 1)))
-            (rgba-surface
-              (if (eq (sdl2:surface-format-format surface) sdl2:+pixelformat-rgba32+)
-                  surface
-                  (sdl2:convert-surface-format surface sdl2:+pixelformat-rgba32+))))
-        (gl:bind-texture :texture-2d texture)
-        (gl:tex-parameter :texture-2d :texture-min-filter min-filter)
-        (gl:tex-parameter :texture-2d :texture-mag-filter mag-filter)
-        (gl:pixel-store :unpack-row-length (/ (sdl2:surface-pitch rgba-surface) 4))
-        (gl:tex-image-2d :texture-2d 0 :rgba
-                         (sdl2:surface-width rgba-surface)
-                         (sdl2:surface-height rgba-surface)
-                         0
-                         :rgba
-                         :unsigned-byte (sdl2:surface-pixels rgba-surface))
-        (gl:bind-texture :texture-2d 0)
-        (unless (eq rgba-surface surface) (sdl2:free-surface rgba-surface))
-        (when free-surface
-          (when (eq free-surface :font)
-            (tg:cancel-finalization surface))
-          (sdl2:free-surface surface))
-        (setf (image-texture image) texture))))
+                                               (min-filter :linear)
+                                               (mag-filter :linear))
+  (flet ((init ()
+           (let ((texture (car (gl:gen-textures 1)))
+                 (rgba-surface
+                   (if (eq (sdl2:surface-format-format surface) sdl2:+pixelformat-rgba32+)
+                       surface
+                       (sdl2:convert-surface-format surface sdl2:+pixelformat-rgba32+))))
+             (gl:bind-texture :texture-2d texture)
+             (gl:tex-parameter :texture-2d :texture-min-filter min-filter)
+             (gl:tex-parameter :texture-2d :texture-mag-filter mag-filter)
+             (gl:pixel-store :unpack-row-length (/ (sdl2:surface-pitch rgba-surface) 4))
+             (gl:tex-image-2d :texture-2d 0 :rgba
+                              (sdl2:surface-width rgba-surface)
+                              (sdl2:surface-height rgba-surface)
+                              0
+                              :rgba
+                              :unsigned-byte (sdl2:surface-pixels rgba-surface))
+             (gl:bind-texture :texture-2d 0)
+             (unless (eq rgba-surface surface) (sdl2:free-surface rgba-surface))
+             (when free-surface
+               (when (eq free-surface :font)
+                 (tg:cancel-finalization surface))
+               (sdl2:free-surface surface))
+             (setf (image-texture image) texture))))
+    (if (delay-init-p)
+        (add-delayed-init-fun! #'init)
+        (init))))
 
 (defun cut-surface (surface x y w h)
   (if (and x y w h)
