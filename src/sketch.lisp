@@ -41,7 +41,7 @@
    (resizable :initform nil :accessor sketch-resizable :initarg :resizable)
    (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :copy-pixels)
    (y-axis :initform :down :accessor sketch-y-axis :initarg :y-axis)
-   (close-on :initform :scancode-escape :accessor sketch-close-on :initarg :close-on)))
+   (close-on :initform :escape :accessor sketch-close-on :initarg :close-on)))
 
 (defclass sketch-window (kit.sdl2:gl-window)
   ((%sketch
@@ -249,12 +249,19 @@
       (initialize-view-matrix sketch)))
   (kit.sdl2:render instance))
 
-;;; Default events
+;;; Default events
+
+(defconstant +scancode-prefix-length+ (length "scancode-"))
+
+(defun without-sdl2-scancode-prefix (keysym)
+  (intern (subseq (symbol-name (sdl2:scancode keysym))
+                  +scancode-prefix-length+)
+          (find-package "KEYWORD")))
 
 (defmethod kit.sdl2:keyboard-event :before ((instance sketch) state timestamp repeatp keysym)
   (declare (ignorable timestamp repeatp))
   (alexandria:when-let (close-on (sketch-close-on instance))
-    (when (and (eql state :keyup) (sdl2:scancode= (sdl2:scancode-value keysym) close-on))
+    (when (and (eql state :keyup) (eq (without-sdl2-scancode-prefix keysym) close-on))
       (kit.sdl2:close-window instance))))
 
 (defmethod close-window :before ((instance sketch-window))
