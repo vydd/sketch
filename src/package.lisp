@@ -188,11 +188,16 @@
 
            ;; Controllers
            :on-click
-           :on-middle-click
-           :on-right-click
-           :on-press
-           :on-middle-press
-           :on-right-press
+           :on-mouse-button
+           :on-mouse-left
+           :on-mouse-middle
+           :on-mouse-right
+           :on-mouse-left-up
+           :on-mouse-left-down
+           :on-mouse-middle-up
+           :on-mouse-middle-down
+           :on-mouse-right-up
+           :on-mouse-right-down
            :on-hover
            :on-enter
            :on-leave

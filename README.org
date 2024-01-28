@@ -432,11 +432,12 @@ Images can be cropped using =(crop (image-resource image) x y w h)=, where =x= a
 Input is handled by defining implementations of the methods listed below. Currently, it is not possible to call drawing functions from these methods, though this can be worked around by saving the input somewhere and then doing the drawing from the sketch body, as demonstrated in the examples to follow.
 
 - =(on-click instance x y)= is called when there's a left click. =x= and =y= give the coordinates of the click.
-- =(on-middle-click instance x y)= and =(on-right-click instance x y)= for middle and right clicks.
-- =(on-click-press instance x y)=, =(on-middle-click-press instance x y)= and =(on-right-click-press instance x y)= are specifically called when the corresponding mouse button is initially pressed down.
+- =(on-mouse-button button state x y)= is called for left, middle and right mousebutton interactions. =button= can be one of =:left=, =:middle= and =:right=. =state= can be either =:up= or =:down=.
+- Depending on the value of =button=, this propagates to one of: =(on-mouse-left state x y)=, =(on-mouse-middle state x y)=, or =(on-mouse-right state x y)=.
+- These methods, in turn, propagate to =(on-mouse-left-up x y)=, =(on-mouse-right-down x y)=, =(on-mouse-right-down x y)=, ...
 - =(on-hover instance x y)= is called when the mouse moves, =x= and =y= give its coordinates.
 - =(on-text instance text)= is called when a single character is entered, =text= is a string consisting of just this character.
-- =(on-key instance key state)= is called when a key is pressed. =key= is a keyword symbol denoting which key was pressed/released (like =:space= or =:left=; for now, the names are based on SDL2 scancodes, see [[https://wiki.libsdl.org/SDL2/SDL_Scancode][here]] for the full list), and =state= is a keyword symbol denoting whether the key was pressed (=:keyup=) or released (=:keydown=).
+- =(on-key instance key state)= is called when a key is pressed. =key= is a keyword symbol denoting which key was pressed/released (like =:space= or =:left=; for now, the names are based on SDL2 scancodes, see [[https://wiki.libsdl.org/SDL2/SDL_Scancode][here]] for the full list), and =state= is a keyword symbol denoting whether the key was pressed (=:up=) or released (=:down=).
 
 In this example, we draw a new rectangle every time there is a click.
 
