@@ -431,7 +431,7 @@ Images can be cropped using =(crop (image-resource image) x y w h)=, where =x= a
 *** Input
 Input is handled by defining implementations of the methods listed below. Currently, it is not possible to call drawing functions from these methods, though this can be worked around by saving the input somewhere and then doing the drawing from the sketch body, as demonstrated in the examples to follow.
 
-- =(on-click instance x y)= is called when there's a left click. =x= and =y= give the coordinates of the click.
+- =(on-click instance x y)=, =(on-middle-click x y)= and =(on-right-click x y)= are called when there's a left, middle or right click. =x= and =y= give the coordinates of the click.
 - =(on-mouse-button button state x y)= is called for left, middle and right mousebutton interactions. =button= can be one of =:left=, =:middle= and =:right=. =state= can be either =:up= or =:down=.
 - Depending on the value of =button=, this propagates to one of: =(on-mouse-left state x y)=, =(on-mouse-middle state x y)=, or =(on-mouse-right state x y)=.
 - These methods, in turn, propagate to =(on-mouse-left-up x y)=, =(on-mouse-right-down x y)=, =(on-mouse-right-down x y)=, ...

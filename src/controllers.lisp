@@ -36,6 +36,8 @@ x & y are assumed to come last in the argument list."
            (call-next-method))))))
 
 (def-xy-event-method on-click (x y))
+(def-xy-event-method on-middle-click (x y))
+(def-xy-event-method on-right-click (x y))
 (def-xy-event-method on-mouse-button (button state x y))
 (def-xy-event-method on-mouse-left (state x y))
 (def-xy-event-method on-mouse-middle (state x y))
@@ -99,6 +101,10 @@ x & y are assumed to come last in the argument list."
 
 (defmethod on-mouse-left-up :after ((instance sketch) x y)
   (on-click instance x y))
+(defmethod on-mouse-middle-up :after ((instance sketch) x y)
+  (on-middle-click instance x y))
+(defmethod on-mouse-right-up :after ((instance sketch) x y)
+  (on-right-click instance x y))
 
 (defmethod kit.sdl2:mousemotion-event ((instance sketch-window) timestamp button-mask x y xrel yrel)
   ;; For backward compatibility.
