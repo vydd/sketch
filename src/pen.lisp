@@ -12,7 +12,9 @@
   (fill nil)
   (stroke nil)
   (weight 1)
-  (curve-steps 100))
+  (curve-steps 100)
+  (winding-rule :nonzero
+   :type (member :odd :nonzero :positive :negative :abs-geq-two)))
 
 (defmacro with-pen (pen &body body)
   (with-shorthand (pen make-pen)
@@ -33,7 +35,8 @@
             :stroke (pen-fill pen)
             :fill (pen-stroke pen)
             :weight (pen-weight pen)
-            :curve-steps (pen-curve-steps pen)))
+            :curve-steps (pen-curve-steps pen)
+            :winding-rule (pen-winding-rule pen)))
 
 (defun background (color)
   "Fills the sketch window with COLOR."

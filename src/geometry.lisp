@@ -71,9 +71,9 @@
 (defun triangulate (polygon)
   (let ((points (group polygon)))
     (apply #'append
-           (glu-tessellate:tessellate (make-array (length points)
-                                                  :initial-contents points)
-                                      :winding-rule :positive))))
+           (glu-tessellate:tessellate
+            (make-array (length points) :initial-contents points)
+            :winding-rule (pen-winding-rule (env-pen *env*))))))
 
 (defun bounding-box (vertices)
   (loop for (x y) in vertices
