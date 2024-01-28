@@ -61,8 +61,8 @@
 
 (defmacro define-sketch-writer (slot &body body)
   `(defmethod (setf ,(alexandria:symbolicate 'sketch- slot)) :after (value (instance sketch))
-     (when (sketch-%window instance)
-       (let ((win (kit.sdl2:sdl-window (sketch-%window instance))))
+     (alexandria:when-let (win (sketch-%window instance))
+       (let ((win (kit.sdl2:sdl-window win)))
          ,@body))))
 
 (define-sketch-writer title
