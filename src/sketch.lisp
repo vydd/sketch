@@ -40,7 +40,8 @@
    (fullscreen :initform nil :accessor sketch-fullscreen :initarg :fullscreen)
    (resizable :initform nil :accessor sketch-resizable :initarg :resizable)
    (copy-pixels :initform nil :accessor sketch-copy-pixels :initarg :copy-pixels)
-   (y-axis :initform :down :accessor sketch-y-axis :initarg :y-axis)))
+   (y-axis :initform :down :accessor sketch-y-axis :initarg :y-axis)
+   (close-on :initform :scancode-escape :accessor sketch-close-on :initarg :close-on)))
 
 (defclass sketch-window (kit.sdl2:gl-window)
   ((%sketch
@@ -250,11 +251,11 @@
 
 ;;; Default events
 
-(defmethod kit.sdl2:keyboard-event :before ((instance sketch-window) state timestamp repeatp keysym)
+(defmethod kit.sdl2:keyboard-event :before ((instance sketch) state timestamp repeatp keysym)
   (declare (ignorable timestamp repeatp))
-  (when (and (eql state :keyup)
-             (sdl2:scancode= (sdl2:scancode-value keysym) :scancode-escape))
-    (kit.sdl2:close-window instance)))
+  (alexandria:when-let (close-on (sketch-close-on instance))
+    (when (and (eql state :keyup) (sdl2:scancode= (sdl2:scancode-value keysym) close-on))
+      (kit.sdl2:close-window instance))))
 
 (defmethod close-window :before ((instance sketch-window))
   (with-environment (slot-value (%sketch instance) '%env)

@@ -23,6 +23,7 @@
            :sketch-resizable
            :sketch-copy-pixels
            :sketch-y-axis
+           :sketch-close-on
 
            :title
            :width
@@ -31,6 +32,7 @@
            :resizable
            :copy-pixels
            :y-axis
+           :close-on
 
            :*default-width*
            :*default-height*
