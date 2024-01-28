@@ -337,10 +337,6 @@
        (make-instances-obsolete ',sketch-name)
        (find-class ',sketch-name))))
 
-(defmacro sketch-slot-value (slot-name)
-  "For accessing the slots of a sketch wherever *sketch* is bound."
-  `(slot-value *sketch* ,slot-name))
-
 ;;; Control flow
 
 (defun stop-loop ()

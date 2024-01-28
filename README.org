@@ -585,7 +585,8 @@ If the mixin class has state that you need to access in the body of your sketch,
   (defclass mixin-with-state () ((name :initform "Ruth" :reader name)))
   (defsketch slot-example
       ((:mixins (mixin-with-state black-background)))
-    (text (format nil "Hi ~a!" (name *sketch*)) 100 100))
+    (with-font (make-font :color +white+)
+      (text (format nil "Hi ~a!" (name *sketch*)) 100 100)))
 #+END_SRC
 
 ** Made with Sketch
