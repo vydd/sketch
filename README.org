@@ -550,9 +550,9 @@ This can be used, for example, to draw a static sketch and then disable the draw
 Example: [[https://github.com/vydd/sketch/blob/master/examples/control-flow.lisp][control-flow.lisp]].
 
 *** Sharing behaviour between sketches
-Let's say you want all your sketches to have a black background, but you don't want to have to reimplement that feature every time. The answer is to use `defsketchx`, which is like `defsketch` but allows you to specify extra superclasses for your sketch class.
+Let's say you want all your sketches to have a black background, but you don't want to have to reimplement that feature every time. The answer is to implement the feature in a class, and then pass the name of that class to `defsketch` through the `:mixins` option.
 
-First, define a mixin class that implements the desired behaviour in the `draw` method (with the `:before` method specialiser):
+First, define a mixin class that implements the desired behaviour in the `draw` method (with the `:before` method specialiser, so that it doesn't override the behaviour of your sketches):
 
 #+BEGIN_SRC lisp
   (defclass black-background () ())
@@ -560,11 +560,12 @@ First, define a mixin class that implements the desired behaviour in the `draw` 
     (background +black+))
 #+END_SRC
 
-Then define your sketches using `defsketchx`:
+Then add the `:mixins` option to your `defsketch` bindings:
 
 #+BEGIN_SRC lisp
-  (defsketchx moon (black-background)
-      ((width 200)
+  (defsketch moon
+      ((:mixins (black-background))
+       (width 200)
        (height 200))
     (circle 100 100 50))
 #+END_SRC
@@ -576,6 +577,15 @@ And it should have a black background. Initialization/setup logic for `black-bac
     (format t "Initializing black background!"))
   (defmethod setup :before ((instance black-background) &key &allow-other-keys)
     (format t "Setting up black background!"))
+#+END_SRC
+
+If the mixin class has state that you need to access in the body of your sketch, then you can access it through `*sketch*`, which is bound to the currently active sketch. Example:
+
+#+BEGIN_SRC lisp
+  (defclass mixin-with-state () ((name :initform "Ruth" :reader name)))
+  (defsketch slot-example
+      ((:mixins (mixin-with-state black-background)))
+    (text (format nil "Hi ~a!" (name *sketch*)) 100 100))
 #+END_SRC
 
 ** Made with Sketch
