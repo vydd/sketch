@@ -308,11 +308,22 @@
                    collect `(,(binding-accessor b) *sketch*)
                    collect (binding-name b)))))
 
-(defmacro defsketchx (sketch-name superclasses binding-forms &body body)
-  (make-defsketch sketch-name superclasses binding-forms body))
-
 (defmacro defsketch (sketch-name binding-forms &body body)
-  (make-defsketch sketch-name (list) binding-forms body))
+  (multiple-value-bind (options binding-forms)
+      (extract-options binding-forms)
+    (make-defsketch sketch-name
+                    (getf options :mixins)
+                    binding-forms
+                    body)))
+
+(defun extract-options (binding-forms)
+  (let (options)
+    (loop while (and binding-forms (keywordp (caar binding-forms)))
+          do (progn
+               (push (cadar binding-forms) options)
+               (push (caar binding-forms) options)
+               (pop binding-forms)))
+    (values options binding-forms)))
 
 (defun make-defsketch (sketch-name superclasses binding-forms body)
   (let ((bindings (parse-bindings sketch-name binding-forms
