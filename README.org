@@ -8,7 +8,7 @@ Sketch is a Common Lisp environment for the creation of electronic art, visual d
 
 ** Installation
 
-Since April 2016, Sketch is available in [[https://www.quicklisp.org/beta/][Quicklisp]], Common Lisp's de facto package manager. This makes getting and running Sketch as easy as
+Sketch is available in [[https://www.quicklisp.org/beta/][Quicklisp]], Common Lisp's de facto package manager. This makes getting and running Sketch as easy as
 
 #+BEGIN_SRC lisp
 (ql:quickload :sketch)
@@ -75,14 +75,8 @@ If you are using SLIME, you won't be able to load or run Sketch if you start SWA
 
 If you did everything correctly, you should be able to =(ql:quickload :sketch)= and move on to the tutorial.
 
-**** If you are obtaining Sketch from this repository, instead of using Quicklisp releases
-Please make sure to also get the following libraries to your =local-projects= directory. This is not necessary otherwise.
-
-- [[https://github.com/lispgames/cl-sdl2]]
-- [[https://github.com/lispgames/sdl2kit]]
-
 *** Running provided examples
- To get a feel for what Sketch can do, and also to make sure that everything has been installed correctly, you can look at the examples. The code below will run all four currently provided examples at once. Note that on older machines running four sketches at once might result in a small degradation in performance, so you might want to run sketches separately.
+ To get a feel for what Sketch can do, and also to make sure that everything has been installed correctly, run the examples as follows.
 
 #+BEGIN_SRC lisp
 CL-USER> (ql:quickload :sketch-examples)
@@ -91,6 +85,8 @@ CL-USER> (make-instance 'sketch-examples:sinewave)
 CL-USER> (make-instance 'sketch-examples:brownian)
 CL-USER> (make-instance 'sketch-examples:life) ; Click to toggle cells,
                                                ; any key to toggle iteration
+CL-USER> (make-instance 'sketch-examples:input)
+CL-USER> (make-instance 'sketch-examples:stars)
 #+END_SRC
 
 *** Running example code from this page
@@ -104,14 +100,14 @@ TUTORIAL> ;; ready
 #+END_SRC
 
 ** Tutorial
-Defining sketches is done with the =DEFSKETCH= macro, that wraps =DEFCLASS=. Using =DEFCLASS= is still possible, but =DEFSKETCH= makes everything so much easier, and in these examples, we're going to pretend that's the only way.
+Defining sketches is done with the =DEFSKETCH= macro, which is essentially a wrapper for =DEFCLASS=.
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ())
   (make-instance 'tutorial)
 #+END_SRC
 
-If all goes well, this should give you an unremarkable gray window.
+If all goes well, this should give you an unremarkable gray window. From now on, assuming you're using Emacs + SLIME, or a similarly capable environment, you can just re-evaluate =(defsketch tutorial () <insert drawing code here>)= and the sketch will be restarted without you having to close the window or make another instance of the class.
 
 *** Shapes
 Let's draw something!
@@ -126,21 +122,20 @@ Let's draw something!
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
     (dotimes (i 10)
-      (rect (* i 40) (* i 40) 40 40)))
-#+END_SRC
-
-#+BEGIN_SRC lisp
-  (defsketch tutorial ()
-    (dotimes (i 10)
       (rect 0 (* i 40) (* (+ i 1) 40) 40)))
 #+END_SRC
 
+Something to note: drawing code doesn't need to go into a special function or method, or be explicitly binded to a sketch. =DEFSKETCH= is defined as =(defsketch sketch-name bindings &body body)=: that body, and any functions is calls to, is your drawing code. We will get to =BINDINGS= later. 
+
+Circles and ellipses are drawn with =(circle x y r)= and =(ellipse cx cy rx ry)=:
+
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
-    (dotimes (i 10)
-      (rect 0 (* i 40) (* (+ i 1) 40) 40))
-    (circle 300 100 50))
+    (circle 300 100 50)
+    (ellipse 200 200 100 50))
 #+END_SRC
+
+Lines with =(line x1 y1 x2 y2)=:
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
@@ -148,16 +143,23 @@ Let's draw something!
     (line 400 0 0 400))
 #+END_SRC
 
+Lines with an arbitrary number of segments with =polyline=:
+
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
     (polyline 100 100 200 150 300 100
               200 200 100 100))
 #+END_SRC
 
+Arbitrary polygons can be drawn using =(polygon x1 y1 x2 y2 ...)=, the winding rule (how the "inside parts" and "outside parts" are determined) is specified as a pen property (pens will be described in more detail later) and can be one of =(:odd :nonzero :positive :negative :abs-geq-two)=. By default, it's =:nonzero=.
+
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
-    (polygon 100 100 200 150 300 100 200 200))
+    (with-pen (make-pen :fill +blue+ :winding-rule :odd)
+      (polygon 100 100 200 150 300 100 200 200)))
 #+END_SRC
+
+To draw a regular polygon with =n= sides, call =(ngon n cx cy rx ry &optional (angle 0))=; =cx= and =cy= are the coordinates of the center of the shape, while =rx= and =ry= are height of an ellipse that the shape is inscribed inside.
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
@@ -165,37 +167,50 @@ Let's draw something!
       (ngon (+ i 3) (+ 50 (* i 100)) 200 20 20 (* i 20))))
 #+END_SRC
 
+Bezier curves with 4 control points are drawn with =(bezier x1 y1 bx1 by1 bx2 by2 x2 y2)=; =x1=, =y1=, =x2= and =y2= determine the start and end points.
+
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
     (bezier 0 400 100 100 300 100 400 400))
 #+END_SRC
 
+The resolution of a curve can be controlled with the pen property =:curve-steps=, for example:
+
+#+BEGIN_SRC lisp
+  (defsketch tutorial ()
+    (with-pen (make-pen :curve-steps 4 :stroke +white+)
+      (bezier 0 400 100 100 300 100 400 400)))
+#+END_SRC
+
 *** Colors
-Grayscale imagery is nice, but let's add color and make our sketch more vibrant. Assuming that you're using Emacs + SLIME, or a similarly capable environment, you can just re-evaluate with the following code:
+In the previous examples, you may have noticed how to draw a shape with a fill color. Let's now explore the color capabilities of Sketch in more detail. To draw a yellow background:
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
     (background +yellow+))
 #+END_SRC
 
-The window becomes yellow. There are a couple of things to note. Drawing code doesn't need to go into a special function or method, or be binded to a sketch explicitly. =DEFSKETCH= is defined as =(defsketch sketch-name bindings &body body)=: that body is your drawing code. We will get to =BINDINGS= later. The other thing is that Sketch comes with its own color library.
-
 **** Predefined colors
 There are constants for commonly used colors: =+RED+=, =+GREEN+=, =+BLUE+=, =+YELLOW+=, =+MAGENTA+=, =+CYAN+=, =+ORANGE+= =+WHITE+=, and =+BLACK+=.
 
 **** RGB, HSB, GRAY
-If you want to be more specific about the colors you want, you are welcome to use =(rgb red green blue &optional (alpha 1.0))=, =(hsb hue saturation brightness &optional (alpha 1.0))= or =(gray amount &optional (alpha 1.0))=. The arguments to these functions are values from 0 to 1. You can use these functions in the same way you just used =+YELLOW+=. Hopefully the function names and their arguments are self-explanatory, but if not, you can learn about the RGB color model [[https://en.wikipedia.org/wiki/RGB_color_model][here]] and about HSB (also called HSV) [[https://en.wikipedia.org/wiki/HSL_and_HSV][here]]. =(gray amount &optional (alpha 1.0))= is really just a convenient alias for =(rgb amount amount amount &optional (alpha 1.0))=, and can be used for brevity when a shade of gray needs to be defined.
+You can create other colors using =(rgb red green blue &optional (alpha 1.0))=, =(hsb hue saturation brightness &optional (alpha 1.0))= or =(gray amount &optional (alpha 1.0))=. The arguments to these functions are values from 0 to 1. =(gray amount &optional (alpha 1.0))= is really just a convenient alias for =(rgb amount amount amount &optional (alpha 1.0))=.
+
+More information:
+
+- [[https://en.wikipedia.org/wiki/RGB_color_model][RGB color model]]
+- [[https://en.wikipedia.org/wiki/HSL_and_HSV][HSB / HSV]]. 
 
 /This might be a good place to note that function names in Sketch use the American English spellings, like "gray" and "color". It's just a choice that needed to be made, in pursue of uniformity and good style./
+
+For a lighter yellow:
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
     (background (rgb 1 1 0.5)))
 #+END_SRC
 
-This will give you a lighter yellow.
-
-All functions have an additional, =ALPHA= parameter. It determines the amount of transparency that the color should have.
+All color functions have an additional =ALPHA= parameter that determines the transparency.
 
 **** RGB-255, HSB-360, GRAY-255
 Sometimes it's easier to think about color values in non-normalized ranges. That's why Sketch offers =RGB-255=, =HSB-360=, and =GRAY-255=.
@@ -206,16 +221,16 @@ This is how these functions map to their normalized variants.
 | (hsb-360 h s b a) | (hsb (/ h 360) (/ s 100) (/ b 100) (/ a 255)) |
 | (gray-255 g a)    | (gray (/ g 255) (/ a 255))                    |
 
-=HSB-360= is using different ranges, because hue is represented in degrees (0-360), and saturation and brightness are represented as percentages (0-100).
+=HSB-360= uses different ranges, because hue is represented in degrees (0-360), and saturation and brightness are represented as percentages (0-100).
 
 **** HEX-TO-COLOR
-If you are used to working with colors in hex, like in CSS, you can use =(hex-to-color string)=, where =STRING= is the color in one of the following formats: "4bc", "#4bc", "4bcdef", and "#4bcdef".
+If you are used to working with colors in hex, like in CSS, you can use =(hex-to-color string)=, where =STRING= is the color in one of the following formats: "4bc", "#4bc", "4bcdef", or "#4bcdef".
 
 **** Generating colors
 If you don't care about fiddling with the exact values, but still need different colors, you can use one of the following functions.
 
 ***** =(lerp-color (start-color end-color amount &key (mode :hsb)))=
-Lerping is a fancy way of saying [[https://en.wikipedia.org/wiki/Linear_interpolation][linear interpolation]]. This function takes the starting color and the ending color, and returns the color between them, which is an =AMOUNT= away from the starting color. When =AMOUNT= equals zero, the returned color equals the starting color, and when =AMOUNT= equals one, the ending color is returned. Amounts between zero and one give colors that are "in-between". These colors are calculated according to the specified =MODE=, which is =:HSB= by default, meaning that the resulting color's hue is between the starting and ending hue, as is the case with its saturation and brightness.
+Lerp is a shorthand for [[https://en.wikipedia.org/wiki/Linear_interpolation][linear interpolation]]. This function takes the starting color and the ending color, and returns the color between them, which is an =AMOUNT= away from the starting color. When =AMOUNT= equals zero, the returned color equals the starting color, and when =AMOUNT= equals one, the ending color is returned. Amounts between zero and one give colors that are "in-between". These colors are calculated according to the specified =MODE=, which is =:HSB= by default, meaning that the resulting color's hue is between the starting and ending hue, as is the case with its saturation and brightness.
 
 #+BEGIN_SRC lisp
   (defsketch lerp-test ((title "lerp-color") (width 400) (height 100))
@@ -225,7 +240,7 @@ Lerping is a fancy way of saying [[https://en.wikipedia.org/wiki/Linear_interpol
 #+END_SRC
 
 ***** =(random-color (&optional (alpha 1.0)))=
-Returns a random color. You probably don't want to use this, because much of the returned colors are either too dark, or too light. You do get to choose the =ALPHA= value, though.
+Returns a random color. You probably don't want to use this, because many of the returned colors will be either too dark, or too light. You do get to choose the =ALPHA= value, though.
 
 #+BEGIN_SRC lisp
   (defparameter *colors* (loop for i below 16 collect (random-color)))
@@ -412,6 +427,19 @@ Use =(text text-string x y &optional width height)= to draw text, where =x= and 
   (defsketch text-test
      ((title "Hello, world!"))
    (text title 0 0 100))
+#+END_SRC
+
+The font can be specified using `(make-font &key face color size line-height align)` and the `with-font` macro:
+
+#+BEGIN_SRC lisp
+  (defsketch text-test
+     ((title "Hello, world!"))
+   (with-font (make-font :color +white+
+                         :font (load-resource "/path/to/font.ttf")
+                         :size 12
+                         :line-height 20
+                         :align :right) ; :left by default, can also be :center
+     (text title 0 0 100)))
 #+END_SRC
 
 *** Images
