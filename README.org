@@ -8,27 +8,35 @@ Sketch is a Common Lisp environment for the creation of electronic art, visual d
 
 ** Installation
 
-Sketch is available in [[https://www.quicklisp.org/beta/][Quicklisp]], Common Lisp's de facto package manager. This makes getting and running Sketch as easy as
+Sketch is available through [[https://www.quicklisp.org/beta/][Quicklisp]], Common Lisp's de facto package manager. From your REPL, run:
 
 #+BEGIN_SRC lisp
 (ql:quickload :sketch)
 #+END_SRC
 
-To make Sketch run correctly, though, a few requirements must be met.
+To make Sketch run correctly, however, a few requirements must be met.
 
 *** Requirements
 **** Common Lisp Implementation
-Sketch should be compatible with all major Common Lisp implementations and all major operating systems - more specifically, all CL implementations and operating systems that [[https://github.com/lispgames/cl-sdl2][cl-sdl2]] runs on. Incompatibility with any of those is considered a bug.
+Sketch should be compatible with all major Common Lisp implementations and all major operating systems - more specifically, all CL implementations and operating systems that [[https://github.com/lispgames/cl-sdl2][cl-sdl2]] runs on. Incompatibility with any of these is considered a bug.
 
 Sketch is known to work with:
 
 - CCL 1.11 on Mac OS X El Capitan
+- CCL 1.12.1 on MacOS 13.1 ([steps](https://github.com/vydd/sketch/issues/67))
 - CCL SVN 1.12.dev.r16617 on Arch Linux
 - CCL 1.11 on Windows 10 64bit
 - SBCL on Debian Unstable
 - SBCL 1.2.16 on Arch Linux
 - SBCL 1.3.1 on Linux Mint 17
 - SBCL 1.3.6 on Windows 10 64bit
+
+Workarounds, or extra steps, may be required on some systems:
+
+- Arch Linux, [issue](https://github.com/vydd/sketch/issues/16).
+- OpenSuse, [issue](https://github.com/vydd/sketch/issues/17).
+- CCL on OSX: Make sure to use the 64-bit version of CCL ([issue](https://github.com/vydd/sketch/issues/23)).
+- Quickload fails with libffi error, [issue](https://github.com/vydd/sketch/issues/47).
 
 Sketch is known to *not* work with:
 
@@ -100,7 +108,7 @@ TUTORIAL> ;; ready
 #+END_SRC
 
 ** Tutorial
-Defining sketches is done with the =DEFSKETCH= macro, which is essentially a wrapper for =DEFCLASS=.
+Defining sketches is done with the =defsketch= macro, which is essentially a wrapper for =defclass=.
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ())
@@ -110,7 +118,7 @@ Defining sketches is done with the =DEFSKETCH= macro, which is essentially a wra
 If all goes well, this should give you an unremarkable gray window. From now on, assuming you're using Emacs + SLIME, or a similarly capable environment, you can just re-evaluate =(defsketch tutorial () <insert drawing code here>)= and the sketch will be restarted without you having to close the window or make another instance of the class.
 
 *** Shapes
-Let's draw something!
+Let's draw something! Drawing code goes inside the body of =defsketch=.
 
 =(rect x y w h)= draws a rectangle where =x= and =y= specify the top-left corner of the rectangle, and =w= and =h= are the width and height. By default, the origin (0, 0) is at the top-left corner of the drawing area, and the positive y direction is facing down.
 
@@ -180,6 +188,25 @@ The resolution of a curve can be controlled with the pen property =:curve-steps=
   (defsketch tutorial ()
     (with-pen (make-pen :curve-steps 4 :stroke +white+)
       (bezier 0 400 100 100 300 100 400 400)))
+#+END_SRC
+
+*** Configuring your sketch
+The first form in =defsketch= after the name of your sketch, and before the body, is a list of bindings that will be available in the sketch body. This is also where a number of configuration options can be set:
+
+- =title= (string): window title.
+- =width= and =height= (in pixels): window dimensions, 400 x 400 by default.
+- =fullscreen= (=t= or =nil=): whether window is fullscreen.
+- =resizable= (=t= or =nil=): whether window is resizable.
+- =copy-pixels= (=t= or =nil=): if true, the screen is not cleared before each drawing loop.
+- =y-axis= (=down= or =up=): =down= by default. Determines both the location of the origin and the positive direction of the y-axis. =down= means (0,0) is in the top-left corner and greater values of =y= move down the screen. =up= means (0,0) is in the bottom-left corner and greater =y= values go up.
+- =close-on= (a keyword symbol denoting a key, or =nil=: a shortcut for closing the sketch window, =:escape= by default. Set to =nil= to disable. The key names (e.g. =:space=, =:g=) are based on SDL2 scancodes, see [[https://wiki.libsdl.org/SDL2/SDL_Scancode][here]].
+
+#+BEGIN_SRC lisp
+  (defsketch tutorial
+      ((radius 10)
+       (resizable t)
+       (width 200))
+    (circle (/ width 2) (/ radius 2) radius))
 #+END_SRC
 
 *** Colors
@@ -429,18 +456,20 @@ Use =(text text-string x y &optional width height)= to draw text, where =x= and 
    (text title 0 0 100))
 #+END_SRC
 
-The font can be specified using `(make-font &key face color size line-height align)` and the `with-font` macro:
+The font can be specified using =(make-font &key face color size line-height align)= and the =with-font= macro.
 
 #+BEGIN_SRC lisp
   (defsketch text-test
-     ((title "Hello, world!"))
+     ((title (format nil "Hello, world!~%Next line"))
    (with-font (make-font :color +white+
-                         :font (load-resource "/path/to/font.ttf")
+                         :face (load-resource "/path/to/font.ttf")
                          :size 12
-                         :line-height 20
-                         :align :right) ; :left by default, can also be :center
+                         :line-height 1
+                         :align :left)
      (text title 0 0 100)))
 #+END_SRC
+
+=align= can be =:left=, =:centre= or =:right=, and determines whether the x & y coordinates correspond to the left end, centre, or right end of the text box. =line-height= determines the vertical space given to a line of text, scaled according to the font size, i.e. =:line-height 1= leaves just enough space so that the text on two lines won't overlap.
 
 *** Images
 First =(load-resource filename ...)= to load the image from a given file, then =(draw image &key x y width height)= to draw the image with its top-left corner at =(x, y)= and with the given =width= and =height=. If not provided, default =(x,y)= is =(0,0)= and =width= & =height= are taken from the image.
@@ -454,7 +483,7 @@ First =(load-resource filename ...)= to load the image from a given file, then =
 
 Note that =load-resource= automatically caches the resource when it is called inside a valid sketch environment (i.e. inside the defsketch's body), so it is not inefficient to call it in every loop. It is important to release resources using =sketch::free-resource=; this is done automatically for resources in the sketch environment when the sketch window is closed. Finally, to avoid caching and to reload the resource every time, the parameter =:force-reload-p= can be passed to =load-resource=.
 
-Images can be cropped using =(crop (image-resource image) x y w h)=, where =x= and =y= indicate the top-left corner of the cropping rectangle and =w= and =h= indicate the width & height. Image flipping can be accomplished by using negative =w= and =h= values.
+Images can be cropped using =(crop image x y w h)=, where =x= and =y= indicate the top-left corner of the cropping rectangle and =w= and =h= indicate the width & height. Image flipping can be accomplished by using negative =w= and =h= values.
 
 *** Input
 Input is handled by defining implementations of the methods listed below. Currently, it is not possible to call drawing functions from these methods, though this can be worked around by saving the input somewhere and then doing the drawing from the sketch body, as demonstrated in the examples to follow.
@@ -582,51 +611,7 @@ Example: [[https://github.com/vydd/sketch/blob/master/examples/control-flow.lisp
 - [[https://vydd.itch.io/qelt][QELT]]
 - [[https://github.com/sjl/coding-math][sjl's implementation of coding math videos]]
 - [[https://github.com/bufferswap/crawler2][Visual examples for axion's crawler2 library]]
-
-** FAQ
-*** I'm trying to compile my defsketch definition, but it keeps telling me that :TITLE (or :WIDTH, :HEIGHT, etc.) is not of the expected type LIST. Why is this happening?
-You're probably trying to use the old way of defining sketches - =(defsketch name window-parameters slot-bindings &body body)=. =DEFSKETCH= has been changed to =(defsketch name bindings &body body)=. It's still possible to define the title and other window parameters, though.
-
-Example:
-
-#+BEGIN_SRC lisp
-  (defsketch foo (:title "Foo" :width 400)
-      ((a 3))
-    (rect 100 100 200 200))
-
-  ;;; Becomes
-
-  (defsketch foo
-      ((title "Foo")
-       (width 400)
-       (a 3))
-    (rect 100 100 200 200))
-#+END_SRC
-
-For more, read about "Bindings" in the tutorial above.
+- [[https://github.com/Kevinpgalligan/sketches]][[Generative art and other experiments by Kevin.]]
 
 ** Outro
-For everything else, read the code or ask vydd at #lispgames.
-
-Go make something pretty!
-
-** License
-
-Copyright (c) 2015-2023 Danilo Vidovic (vydd) and contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is furnished
-to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+For everything else, read the code or ask vydd at #lispgames. Go make something pretty!
