@@ -23,8 +23,9 @@ are set to the width & height of the image if not provided."
   (draw image-resource :x x :y y :width width :height height))
 
 (defmethod crop ((image-resource image) x y w h)
-  "Generate a cropped image resource from IMAGE-RESOURCE, limiting how much of the image is drawn
-   to the rect of X,Y,W,H, which are all in pixel values."
+  "Generate a cropped image resource from IMAGE-RESOURCE, limiting how much
+of the image is drawn to the rect of X,Y,W,H, which are all in pixel values, and
+X & Y are relative to the image."
   (cropped-image-from-image image-resource x y w h))
 
 (defun save-png (pathname)
