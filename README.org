@@ -228,7 +228,7 @@ More information:
 - [[https://en.wikipedia.org/wiki/RGB_color_model][RGB color model]]
 - [[https://en.wikipedia.org/wiki/HSL_and_HSV][HSB / HSV]]. 
 
-/This might be a good place to note that function names in Sketch use the American English spellings, like "gray" and "color". It's just a choice that needed to be made, in pursue of uniformity and good style./
+/This might be a good place to note that function names in Sketch use the American English spellings, like "gray" and "color". It's just a choice that needed to be made, in pursuit of uniformity and good style./
 
 For a lighter yellow:
 
