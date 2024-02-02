@@ -23,7 +23,7 @@ Sketch should be compatible with all major Common Lisp implementations and all m
 Sketch is known to work with:
 
 - CCL 1.11 on Mac OS X El Capitan
-- CCL 1.12.1 on MacOS 13.1 ([steps](https://github.com/vydd/sketch/issues/67))
+- CCL 1.12.1 on MacOS 13.1 ([[https://github.com/vydd/sketch/issues/67][steps]])
 - CCL SVN 1.12.dev.r16617 on Arch Linux
 - CCL 1.11 on Windows 10 64bit
 - SBCL on Debian Unstable
@@ -33,10 +33,10 @@ Sketch is known to work with:
 
 Workarounds, or extra steps, may be required on some systems:
 
-- Arch Linux, [issue](https://github.com/vydd/sketch/issues/16).
-- OpenSuse, [issue](https://github.com/vydd/sketch/issues/17).
-- CCL on OSX: Make sure to use the 64-bit version of CCL ([issue](https://github.com/vydd/sketch/issues/23)).
-- Quickload fails with libffi error, [issue](https://github.com/vydd/sketch/issues/47).
+- Arch Linux, [[https://github.com/vydd/sketch/issues/16][issue]].
+- OpenSuse, [[https://github.com/vydd/sketch/issues/17][issue]].
+- CCL on OSX: Make sure to use the 64-bit version of CCL ([[https://github.com/vydd/sketch/issues/23][issue]]).
+- Quickload fails with libffi error, [[https://github.com/vydd/sketch/issues/47][issue]].
 
 Sketch is known to *not* work with:
 
@@ -133,7 +133,7 @@ Let's draw something! Drawing code goes inside the body of =defsketch=.
       (rect 0 (* i 40) (* (+ i 1) 40) 40)))
 #+END_SRC
 
-Something to note: drawing code doesn't need to go into a special function or method, or be explicitly binded to a sketch. =DEFSKETCH= is defined as =(defsketch sketch-name bindings &body body)=: that body, and any functions is calls to, is your drawing code. We will get to =BINDINGS= later. 
+Something to note: drawing code doesn't need to go into a special function or method, or be explicitly binded to a sketch. =defsketch= is defined as =(defsketch sketch-name bindings &body body)=: that body, and any functions it calls to, is your drawing code. We will get to =bindings= later. 
 
 Circles and ellipses are drawn with =(circle x y r)= and =(ellipse cx cy rx ry)=:
 
@@ -198,8 +198,8 @@ The first form in =defsketch= after the name of your sketch, and before the body
 - =fullscreen= (=t= or =nil=): whether window is fullscreen.
 - =resizable= (=t= or =nil=): whether window is resizable.
 - =copy-pixels= (=t= or =nil=): if true, the screen is not cleared before each drawing loop.
-- =y-axis= (=down= or =up=): =down= by default. Determines both the location of the origin and the positive direction of the y-axis. =down= means (0,0) is in the top-left corner and greater values of =y= move down the screen. =up= means (0,0) is in the bottom-left corner and greater =y= values go up.
-- =close-on= (a keyword symbol denoting a key, or =nil=: a shortcut for closing the sketch window, =:escape= by default. Set to =nil= to disable. The key names (e.g. =:space=, =:g=) are based on SDL2 scancodes, see [[https://wiki.libsdl.org/SDL2/SDL_Scancode][here]].
+- =y-axis= (=:down= or =:up=): =:down= by default. Determines both the location of the origin and the positive direction of the y-axis. =:down= means (0,0) is in the top-left corner and greater values of =y= move down the screen. =:up= means (0,0) is in the bottom-left corner and greater =y= values go up.
+- =close-on= (a keyword symbol denoting a key, or =nil= to disable): a shortcut for closing the sketch window, =:escape= by default. Set to =nil= to disable. The key names (e.g. =:space=, =:g=) are based on SDL2 scancodes, see [[https://wiki.libsdl.org/SDL2/SDL_Scancode][here]].
 
 #+BEGIN_SRC lisp
   (defsketch tutorial
@@ -483,7 +483,7 @@ First =(load-resource filename ...)= to load the image from a given file, then =
 
 Note that =load-resource= automatically caches the resource when it is called inside a valid sketch environment (i.e. inside the defsketch's body), so it is not inefficient to call it in every loop. It is important to release resources using =sketch::free-resource=; this is done automatically for resources in the sketch environment when the sketch window is closed. Finally, to avoid caching and to reload the resource every time, the parameter =:force-reload-p= can be passed to =load-resource=.
 
-Images can be cropped using =(crop image x y w h)=, where =x= and =y= indicate the top-left corner of the cropping rectangle and =w= and =h= indicate the width & height. Image flipping can be accomplished by using negative =w= and =h= values.
+Images can be cropped using =(crop image x y w h)=, where =x= and =y= indicate the top-left corner of the cropping rectangle (relative to the top-left corner of the image) and =w= and =h= indicate the width & height. Image flipping can be accomplished by using negative =w= and =h= values.
 
 *** Input
 Input is handled by defining implementations of the methods listed below. Currently, it is not possible to call drawing functions from these methods, though this can be worked around by saving the input somewhere and then doing the drawing from the sketch body, as demonstrated in the examples to follow.
@@ -611,7 +611,7 @@ Example: [[https://github.com/vydd/sketch/blob/master/examples/control-flow.lisp
 - [[https://vydd.itch.io/qelt][QELT]]
 - [[https://github.com/sjl/coding-math][sjl's implementation of coding math videos]]
 - [[https://github.com/bufferswap/crawler2][Visual examples for axion's crawler2 library]]
-- [[https://github.com/Kevinpgalligan/sketches]][[Generative art and other experiments by Kevin.]]
+- [[https://github.com/Kevinpgalligan/sketches][Generative art and other experiments by Kevin.]]
 
 ** Outro
 For everything else, read the code or ask vydd at #lispgames. Go make something pretty!
