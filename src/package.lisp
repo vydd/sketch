@@ -15,7 +15,9 @@
            :draw
 
            :defsketch
+           :*sketch*
 
+           :sketch-slot-value
            :sketch-title
            :sketch-width
            :sketch-height
