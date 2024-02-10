@@ -23,6 +23,7 @@
            :sketch-resizable
            :sketch-copy-pixels
            :sketch-y-axis
+           :sketch-close-on
 
            :title
            :width
@@ -31,6 +32,7 @@
            :resizable
            :copy-pixels
            :y-axis
+           :close-on
 
            :*default-width*
            :*default-height*
@@ -103,6 +105,8 @@
            :pen-stroke
            :pen-fill
            :pen-weight
+           :pen-curve-steps
+           :pen-winding-rule
            :make-pen
            :set-pen
            :copy-pen
@@ -184,11 +188,16 @@
 
            ;; Controllers
            :on-click
-           :on-middle-click
-           :on-right-click
-           :on-press
-           :on-middle-press
-           :on-right-press
+           :on-mouse-button
+           :on-mouse-left
+           :on-mouse-middle
+           :on-mouse-right
+           :on-mouse-left-up
+           :on-mouse-left-down
+           :on-mouse-middle-up
+           :on-mouse-middle-down
+           :on-mouse-right-up
+           :on-mouse-right-down
            :on-hover
            :on-enter
            :on-leave

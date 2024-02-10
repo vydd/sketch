@@ -39,27 +39,27 @@
     (gl:tex-image-2d :texture-2d 0 :rgba 1 1 0 :bgra :unsigned-byte #(255 255 255 255))
     texture))
 
-(defun initialize-environment (w)
-  (with-slots ((env %env) width height y-axis) w
+(defun initialize-environment (sketch)
+  (with-slots ((env %env) width height y-axis) sketch
     (setf (env-programs env) (kit.gl.shader:compile-shader-dictionary 'sketch-programs)
           (env-vao env) (make-instance 'kit.gl.vao:vao :type 'sketch-vao)
           (env-white-pixel-texture env) (make-white-pixel-texture)
           (env-white-color-vector env) #(255 255 255 255)
           (env-pen env) (make-default-pen)
           (env-font env) (make-default-font))
-    (initialize-view-matrix w)
+    (initialize-view-matrix sketch)
     (kit.gl.shader:use-program (env-programs env) :fill-shader)))
 
-(defun initialize-view-matrix (w)
-  (with-slots ((env %env) width height y-axis %viewport-changed) w
+(defun initialize-view-matrix (sketch)
+  (with-slots ((env %env) width height y-axis %viewport-changed) sketch
     (setf (env-view-matrix env) (if (eq y-axis :down)
                                     (kit.glm:ortho-matrix 0 width height 0 -1 1)
                                     (kit.glm:ortho-matrix 0 width 0 height -1 1))
           (env-y-axis-sgn env) (if (eq y-axis :down) +1 -1)
           %viewport-changed t)))
 
-(defun initialize-gl (w)
-  (with-slots ((env %env) width height) w
+(defun initialize-gl (sketch)
+  (with-slots ((w %window)) sketch
     (handler-case (sdl2:gl-set-swap-interval 1)
       ;; Some OpenGL drivers do not allow to control swapping.
       ;; In this case SDL2 sets an error that needs to be cleared.
@@ -71,17 +71,9 @@
     (gl:blend-func :src-alpha :one-minus-src-alpha)
     (gl:hint :line-smooth-hint :nicest)
     (gl:hint :polygon-smooth-hint :nicest)
-    (gl:clear-color 0.0 1.0 0.0 1.0)
+    (gl:clear-color 0.0 0.0 0.0 1.0)
     (gl:clear :color-buffer :depth-buffer)
     (gl:flush)))
-
-(defun debug-mode-p ()
-  (and (env-red-screen *env*)
-       (env-debug-key-pressed *env*)))
-
-(defun exit-debug-mode ()
-  (setf (env-red-screen *env*) nil
-        (env-debug-key-pressed *env*) nil))
 
 (defmacro with-environment (env &body body)
   `(let ((*env* ,env))

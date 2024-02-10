@@ -8,27 +8,35 @@ Sketch is a Common Lisp environment for the creation of electronic art, visual d
 
 ** Installation
 
-Since April 2016, Sketch is available in [[https://www.quicklisp.org/beta/][Quicklisp]], Common Lisp's de facto package manager. This makes getting and running Sketch as easy as
+Sketch is available through [[https://www.quicklisp.org/beta/][Quicklisp]], Common Lisp's de facto package manager. From your REPL, run:
 
 #+BEGIN_SRC lisp
 (ql:quickload :sketch)
 #+END_SRC
 
-To make Sketch run correctly, though, a few requirements must be met.
+To make Sketch run correctly, however, a few requirements must be met.
 
 *** Requirements
 **** Common Lisp Implementation
-Sketch should be compatible with all major Common Lisp implementations and all major operating systems - more specifically, all CL implementations and operating systems that [[https://github.com/lispgames/cl-sdl2][cl-sdl2]] runs on. Incompatibility with any of those is considered a bug.
+Sketch should be compatible with all major Common Lisp implementations and all major operating systems - more specifically, all CL implementations and operating systems that [[https://github.com/lispgames/cl-sdl2][cl-sdl2]] runs on. Incompatibility with any of these is considered a bug.
 
 Sketch is known to work with:
 
 - CCL 1.11 on Mac OS X El Capitan
+- CCL 1.12.1 on MacOS 13.1 ([[https://github.com/vydd/sketch/issues/67][steps]])
 - CCL SVN 1.12.dev.r16617 on Arch Linux
 - CCL 1.11 on Windows 10 64bit
 - SBCL on Debian Unstable
 - SBCL 1.2.16 on Arch Linux
 - SBCL 1.3.1 on Linux Mint 17
 - SBCL 1.3.6 on Windows 10 64bit
+
+Workarounds, or extra steps, may be required on some systems:
+
+- Arch Linux, [[https://github.com/vydd/sketch/issues/16][issue]].
+- OpenSuse, [[https://github.com/vydd/sketch/issues/17][issue]].
+- CCL on OSX: Make sure to use the 64-bit version of CCL ([[https://github.com/vydd/sketch/issues/23][issue]]).
+- Quickload fails with libffi error, [[https://github.com/vydd/sketch/issues/47][issue]].
 
 Sketch is known to *not* work with:
 
@@ -75,14 +83,8 @@ If you are using SLIME, you won't be able to load or run Sketch if you start SWA
 
 If you did everything correctly, you should be able to =(ql:quickload :sketch)= and move on to the tutorial.
 
-**** If you are obtaining Sketch from this repository, instead of using Quicklisp releases
-Please make sure to also get the following libraries to your =local-projects= directory. This is not necessary otherwise.
-
-- [[https://github.com/lispgames/cl-sdl2]]
-- [[https://github.com/lispgames/sdl2kit]]
-
 *** Running provided examples
- To get a feel for what Sketch can do, and also to make sure that everything has been installed correctly, you can look at the examples. The code below will run all four currently provided examples at once. Note that on older machines running four sketches at once might result in a small degradation in performance, so you might want to run sketches separately.
+ To get a feel for what Sketch can do, and also to make sure that everything has been installed correctly, run the examples as follows.
 
 #+BEGIN_SRC lisp
 CL-USER> (ql:quickload :sketch-examples)
@@ -91,6 +93,8 @@ CL-USER> (make-instance 'sketch-examples:sinewave)
 CL-USER> (make-instance 'sketch-examples:brownian)
 CL-USER> (make-instance 'sketch-examples:life) ; Click to toggle cells,
                                                ; any key to toggle iteration
+CL-USER> (make-instance 'sketch-examples:input)
+CL-USER> (make-instance 'sketch-examples:stars)
 #+END_SRC
 
 *** Running example code from this page
@@ -104,17 +108,17 @@ TUTORIAL> ;; ready
 #+END_SRC
 
 ** Tutorial
-Defining sketches is done with the =DEFSKETCH= macro, that wraps =DEFCLASS=. Using =DEFCLASS= is still possible, but =DEFSKETCH= makes everything so much easier, and in these examples, we're going to pretend that's the only way.
+Defining sketches is done with the =defsketch= macro, which is essentially a wrapper for =defclass=.
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ())
   (make-instance 'tutorial)
 #+END_SRC
 
-If all goes well, this should give you an unremarkable gray window.
+If all goes well, this should give you an unremarkable gray window. From now on, assuming you're using Emacs + SLIME, or a similarly capable environment, you can just re-evaluate =(defsketch tutorial () <insert drawing code here>)= and the sketch will be restarted without you having to close the window or make another instance of the class.
 
 *** Shapes
-Let's draw something!
+Let's draw something! Drawing code goes inside the body of =defsketch=.
 
 =(rect x y w h)= draws a rectangle where =x= and =y= specify the top-left corner of the rectangle, and =w= and =h= are the width and height. By default, the origin (0, 0) is at the top-left corner of the drawing area, and the positive y direction is facing down.
 
@@ -126,21 +130,20 @@ Let's draw something!
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
     (dotimes (i 10)
-      (rect (* i 40) (* i 40) 40 40)))
-#+END_SRC
-
-#+BEGIN_SRC lisp
-  (defsketch tutorial ()
-    (dotimes (i 10)
       (rect 0 (* i 40) (* (+ i 1) 40) 40)))
 #+END_SRC
 
+Something to note: drawing code doesn't need to go into a special function or method, or be explicitly binded to a sketch. =defsketch= is defined as =(defsketch sketch-name bindings &body body)=: that body, and any functions it calls to, is your drawing code. We will get to =bindings= later. 
+
+Circles and ellipses are drawn with =(circle x y r)= and =(ellipse cx cy rx ry)=:
+
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
-    (dotimes (i 10)
-      (rect 0 (* i 40) (* (+ i 1) 40) 40))
-    (circle 300 100 50))
+    (circle 300 100 50)
+    (ellipse 200 200 100 50))
 #+END_SRC
+
+Lines with =(line x1 y1 x2 y2)=:
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
@@ -148,16 +151,23 @@ Let's draw something!
     (line 400 0 0 400))
 #+END_SRC
 
+Lines with an arbitrary number of segments with =polyline=:
+
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
     (polyline 100 100 200 150 300 100
               200 200 100 100))
 #+END_SRC
 
+Arbitrary polygons can be drawn using =(polygon x1 y1 x2 y2 ...)=, the winding rule (how the "inside parts" and "outside parts" are determined) is specified as a pen property (pens will be described in more detail later) and can be one of =(:odd :nonzero :positive :negative :abs-geq-two)=. By default, it's =:nonzero=.
+
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
-    (polygon 100 100 200 150 300 100 200 200))
+    (with-pen (make-pen :fill +blue+ :winding-rule :odd)
+      (polygon 100 100 200 150 300 100 200 200)))
 #+END_SRC
+
+To draw a regular polygon with =n= sides, call =(ngon n cx cy rx ry &optional (angle 0))=; =cx= and =cy= are the coordinates of the center of the shape, while =rx= and =ry= are height of an ellipse that the shape is inscribed inside.
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
@@ -165,37 +175,69 @@ Let's draw something!
       (ngon (+ i 3) (+ 50 (* i 100)) 200 20 20 (* i 20))))
 #+END_SRC
 
+Bezier curves with 4 control points are drawn with =(bezier x1 y1 bx1 by1 bx2 by2 x2 y2)=; =x1=, =y1=, =x2= and =y2= determine the start and end points.
+
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
     (bezier 0 400 100 100 300 100 400 400))
 #+END_SRC
 
+The resolution of a curve can be controlled with the pen property =:curve-steps=, for example:
+
+#+BEGIN_SRC lisp
+  (defsketch tutorial ()
+    (with-pen (make-pen :curve-steps 4 :stroke +white+)
+      (bezier 0 400 100 100 300 100 400 400)))
+#+END_SRC
+
+*** Configuring your sketch
+The first form in =defsketch= after the name of your sketch, and before the body, is a list of bindings that will be available in the sketch body. This is also where a number of configuration options can be set:
+
+- =title= (string): window title.
+- =width= and =height= (in pixels): window dimensions, 400 x 400 by default.
+- =fullscreen= (=t= or =nil=): whether window is fullscreen.
+- =resizable= (=t= or =nil=): whether window is resizable.
+- =copy-pixels= (=t= or =nil=): if true, the screen is not cleared before each drawing loop.
+- =y-axis= (=:down= or =:up=): =:down= by default. Determines both the location of the origin and the positive direction of the y-axis. =:down= means (0,0) is in the top-left corner and greater values of =y= move down the screen. =:up= means (0,0) is in the bottom-left corner and greater =y= values go up.
+- =close-on= (a keyword symbol denoting a key, or =nil= to disable): a shortcut for closing the sketch window, =:escape= by default. Set to =nil= to disable. The key names (e.g. =:space=, =:g=) are based on SDL2 scancodes, see [[https://wiki.libsdl.org/SDL2/SDL_Scancode][here]].
+
+#+BEGIN_SRC lisp
+  (defsketch tutorial
+      ((radius 10)
+       (resizable t)
+       (width 200))
+    (circle (/ width 2) (/ radius 2) radius))
+#+END_SRC
+
 *** Colors
-Grayscale imagery is nice, but let's add color and make our sketch more vibrant. Assuming that you're using Emacs + SLIME, or a similarly capable environment, you can just re-evaluate with the following code:
+In the previous examples, you may have noticed how to draw a shape with a fill color. Let's now explore the color capabilities of Sketch in more detail. To draw a yellow background:
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
     (background +yellow+))
 #+END_SRC
 
-The window becomes yellow. There are a couple of things to note. Drawing code doesn't need to go into a special function or method, or be binded to a sketch explicitly. =DEFSKETCH= is defined as =(defsketch sketch-name bindings &body body)=: that body is your drawing code. We will get to =BINDINGS= later. The other thing is that Sketch comes with its own color library.
-
 **** Predefined colors
 There are constants for commonly used colors: =+RED+=, =+GREEN+=, =+BLUE+=, =+YELLOW+=, =+MAGENTA+=, =+CYAN+=, =+ORANGE+= =+WHITE+=, and =+BLACK+=.
 
 **** RGB, HSB, GRAY
-If you want to be more specific about the colors you want, you are welcome to use =(rgb red green blue &optional (alpha 1.0))=, =(hsb hue saturation brightness &optional (alpha 1.0))= or =(gray amount &optional (alpha 1.0))=. The arguments to these functions are values from 0 to 1. You can use these functions in the same way you just used =+YELLOW+=. Hopefully the function names and their arguments are self-explanatory, but if not, you can learn about the RGB color model [[https://en.wikipedia.org/wiki/RGB_color_model][here]] and about HSB (also called HSV) [[https://en.wikipedia.org/wiki/HSL_and_HSV][here]]. =(gray amount &optional (alpha 1.0))= is really just a convenient alias for =(rgb amount amount amount &optional (alpha 1.0))=, and can be used for brevity when a shade of gray needs to be defined.
+You can create other colors using =(rgb red green blue &optional (alpha 1.0))=, =(hsb hue saturation brightness &optional (alpha 1.0))= or =(gray amount &optional (alpha 1.0))=. The arguments to these functions are values from 0 to 1. =(gray amount &optional (alpha 1.0))= is really just a convenient alias for =(rgb amount amount amount &optional (alpha 1.0))=.
 
-/This might be a good place to note that function names in Sketch use the American English spellings, like "gray" and "color". It's just a choice that needed to be made, in pursue of uniformity and good style./
+More information:
+
+- [[https://en.wikipedia.org/wiki/RGB_color_model][RGB color model]]
+- [[https://en.wikipedia.org/wiki/HSL_and_HSV][HSB / HSV]]. 
+
+/This might be a good place to note that function names in Sketch use the American English spellings, like "gray" and "color". It's just a choice that needed to be made, in pursuit of uniformity and good style./
+
+For a lighter yellow:
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ()
     (background (rgb 1 1 0.5)))
 #+END_SRC
 
-This will give you a lighter yellow.
-
-All functions have an additional, =ALPHA= parameter. It determines the amount of transparency that the color should have.
+All color functions have an additional =ALPHA= parameter that determines the transparency.
 
 **** RGB-255, HSB-360, GRAY-255
 Sometimes it's easier to think about color values in non-normalized ranges. That's why Sketch offers =RGB-255=, =HSB-360=, and =GRAY-255=.
@@ -206,16 +248,16 @@ This is how these functions map to their normalized variants.
 | (hsb-360 h s b a) | (hsb (/ h 360) (/ s 100) (/ b 100) (/ a 255)) |
 | (gray-255 g a)    | (gray (/ g 255) (/ a 255))                    |
 
-=HSB-360= is using different ranges, because hue is represented in degrees (0-360), and saturation and brightness are represented as percentages (0-100).
+=HSB-360= uses different ranges, because hue is represented in degrees (0-360), and saturation and brightness are represented as percentages (0-100).
 
 **** HEX-TO-COLOR
-If you are used to working with colors in hex, like in CSS, you can use =(hex-to-color string)=, where =STRING= is the color in one of the following formats: "4bc", "#4bc", "4bcdef", and "#4bcdef".
+If you are used to working with colors in hex, like in CSS, you can use =(hex-to-color string)=, where =STRING= is the color in one of the following formats: "4bc", "#4bc", "4bcdef", or "#4bcdef".
 
 **** Generating colors
 If you don't care about fiddling with the exact values, but still need different colors, you can use one of the following functions.
 
 ***** =(lerp-color (start-color end-color amount &key (mode :hsb)))=
-Lerping is a fancy way of saying [[https://en.wikipedia.org/wiki/Linear_interpolation][linear interpolation]]. This function takes the starting color and the ending color, and returns the color between them, which is an =AMOUNT= away from the starting color. When =AMOUNT= equals zero, the returned color equals the starting color, and when =AMOUNT= equals one, the ending color is returned. Amounts between zero and one give colors that are "in-between". These colors are calculated according to the specified =MODE=, which is =:HSB= by default, meaning that the resulting color's hue is between the starting and ending hue, as is the case with its saturation and brightness.
+Lerp is a shorthand for [[https://en.wikipedia.org/wiki/Linear_interpolation][linear interpolation]]. This function takes the starting color and the ending color, and returns the color between them, which is an =AMOUNT= away from the starting color. When =AMOUNT= equals zero, the returned color equals the starting color, and when =AMOUNT= equals one, the ending color is returned. Amounts between zero and one give colors that are "in-between". These colors are calculated according to the specified =MODE=, which is =:HSB= by default, meaning that the resulting color's hue is between the starting and ending hue, as is the case with its saturation and brightness.
 
 #+BEGIN_SRC lisp
   (defsketch lerp-test ((title "lerp-color") (width 400) (height 100))
@@ -225,7 +267,7 @@ Lerping is a fancy way of saying [[https://en.wikipedia.org/wiki/Linear_interpol
 #+END_SRC
 
 ***** =(random-color (&optional (alpha 1.0)))=
-Returns a random color. You probably don't want to use this, because much of the returned colors are either too dark, or too light. You do get to choose the =ALPHA= value, though.
+Returns a random color. You probably don't want to use this, because many of the returned colors will be either too dark, or too light. You do get to choose the =ALPHA= value, though.
 
 #+BEGIN_SRC lisp
   (defparameter *colors* (loop for i below 16 collect (random-color)))
@@ -414,6 +456,21 @@ Use =(text text-string x y &optional width height)= to draw text, where =x= and 
    (text title 0 0 100))
 #+END_SRC
 
+The font can be specified using =(make-font &key face color size line-height align)= and the =with-font= macro.
+
+#+BEGIN_SRC lisp
+  (defsketch text-test
+     ((title (format nil "Hello, world!~%Next line"))
+   (with-font (make-font :color +white+
+                         :face (load-resource "/path/to/font.ttf")
+                         :size 12
+                         :line-height 1
+                         :align :left)
+     (text title 0 0 100)))
+#+END_SRC
+
+=align= can be =:left=, =:centre= or =:right=, and determines whether the x & y coordinates correspond to the left end, centre, or right end of the text box. =line-height= determines the vertical space given to a line of text, scaled according to the font size, i.e. =:line-height 1= leaves just enough space so that the text on two lines won't overlap.
+
 *** Images
 First =(load-resource filename ...)= to load the image from a given file, then =(draw image &key x y width height)= to draw the image with its top-left corner at =(x, y)= and with the given =width= and =height=. If not provided, default =(x,y)= is =(0,0)= and =width= & =height= are taken from the image.
 
@@ -426,17 +483,18 @@ First =(load-resource filename ...)= to load the image from a given file, then =
 
 Note that =load-resource= automatically caches the resource when it is called inside a valid sketch environment (i.e. inside the defsketch's body), so it is not inefficient to call it in every loop. It is important to release resources using =sketch::free-resource=; this is done automatically for resources in the sketch environment when the sketch window is closed. Finally, to avoid caching and to reload the resource every time, the parameter =:force-reload-p= can be passed to =load-resource=.
 
-Images can be cropped using =(crop (image-resource image) x y w h)=, where =x= and =y= indicate the top-left corner of the cropping rectangle and =w= and =h= indicate the width & height. Image flipping can be accomplished by using negative =w= and =h= values.
+Images can be cropped using =(crop image x y w h)=, where =x= and =y= indicate the top-left corner of the cropping rectangle (relative to the top-left corner of the image) and =w= and =h= indicate the width & height. Image flipping can be accomplished by using negative =w= and =h= values.
 
 *** Input
 Input is handled by defining implementations of the methods listed below. Currently, it is not possible to call drawing functions from these methods, though this can be worked around by saving the input somewhere and then doing the drawing from the sketch body, as demonstrated in the examples to follow.
 
-- =(on-click instance x y)= is called when there's a left click. =x= and =y= give the coordinates of the click.
-- =(on-middle-click instance x y)= and =(on-right-click instance x y)= for middle and right clicks.
-- =(on-click-press instance x y)=, =(on-middle-click-press instance x y)= and =(on-right-click-press instance x y)= are specifically called when the corresponding mouse button is initially pressed down.
+- =(on-click instance x y)=, =(on-middle-click x y)= and =(on-right-click x y)= are called when there's a left, middle or right click. =x= and =y= give the coordinates of the click.
+- =(on-mouse-button button state x y)= is called for left, middle and right mousebutton interactions. =button= can be one of =:left=, =:middle= and =:right=. =state= can be either =:up= or =:down=.
+- Depending on the value of =button=, this propagates to one of: =(on-mouse-left state x y)=, =(on-mouse-middle state x y)=, or =(on-mouse-right state x y)=.
+- These methods, in turn, propagate to =(on-mouse-left-up x y)=, =(on-mouse-right-down x y)=, =(on-mouse-right-down x y)=, ...
 - =(on-hover instance x y)= is called when the mouse moves, =x= and =y= give its coordinates.
 - =(on-text instance text)= is called when a single character is entered, =text= is a string consisting of just this character.
-- =(on-key instance key state)= is called when a key is pressed. =key= is a keyword symbol denoting which key was pressed/released (like =:space= or =:left=; for now, the names are based on SDL2 scancodes, see [[https://wiki.libsdl.org/SDL2/SDL_Scancode][here]] for the full list), and =state= is a keyword symbol denoting whether the key was pressed (=:keyup=) or released (=:keydown=).
+- =(on-key instance key state)= is called when a key is pressed. =key= is a keyword symbol denoting which key was pressed/released (like =:space= or =:left=; for now, the names are based on SDL2 scancodes, see [[https://wiki.libsdl.org/SDL2/SDL_Scancode][here]] for the full list), and =state= is a keyword symbol denoting whether the key was pressed (=:up=) or released (=:down=).
 
 In this example, we draw a new rectangle every time there is a click.
 
@@ -553,51 +611,7 @@ Example: [[https://github.com/vydd/sketch/blob/master/examples/control-flow.lisp
 - [[https://vydd.itch.io/qelt][QELT]]
 - [[https://github.com/sjl/coding-math][sjl's implementation of coding math videos]]
 - [[https://github.com/bufferswap/crawler2][Visual examples for axion's crawler2 library]]
-
-** FAQ
-*** I'm trying to compile my defsketch definition, but it keeps telling me that :TITLE (or :WIDTH, :HEIGHT, etc.) is not of the expected type LIST. Why is this happening?
-You're probably trying to use the old way of defining sketches - =(defsketch name window-parameters slot-bindings &body body)=. =DEFSKETCH= has been changed to =(defsketch name bindings &body body)=. It's still possible to define the title and other window parameters, though.
-
-Example:
-
-#+BEGIN_SRC lisp
-  (defsketch foo (:title "Foo" :width 400)
-      ((a 3))
-    (rect 100 100 200 200))
-
-  ;;; Becomes
-
-  (defsketch foo
-      ((title "Foo")
-       (width 400)
-       (a 3))
-    (rect 100 100 200 200))
-#+END_SRC
-
-For more, read about "Bindings" in the tutorial above.
+- [[https://github.com/Kevinpgalligan/sketches][Generative art and other experiments by Kevin.]]
 
 ** Outro
-For everything else, read the code or ask vydd at #lispgames.
-
-Go make something pretty!
-
-** License
-
-Copyright (c) 2015-2023 Danilo Vidovic (vydd) and contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is furnished
-to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+For everything else, read the code or ask vydd at #lispgames. Go make something pretty!
