@@ -8,6 +8,10 @@
 ;;;   | | |  _ <  / ___ \| |\  |___) |  _|| |_| |  _ <| |  | |___) |
 ;;;   |_| |_| \_\/_/   \_\_| \_|____/|_|   \___/|_| \_\_|  |_|____/
 
+(add-to-environment :model-matrix (sb-cga:identity-matrix))
+(add-to-environment :view-matrix nil)
+(add-to-environment :matrix-stack nil)
+
 (defun set-matrix (matrix)
   (setf (env-model-matrix *env*) matrix))
 

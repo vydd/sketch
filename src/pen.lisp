@@ -8,6 +8,8 @@
 ;;; |  __/| |___| |\  |
 ;;; |_|   |_____|_| \_|
 
+(add-to-environment :pen (make-default-pen))
+
 (defstruct pen
   (fill nil)
   (stroke nil)
@@ -16,17 +18,11 @@
   (winding-rule :nonzero
    :type (member :odd :nonzero :positive :negative :abs-geq-two)))
 
-(defmacro with-pen (pen &body body)
-  (with-shorthand (pen make-pen)
-    (alexandria:with-gensyms (previous-pen)
-      `(let ((,previous-pen (env-pen *env*)))
-         (unwind-protect (progn
-                           (setf (env-pen *env*) ,pen)
-                           ,@body)
-           (setf (env-pen *env*) ,previous-pen))))))
+(let ((pen))
+  (defun make-default-pen ()
+    (setf pen (or pen (make-pen :weight 1 :fill +white+ :stroke +black+)))))
 
 (defun set-pen (pen)
-  "Sets environment pen to PEN."
   (setf (env-pen *env*) pen))
 
 (defun flip-pen (pen)
@@ -38,14 +34,11 @@
             :curve-steps (pen-curve-steps pen)
             :winding-rule (pen-winding-rule pen)))
 
-(defun background (color)
-  "Fills the sketch window with COLOR."
-  (apply #'gl:clear-color (color-rgba color))
-  (gl:clear :color-buffer))
-
-(let ((pen))
-  (defun make-default-pen ()
-    (setf pen (or pen
-                  (make-pen :weight 1
-                            :fill +white+
-                            :stroke +black+)))))
+(defmacro with-pen (pen &body body)
+  (with-shorthand (pen make-pen)
+    (alexandria:with-gensyms (previous-pen)
+      `(let ((,previous-pen (env-pen *env*)))
+         (unwind-protect (progn
+                           (setf (env-pen *env*) ,pen)
+                           ,@body)
+           (setf (env-pen *env*) ,previous-pen))))))

@@ -8,6 +8,11 @@
 ;;;  ___) |  _  |/ ___ \| |_| | |___|  _ < ___) |
 ;;; |____/|_| |_/_/   \_\____/|_____|_| \_\____/
 
+(add-to-environment :programs           ; TODO: should probably be PROGRAM - this is for compat
+  (let ((programs (kit.gl.shader:compile-shader-dictionary 'sketch-programs)))
+    (kit.gl.shader:use-program programs :fill-shader)
+    programs))
+
 (kit.gl.shader:defdict sketch-programs ()
   (kit.gl.shader:program :fill-shader (:view-m :model-m :texid)
                          (:vertex-shader "

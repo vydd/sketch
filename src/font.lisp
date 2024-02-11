@@ -8,6 +8,8 @@
 ;;; |  _|| |_| | |\  | | |
 ;;; |_|   \___/|_| \_| |_|
 
+(add-to-environment :font (make-default-font))
+
 (defclass font (resource)
   ((face :accessor font-face :initarg :face)
    (color :accessor font-color :initarg :color)
@@ -16,7 +18,7 @@
    (align :accessor font-align :initarg :align :initform :left)))
 
 (defun make-font (&key face color size line-height align)
-  (let* ((*env* (or *env* (make-env))))
+  (let* ((*env* (or *env* (make-fake-env))))
     (make-instance 'font
                    :face (or face
                              (font-face (or (env-font *env*)

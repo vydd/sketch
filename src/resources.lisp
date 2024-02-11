@@ -8,6 +8,8 @@
 ;;; |  _ <| |___ ___) | |_| | |_| |  _ <| |___| |___ ___) |
 ;;; |_| \_\_____|____/ \___/ \___/|_| \_\\____|_____|____/
 
+(add-to-environment :resources (make-hash-table))
+
 ;;; Classes
 
 (defclass resource () ())
@@ -55,7 +57,7 @@
       (subseq name (1+ pos)))))
 
 (defun load-resource (filename &rest all-keys &key type force-reload-p &allow-other-keys)
-  (let ((*env* (or *env* (make-env)))) ;; try faking env if we still don't have one
+  (let ((*env* (or *env* (make-fake-env)))) ;; try faking env if we still don't have one
     (symbol-macrolet ((resource (gethash key (env-resources *env*))))
       (alexandria:remove-from-plistf all-keys :force-reload-p)
       (let* ((key (alexandria:make-keyword

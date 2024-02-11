@@ -16,7 +16,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; Sketch class
+(add-to-environment :debug-key-pressed nil)
+(add-to-environment :red-screen nil)
+(add-to-environment :y-axis-sgn +1)
+
+ ;;; Sketch class
 
 (defparameter *sketch* nil
   "The current sketch instance.")
@@ -27,7 +31,7 @@
   "The default height of sketch window")
 
 (defclass sketch ()
-  ((%env :initform (make-env) :reader sketch-%env)
+  ((%env :initform nil :reader sketch-%env)
    (%setup-called :initform nil :accessor sketch-%setup-called)
    (%viewport-changed :initform t)
    (%entities :initform (make-hash-table) :accessor sketch-%entities)
@@ -138,13 +142,31 @@
                        :fullscreen (sketch-fullscreen instance)
                        :resizable (sketch-resizable instance)
                        :sketch instance))
-  (initialize-environment instance)
+  (setf (slot-value instance '%env) (make-env))
+  (initialize-view-matrix instance)
   (initialize-gl instance)
   ;; These will have been added in the call to PREPARE.
   (with-slots ((fs %delayed-init-funs)) instance
     (loop for f across fs
           do (funcall f))
     (setf fs (make-array 0 :adjustable t :fill-pointer t))))
+
+(defun initialize-gl (sketch)
+  (with-slots ((w %window)) sketch
+    (handler-case (sdl2:gl-set-swap-interval 1)
+      ;; Some OpenGL drivers do not allow to control swapping.
+      ;; In this case SDL2 sets an error that needs to be cleared.
+      (sdl2::sdl-rc-error (e)
+        (warn "VSYNC was not enabled; frame rate was not restricted to 60fps.~%  ~A" e)
+        (sdl2-ffi.functions:sdl-clear-error)))
+    (setf (kit.sdl2:idle-render w) t)
+    (gl:enable :blend :line-smooth :polygon-smooth)
+    (gl:blend-func :src-alpha :one-minus-src-alpha)
+    (gl:hint :line-smooth-hint :nicest)
+    (gl:hint :polygon-smooth-hint :nicest)
+    (gl:clear-color 0.0 0.0 0.0 1.0)
+    (gl:clear :color-buffer :depth-buffer)
+    (gl:flush)))
 
 (defmethod update-instance-for-redefined-class :after
     ((instance sketch) added-slots discarded-slots property-list &rest initargs)
@@ -238,6 +260,15 @@
 
 (defmethod kit.sdl2:render ((instance sketch))
   (kit.sdl2:render (sketch-%window instance)))
+
+;;; TODO: Would be great to move it to transforms.
+(defun initialize-view-matrix (sketch)
+  (with-slots ((env %env) width height y-axis %viewport-changed) sketch
+    (setf (env-view-matrix env) (if (eq y-axis :down)
+                                    (kit.glm:ortho-matrix 0 width height 0 -1 1)
+                                    (kit.glm:ortho-matrix 0 width 0 height -1 1))
+          (env-y-axis-sgn env) (if (eq y-axis :down) +1 -1)
+          %viewport-changed t)))
 
 ;;; Support for resizable windows
 
