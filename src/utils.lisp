@@ -94,10 +94,6 @@ but may be considered unique for all practical purposes."
       path
       (format nil "~a" (asdf:system-relative-pathname system path))))
 
-(defun surface-format (surface)
-  (plus-c:c-let ((surface sdl2-ffi:sdl-surface :from surface))
-    (surface :format :format)))
-
 (defmacro with-shorthand ((var maker) &body body)
   `(let ((,var (if (and (listp ,var) (keywordp (car ,var)))
                  (cons ',maker ,var)

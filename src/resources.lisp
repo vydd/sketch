@@ -155,6 +155,10 @@
         dst-surface)
       surface))
 
+(defun surface-format (surface)
+  (plus-c:c-let ((surface sdl2-ffi:sdl-surface :from surface))
+    (surface :format :format)))
+
 (defmethod load-typed-resource (filename (type (eql :typeface))
                                 &key (size 18) &allow-other-keys)
   (make-instance 'typeface
