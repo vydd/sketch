@@ -148,3 +148,25 @@
              (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 1)) (aref color 1)
              (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 2)) (aref color 2)
              (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 3)) (aref color 3))))
+
+(defun save-png (pathname)
+  (let ((width (sketch-width *sketch*))
+        (height (sketch-height *sketch*)))
+    (flet ((ptr (vec offset)
+             (static-vectors:static-vector-pointer vec :offset offset))
+           (from (row col width)
+             (+ col (* row (* 4 width))))
+           (to (row col width height)
+             (+ col (* (- height row 1) 4 width))))
+      (static-vectors:with-static-vector (buffer (* 4 width height))
+        (%gl:read-pixels 0 0 width height :rgba :unsigned-byte (ptr buffer 0))
+        (dotimes (row (truncate height 2))
+          (dotimes (col (* 4 width))
+            (rotatef (cffi:mem-aref (ptr buffer (from row col width)) :uint8)
+                     (cffi:mem-aref (ptr buffer (to row col width height)) :uint8))))
+        (let ((png (make-instance 'zpng:png
+                                  :width width
+                                  :height height
+                                  :color-type :truecolor-alpha
+                                  :image-data buffer)))
+          (zpng:write-png png pathname))))))
