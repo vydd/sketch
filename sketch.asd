@@ -40,6 +40,7 @@
                (:file "shaders")
                (:file "drawing")
                (:file "sketch")
+               (:file "window")
                (:file "entities") ; depends on sketch
                (:file "figures")
                (:file "controllers")

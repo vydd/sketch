@@ -60,10 +60,10 @@ x & y are assumed to come last in the argument list."
       (on-enter entity))
     (call-next-method)))
 
-(defmethod kit.sdl2:mousebutton-event ((instance sketch-window) state timestamp button x y)
+(defmethod kit.sdl2:mousebutton-event ((instance window) state timestamp button x y)
   ;; For backward compatibility.
-  (kit.sdl2:mousebutton-event (%sketch instance) state timestamp button x y)
-  (on-mouse-button (%sketch instance)
+  (kit.sdl2:mousebutton-event (window-sketch instance) state timestamp button x y)
+  (on-mouse-button (window-sketch instance)
                    (translate-sdl2-button button)
                    (translate-sdl2-button-state state)
                    x
@@ -106,10 +106,10 @@ x & y are assumed to come last in the argument list."
 (defmethod on-mouse-right-up :after ((instance sketch) x y)
   (on-right-click instance x y))
 
-(defmethod kit.sdl2:mousemotion-event ((instance sketch-window) timestamp button-mask x y xrel yrel)
+(defmethod kit.sdl2:mousemotion-event ((instance window) timestamp button-mask x y xrel yrel)
   ;; For backward compatibility.
-  (kit.sdl2:mousemotion-event (%sketch instance) timestamp button-mask x y xrel yrel)
-  (with-slots ((sketch %sketch)) instance
+  (kit.sdl2:mousemotion-event (window-sketch instance) timestamp button-mask x y xrel yrel)
+  (let ((sketch (window-sketch instance)))
     (on-hover sketch x y)
     (unless
         (loop for entity being the hash-key of (sketch-%entities sketch)
@@ -122,7 +122,7 @@ x & y are assumed to come last in the argument list."
         (on-leave *current-entity*)
         (setf *current-entity* nil)))))
 
-(defmethod kit.sdl2:mousemotion-event :after ((instance sketch-window)
+(defmethod kit.sdl2:mousemotion-event :after ((instance window)
                                               timestamp button-mask x y xrel yrel)
   (out :mouse (cons x y)
        :mouse-x x
@@ -131,15 +131,15 @@ x & y are assumed to come last in the argument list."
        :mouse-xrel xrel
        :mouse-yrel yrel))
 
-(defmethod kit.sdl2:mousewheel-event :after ((instance sketch-window)
+(defmethod kit.sdl2:mousewheel-event :after ((instance window)
                                              timestamp x y)
   (out :mouse-wheel (cons x y)
        :mouse-wheel-x x
        :mouse-wheel-y y))
 
-(defmethod kit.sdl2:mousebutton-event :after ((instance sketch-window)
+(defmethod kit.sdl2:mousebutton-event :after ((instance window)
                                               state timestamp button x y)
-  (with-slots (%env) (%sketch instance)
+  (with-slots (%env) (window-sketch instance)
     (when (env-red-screen %env)
       (when (eq state :mousebuttonup)
         (setf (env-debug-key-pressed %env) t)))))
@@ -159,12 +159,12 @@ x & y are assumed to come last in the argument list."
     (let ((*draw-mode* nil))
       (call-next-method))))
 
-(defmethod kit.sdl2:textinput-event :after ((instance sketch-window) timestamp text)
-  (on-text (%sketch instance) text))
+(defmethod kit.sdl2:textinput-event :after ((instance window) timestamp text)
+  (on-text (window-sketch instance) text))
 
-(defmethod kit.sdl2:keyboard-event :after ((instance sketch-window) state timestamp repeat-p keysym)
+(defmethod kit.sdl2:keyboard-event :after ((instance window) state timestamp repeat-p keysym)
   (when (not repeat-p)
-    (on-key (%sketch instance)
+    (on-key (window-sketch instance)
             (without-sdl2-scancode-prefix keysym)
             (translate-sdl2-key-state state))))
 
