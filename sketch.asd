@@ -40,7 +40,10 @@
                (:file "shaders")
                (:file "drawing")
                (:file "sketch")
-               (:file "window")
+               (:module "backend"
+                        :depends-on ("package")
+                        :serial t
+                        :components ((:file "window")))
                (:file "entities") ; depends on sketch
                (:file "figures")
                (:file "controllers")

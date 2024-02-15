@@ -11,7 +11,8 @@
 (defclass window (kit.sdl2:gl-window)
   ((sketch :initarg :sketch :accessor window-sketch
            :documentation "The sketch associated with this window.")
-   (closing :initform nil :accessor window-closing)))
+   (closing :initform nil :accessor window-closing)
+   (viewport-changed :initform t :accessor window-viewport-changed)))
 
 ;; Make sure that the rendering is always enabled.
 
@@ -147,6 +148,22 @@
 
 (defmethod kit.sdl2:render ((instance sketch))
   (kit.sdl2:render (sketch-window instance)))
+
+(defun maybe-change-viewport (sketch &aux (window (sketch-window sketch)))
+  (with-slots (%env width height) sketch
+    (when (window-viewport-changed window)
+      (kit.gl.shader:uniform-matrix (env-programs %env) :view-m 4 (vector (env-view-matrix %env)))
+      (gl:viewport 0 0 width height)
+      (setf (window-viewport-changed window) nil))))
+
+;;; TODO: Would be great to move it to transforms.
+(defun initialize-view-matrix (sketch &aux (window (sketch-window sketch)))
+  (with-slots ((env %env) width height y-axis) sketch
+    (setf (env-view-matrix env) (if (eq y-axis :down)
+                                    (kit.glm:ortho-matrix 0 width height 0 -1 1)
+                                    (kit.glm:ortho-matrix 0 width 0 height -1 1))
+          (env-y-axis-sgn env) (if (eq y-axis :down) +1 -1)
+          (window-viewport-changed window) t)))
 
 ;;; Control flow
 

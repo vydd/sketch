@@ -33,7 +33,6 @@
 (defclass sketch ()
   ((%env :initform nil :reader sketch-%env)
    (%setup-called :initform nil :accessor sketch-%setup-called)
-   (%viewport-changed :initform t)
    (%entities :initform (make-hash-table) :accessor sketch-%entities)
    (%delayed-init-funs :initform (make-array 0 :adjustable t :fill-pointer t)
                        :accessor sketch-%delayed-init-funs)
@@ -151,23 +150,6 @@
      (start-draw)
      ,@body
      (end-draw)))
-
-(defun maybe-change-viewport (sketch)
-  (with-slots (%env %viewport-changed width height) sketch
-    (when %viewport-changed
-      (kit.gl.shader:uniform-matrix (env-programs %env) :view-m 4 (vector (env-view-matrix %env)))
-      (gl:viewport 0 0 width height)
-      (setf %viewport-changed nil))))
-
-
-;;; TODO: Would be great to move it to transforms.
-(defun initialize-view-matrix (sketch)
-  (with-slots ((env %env) width height y-axis %viewport-changed) sketch
-    (setf (env-view-matrix env) (if (eq y-axis :down)
-                                    (kit.glm:ortho-matrix 0 width height 0 -1 1)
-                                    (kit.glm:ortho-matrix 0 width 0 height -1 1))
-          (env-y-axis-sgn env) (if (eq y-axis :down) +1 -1)
-          %viewport-changed t)))
 
 ;;; Default events
 
