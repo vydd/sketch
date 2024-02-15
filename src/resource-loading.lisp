@@ -32,14 +32,14 @@
         (when (not resource)
           (setf resource
                 (apply #'load-typed-resource
-                       (list*  filename
-                               (or type
-                                   (case (alexandria:make-keyword
-                                          (alexandria:symbolicate
-                                           (string-upcase (file-name-extension filename))))
-                                     ((:png :jpg :jpeg :tga :gif :bmp) :image)
-                                     ((:ttf :otf) :typeface)))
-                               all-keys))))
+                       (list* filename
+                              (or type
+                                  (case (alexandria:make-keyword
+                                         (alexandria:symbolicate
+                                          (string-upcase (file-name-extension filename))))
+                                    ((:png :jpg :jpeg :tga :gif :bmp) :image)
+                                    ((:ttf :otf) :typeface)))
+                              all-keys))))
         resource))))
 
 (defgeneric load-typed-resource (filename type &key &allow-other-keys))
@@ -77,34 +77,30 @@
    :mag-filter mag-filter))
 
 (defun init-image-texture! (image surface &key (free-surface t)
-                                               (min-filter :linear)
-                                               (mag-filter :linear))
-  (flet ((init ()
-           (let ((texture (car (gl:gen-textures 1)))
-                 (rgba-surface
-                   (if (eq (sdl2:surface-format-format surface) sdl2:+pixelformat-rgba32+)
-                       surface
-                       (sdl2:convert-surface-format surface sdl2:+pixelformat-rgba32+))))
-             (gl:bind-texture :texture-2d texture)
-             (gl:tex-parameter :texture-2d :texture-min-filter min-filter)
-             (gl:tex-parameter :texture-2d :texture-mag-filter mag-filter)
-             (gl:pixel-store :unpack-row-length (/ (sdl2:surface-pitch rgba-surface) 4))
-             (gl:tex-image-2d :texture-2d 0 :rgba
-                              (sdl2:surface-width rgba-surface)
-                              (sdl2:surface-height rgba-surface)
-                              0
-                              :rgba
-                              :unsigned-byte (sdl2:surface-pixels rgba-surface))
-             (gl:bind-texture :texture-2d 0)
-             (unless (eq rgba-surface surface) (sdl2:free-surface rgba-surface))
-             (when free-surface
-               (when (eq free-surface :font)
-                 (tg:cancel-finalization surface))
-               (sdl2:free-surface surface))
-             (setf (image-texture image) texture))))
-    (if (delay-init-p)
-        (add-delayed-init-fun! #'init)
-        (init))))
+                                            (min-filter :linear)
+                                            (mag-filter :linear))
+  (let ((texture (car (gl:gen-textures 1)))
+        (rgba-surface
+          (if (eq (sdl2:surface-format-format surface) sdl2:+pixelformat-rgba32+)
+              surface
+              (sdl2:convert-surface-format surface sdl2:+pixelformat-rgba32+))))
+    (gl:bind-texture :texture-2d texture)
+    (gl:tex-parameter :texture-2d :texture-min-filter min-filter)
+    (gl:tex-parameter :texture-2d :texture-mag-filter mag-filter)
+    (gl:pixel-store :unpack-row-length (/ (sdl2:surface-pitch rgba-surface) 4))
+    (gl:tex-image-2d :texture-2d 0 :rgba
+                     (sdl2:surface-width rgba-surface)
+                     (sdl2:surface-height rgba-surface)
+                     0
+                     :rgba
+                     :unsigned-byte (sdl2:surface-pixels rgba-surface))
+    (gl:bind-texture :texture-2d 0)
+    (unless (eq rgba-surface surface) (sdl2:free-surface rgba-surface))
+    (when free-surface
+      (when (eq free-surface :font)
+        (tg:cancel-finalization surface))
+      (sdl2:free-surface surface))
+    (setf (image-texture image) texture)))
 
 (defun cut-surface (surface x y w h)
   (if (and x y w h)

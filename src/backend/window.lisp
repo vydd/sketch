@@ -95,12 +95,7 @@
     (setf (gethash instance *sketch-window*) window)
     (setf (slot-value instance '%env) (make-env))
     (initialize-view-matrix instance)
-    (initialize-gl window)
-    ;; These will have been added in the call to PREPARE.
-    (with-slots ((fs %delayed-init-funs)) instance
-      (loop for f across fs
-            do (funcall f))
-      (setf fs (make-array 0 :adjustable t :fill-pointer t)))))
+    (initialize-gl window)))
 
 (defun initialize-gl (window)
   (handler-case (sdl2:gl-set-swap-interval 1)

@@ -34,8 +34,6 @@
   ((%env :initform nil :reader sketch-%env)
    (%setup-called :initform nil :accessor sketch-%setup-called)
    (%entities :initform (make-hash-table) :accessor sketch-%entities)
-   (%delayed-init-funs :initform (make-array 0 :adjustable t :fill-pointer t)
-                       :accessor sketch-%delayed-init-funs)
    (title :initform "Sketch" :accessor sketch-title :initarg :title)
    (width :initform *default-width* :accessor sketch-width :initarg :width)
    (height :initform *default-height* :accessor sketch-height :initarg :height)
@@ -218,15 +216,3 @@
 
        (make-instances-obsolete ',sketch-name)
        (find-class ',sketch-name))))
-
-;;; Resource-handling
-
-(defun delay-init-p ()
-  "This checks whether the OpenGL context has been created yet. If not,
-we need to wait before initializing certain resources."
-  (and *sketch*
-       (null (sketch-window *sketch*))))
-
-(defun add-delayed-init-fun! (f)
-  "F should be a function with no arguments."
-  (vector-push-extend f (sketch-%delayed-init-funs *sketch*)))
