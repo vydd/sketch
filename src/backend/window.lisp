@@ -125,6 +125,12 @@
 
 ;;; Rendering
 
+(defmacro with-gl-draw (&body body)
+  `(progn
+     (start-draw)
+     ,@body
+     (end-draw)))
+
 (defmethod kit.sdl2:render ((window window) &aux (sketch (window-sketch window)))
   (maybe-change-viewport sketch)
   (with-sketch (sketch)
@@ -194,6 +200,19 @@
 (define-sdl2-forward kit.sdl2:controller-button-event (controller state timestamp button))
 
 ;;; Close window
+
+(defconstant +scancode-prefix-length+ (length "scancode-"))
+
+(defun without-sdl2-scancode-prefix (keysym)
+  (intern (subseq (symbol-name (sdl2:scancode keysym))
+                  +scancode-prefix-length+)
+          (find-package "KEYWORD")))
+
+(defmethod kit.sdl2:keyboard-event :before ((instance sketch) state timestamp repeatp keysym)
+  (declare (ignorable timestamp repeatp))
+  (alexandria:when-let (close-on (sketch-close-on instance))
+    (when (and (eql state :keyup) (eq (without-sdl2-scancode-prefix keysym) close-on))
+      (kit.sdl2:close-window instance))))
 
 ;; KIT.SDL2:CLOSE-WINDOW is tricky: it should always be called on both
 ;; the sketch and sketch's window; but it also can be first called on

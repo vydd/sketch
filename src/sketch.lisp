@@ -121,27 +121,6 @@
          (with-identity-matrix
            ,@body)))))
 
-(defmacro with-gl-draw (&body body)
-  `(progn
-     (start-draw)
-     ,@body
-     (end-draw)))
-
-;;; Default events
-
-(defconstant +scancode-prefix-length+ (length "scancode-"))
-
-(defun without-sdl2-scancode-prefix (keysym)
-  (intern (subseq (symbol-name (sdl2:scancode keysym))
-                  +scancode-prefix-length+)
-          (find-package "KEYWORD")))
-
-(defmethod kit.sdl2:keyboard-event :before ((instance sketch) state timestamp repeatp keysym)
-  (declare (ignorable timestamp repeatp))
-  (alexandria:when-let (close-on (sketch-close-on instance))
-    (when (and (eql state :keyup) (eq (without-sdl2-scancode-prefix keysym) close-on))
-      (kit.sdl2:close-window instance))))
-
 ;;; DEFSKETCH macro
 
 (defun define-sketch-defclass (name bindings)
