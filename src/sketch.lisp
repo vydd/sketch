@@ -135,12 +135,9 @@
   (loop for b in bindings
         when (binding-channelp b)
         collect `(define-channel-observer
-                   ; TODO: Should this really depend on kit.sdl2?
-                   (let ((win (kit.sdl2:last-window)))
-                     (when win
-                       (setf (,(binding-accessor b) (window-sketch win))
-                             (in ,(binding-channel-name b)
-                                 ,(binding-initform b))))))))
+                   (setf (,(binding-accessor b) *sketch*)
+                         (in ,(binding-channel-name b)
+                             ,(binding-initform b))))))
 
 (defun define-sketch-draw-method (name bindings body)
   `(defmethod draw ((*sketch* ,name) &key x y width height mode &allow-other-keys)

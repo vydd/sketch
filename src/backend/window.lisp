@@ -131,21 +131,21 @@
      ,@body
      (end-draw)))
 
-(defmethod kit.sdl2:render ((window window) &aux (sketch (window-sketch window)))
-  (maybe-change-viewport sketch)
-  (with-sketch (sketch)
+(defmethod kit.sdl2:render ((window window) &aux (*sketch* (window-sketch window)))
+  (maybe-change-viewport *sketch*)
+  (with-sketch (*sketch*)
     (with-gl-draw
-      (with-error-handling (sketch)
-        (unless (sketch-copy-pixels sketch)
+      (with-error-handling (*sketch*)
+        (unless (sketch-copy-pixels *sketch*)
           (background (gray 0.4)))
         (when (or (env-red-screen *env*)
-                  (not (sketch-%setup-called sketch)))
+                  (not (sketch-%setup-called *sketch*)))
           (setf (env-red-screen *env*) nil
-                (sketch-%setup-called sketch) t)
+                (sketch-%setup-called *sketch*) t)
           (with-stage :setup
-            (setup sketch)))
+            (setup *sketch*)))
         (with-stage :draw
-          (draw sketch))))))
+          (draw *sketch*))))))
 
 (defmethod kit.sdl2:render ((instance sketch))
   (kit.sdl2:render (sketch-window instance)))
