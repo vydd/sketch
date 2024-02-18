@@ -43,7 +43,8 @@
                (:module "backend"
                         :depends-on ("package")
                         :serial t
-                        :components ((:file "window")))
+                        :components ((:file "window")
+                                     (:file "sdl2backend")))
                (:file "entities") ; depends on sketch
                (:file "figures")
                (:file "controllers")

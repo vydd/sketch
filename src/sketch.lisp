@@ -59,28 +59,6 @@
     (declare (ignore x y width height mode))
     ()))
 
-;;; Initialization
-
-(defparameter *initialized* nil)
-
-(defun initialize-sketch ()
-  (unless *initialized*
-    (setf *initialized* t)
-    (kit.sdl2:init)
-    (sdl2-ttf:init)
-    (sdl2:in-main-thread ()
-      (sdl2:gl-set-attr :multisamplebuffers 1)
-      (sdl2:gl-set-attr :multisamplesamples 4)
-
-      (sdl2:gl-set-attr :context-major-version 3)
-      (sdl2:gl-set-attr :context-minor-version 3)
-      (sdl2:gl-set-attr :context-profile-mask 1))))
-
-(defmethod initialize-instance :around ((instance sketch) &key &allow-other-keys)
-  (initialize-sketch)
-  (sdl2:in-main-thread ()
-    (call-next-method))
-  (kit.sdl2:start))
 
 (defmethod update-instance-for-redefined-class :after
     ((instance sketch) added-slots discarded-slots property-list &rest initargs)
