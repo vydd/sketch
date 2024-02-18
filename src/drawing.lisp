@@ -11,6 +11,19 @@
 ;;;  http://onrendering.blogspot.com/2011/10/buffer-object-streaming-in-opengl.html
 ;;;  http://www.java-gaming.org/index.php?topic=32169.0
 
+(add-to-environment :buffer-position 0)
+(add-to-environment :vao (make-instance 'kit.gl.vao:vao :type 'sketch-vao))
+(add-to-environment :white-pixel-texture (make-white-pixel-texture))
+(add-to-environment :white-color-vector #(255 255 255 255))
+
+(defun make-white-pixel-texture ()
+  "Sent to shaders when no image is active."
+  (let ((texture (car (gl:gen-textures 1))))
+    (gl:bind-texture :texture-2d texture)
+    (gl:tex-parameter :texture-2d :texture-min-filter :linear)
+    (gl:tex-image-2d :texture-2d 0 :rgba 1 1 0 :bgra :unsigned-byte #(255 255 255 255))
+    texture))
+
 (kit.gl.vao:defvao sketch-vao ()
   (:interleave ()
                (vertex :float 2)
@@ -32,6 +45,11 @@
 (defmacro with-uv-rect (rect &body body)
   `(let ((*uv-rect* ,rect))
      ,@body))
+
+(defun background (color)
+  "Fills the sketch window with COLOR."
+  (apply #'gl:clear-color (color-rgba color))
+  (gl:clear :color-buffer))
 
 (defun start-draw ()
   (%gl:bind-buffer :array-buffer (aref (slot-value (env-vao *env*) 'kit.gl.vao::vbos) 0))
@@ -130,3 +148,25 @@
              (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 1)) (aref color 1)
              (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 2)) (aref color 2)
              (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 3)) (aref color 3))))
+
+(defun save-png (pathname)
+  (let ((width (sketch-width *sketch*))
+        (height (sketch-height *sketch*)))
+    (flet ((ptr (vec offset)
+             (static-vectors:static-vector-pointer vec :offset offset))
+           (from (row col width)
+             (+ col (* row (* 4 width))))
+           (to (row col width height)
+             (+ col (* (- height row 1) 4 width))))
+      (static-vectors:with-static-vector (buffer (* 4 width height))
+        (%gl:read-pixels 0 0 width height :rgba :unsigned-byte (ptr buffer 0))
+        (dotimes (row (truncate height 2))
+          (dotimes (col (* 4 width))
+            (rotatef (cffi:mem-aref (ptr buffer (from row col width)) :uint8)
+                     (cffi:mem-aref (ptr buffer (to row col width height)) :uint8))))
+        (let ((png (make-instance 'zpng:png
+                                  :width width
+                                  :height height
+                                  :color-type :truecolor-alpha
+                                  :image-data buffer)))
+          (zpng:write-png png pathname))))))

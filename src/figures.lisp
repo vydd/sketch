@@ -41,7 +41,7 @@
           h nil
           body (cons opt body)))
   `(let ((*draw-sequence* nil))
-     (let ((*env* (make-env))
+     (let ((*env* (make-fake-env))
            (*draw-mode* :figure))
        (with-pen (make-default-pen)
          ,@body))
