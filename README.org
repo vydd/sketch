@@ -257,7 +257,7 @@ If you are used to working with colors in hex, like in CSS, you can use =(hex-to
 If you don't care about fiddling with the exact values, but still need different colors, you can use one of the following functions.
 
 ***** =(lerp-color (start-color end-color amount &key (mode :hsb)))=
-Lerp is a shorthand for [[https://en.wikipedia.org/wiki/Linear_interpolation][linear interpolation]]. This function takes the starting color and the ending color, and returns the color between them, which is an =AMOUNT= away from the starting color. When =AMOUNT= equals zero, the returned color equals the starting color, and when =AMOUNT= equals one, the ending color is returned. Amounts between zero and one give colors that are "in-between". These colors are calculated according to the specified =MODE=, which is =:HSB= by default, meaning that the resulting color's hue is between the starting and ending hue, as is the case with its saturation and brightness.
+Lerp is a shorthand for [[https://en.wikipedia.org/wiki/Linear_interpolation][linear interpolation]]. This function takes the starting color and the ending color, and returns the color between them, which is an =AMOUNT= away from the starting color. When =AMOUNT= equals zero, the returned color equals the starting color, and when =AMOUNT= equals one, the ending color is returned. Amounts between zero and one give colors that are "in-between". These colors are calculated according to the specified =MODE=, which is =:HSB= by default, meaning that the resulting color's hue is between the starting and ending hue, as is the case with its saturation and brightness. Any other keyword will result in RGB interpolation.
 
 #+BEGIN_SRC lisp
   (defsketch lerp-test ((title "lerp-color") (width 400) (height 100))
