@@ -469,7 +469,7 @@ The font can be specified using =(make-font &key face color size line-height ali
      (text title 0 0 100)))
 #+END_SRC
 
-=align= can be =:left=, =:centre= or =:right=, and determines whether the x & y coordinates correspond to the left end, centre, or right end of the text box. =line-height= determines the vertical space given to a line of text, scaled according to the font size, i.e. =:line-height 1= leaves just enough space so that the text on two lines won't overlap.
+=align= can be =:left=, =:center= or =:right=, and determines whether the x & y coordinates correspond to the left end, centre, or right end of the text box. =line-height= determines the vertical space given to a line of text, scaled according to the font size, i.e. =:line-height 1= leaves just enough space so that the text on two lines won't overlap.
 
 *** Images
 First =(load-resource filename ...)= to load the image from a given file, then =(draw image &key x y width height)= to draw the image with its top-left corner at =(x, y)= and with the given =width= and =height=. If not provided, default =(x,y)= is =(0,0)= and =width= & =height= are taken from the image.
