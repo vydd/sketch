@@ -8,6 +8,12 @@
 ;;;  ___) |  _  |/ ___ \|  __/| |___ ___) |
 ;;; |____/|_| |_/_/   \_\_|   |_____|____/
 
+
+(defparameter *bevel-join-min-angle* (radians 2))
+(defparameter *miter-join-min-angle* (radians 20)
+  "The minimum angle below which miter join starts to show visual artifacts
+or look ugly, and should be swapped for another join algorithm.")
+
 (defun point (x y)
   (declare (type real x y))
   (let ((weight (or (pen-weight (env-pen *env*)) 1)))
@@ -33,26 +39,79 @@
   (with-pen (flip-pen (env-pen *env*))
     (funcall (make-line x1 y1 x2 y2))))
 
-(defun translated-intersects (lines distance)
-  (let ((lines (mapcar (lambda (x) (translate-line x distance)) lines)))
-    (edges (append (list (caar lines))
-                   (mapcar (lambda (x) (apply #'intersect-lines x))
-                           (edges lines nil))
-                   (cdar (last lines)))
-           nil)))
-
 (defun make-polyline (&rest coordinates)
   (multiple-value-bind (d+ d-)
       (div2-inexact (pen-weight (env-pen *env*)))
-    (let* ((lines (edges (group coordinates) nil))
-           (lefts (translated-intersects lines (+ d+)))
-           (rights (translated-intersects lines (- d-))))
-      (lambda ()
-        (draw-shape
-         :triangle-strip
-         (mix-lists (apply #'append lefts)
-                    (apply #'append rights))
-         nil)))))
+    (let ((lines (edges (group coordinates) nil)))
+      (multiple-value-bind (lefts rights)
+          (join-lines lines d+ (- d-))
+        (lambda ()
+          (draw-shape
+           :triangle-strip
+           (mix-lists lefts rights)
+           nil))))))
+
+(defun join-lines (lines d+ d-)
+  (let* ((first-line (first lines))
+         ;; The first point of the first line gives the first point of the polyline.
+         (lefts (list (first (translate-line first-line d+))))
+         (rights (list (first (translate-line first-line d-)))))
+    (loop for (l1 . (l2 . rest)) on lines
+          while l1
+          do (if (null l2)
+                 ;; The last point of the last line gives the end of the polyline.
+                 (progn
+                   (push (second (translate-line l1 d+)) lefts)
+                   (push (second (translate-line l1 d-)) rights))
+                 ;; If not the last line, need to join these 2 lines using some
+                 ;; join algorithm.
+                 ;; See, for example:
+                 ;;   https://mattdesl.svbtle.com/drawing-lines-is-hard
+                 ;;   http://bluevoid.com/opengl/sig00/advanced00/notes/node290.html
+                 (let ((l1-left (translate-line l1 d+))
+                       (l1-right (translate-line l1 d-))
+                       (l2-left (translate-line l2 d+))
+                       (l2-right (translate-line l2 d-)))
+                   (multiple-value-bind (new-lefts new-rights)
+                       (funcall
+                        (let ((angle (interior-angle-between-lines l1 l2)))
+                          (cond
+                            ((< angle *bevel-join-min-angle*) #'simple-join)
+                            ((< angle *miter-join-min-angle*) #'bevel-join)
+                            (t #'miter-join)))
+                        l1 l2 l1-left l1-right l2-left l2-right)
+                     (map nil (lambda (p) (push p lefts)) new-lefts)
+                     (map nil (lambda (p) (push p rights)) new-rights)))))
+    (values (reverse lefts) (reverse rights))))
+
+(defun simple-join (l1 l2 l1-left l1-right l2-left l2-right)
+  (declare (ignore l1 l2 l2-left l2-right))
+  (values (list (second l1-left)) (list (second l1-right))))
+
+(defun miter-join (l1 l2 l1-left l1-right l2-left l2-right)
+  (declare (ignore l1 l2))
+  (values (list (intersect-lines l1-left l2-left))
+          (list (intersect-lines l1-right l2-right))))
+
+(defun bevel-join (l1 l2 l1-left l1-right l2-left l2-right)
+  (if (let ((v1 (line-as-vector l1))
+            (v2 (line-as-vector l2)))
+        ;; Convert to coordinate system where v1 points along
+        ;; the positive x-axis. Then, if v2 is above the x-axis, it turns
+        ;; left relative to v1 and the left side of the polyline is interior
+        ;; here. Thus, we intersect the left side and bevel the right side.
+        ;; And vice versa.
+        (< 0 (+ (* (second v1) (first v2))
+                (* (- (first v1)) (second v2)))))
+      (values (duplicate
+               (list (intersect-lines l1-left l2-left)))
+              (list (second l1-right) (first l2-right)))
+      (values (list (second l1-left) (first l2-left))
+              (duplicate
+               (list (intersect-lines l1-right l2-right))))))
+
+(defun duplicate (list)
+  (append list list))
 
 (defun polyline (&rest coordinates)
   (case (pen-weight (env-pen *env*))
