@@ -81,16 +81,44 @@
                                 (vector (env-model-matrix *env*)))
   (gl:bind-texture :texture-2d texture)
   (symbol-macrolet ((position (env-buffer-position *env*)))
-    (when (> (* *bytes-per-vertex* (+ position (length vertices))) *buffer-size*)
+    (when (not (enough-space-for-vertices-p vertices))
       (start-draw))
-    (let ((buffer-pointer (%gl:map-buffer-range :array-buffer
-                                                (* position *bytes-per-vertex*)
-                                                (* (length vertices) *bytes-per-vertex*)
-                                                +access-mode+)))
-      (fill-buffer buffer-pointer vertices color)
-      (%gl:unmap-buffer :array-buffer)
-      (%gl:draw-arrays primitive position (length vertices))
-      (setf position (+ position (length vertices))))))
+    (loop for (batch-size batch) in (batch-vertices vertices primitive)
+          do (let* ((buffer-pointer
+                      (%gl:map-buffer-range :array-buffer
+                                            (* position *bytes-per-vertex*)
+                                            (* batch-size *bytes-per-vertex*)
+                                            +access-mode+)))
+               ;; TODO: tweak fill-buffer to account for (optional) batch size.
+               (fill-buffer buffer-pointer batch color batch-size)
+               (%gl:unmap-buffer :array-buffer)
+               (%gl:draw-arrays primitive position batch-size)
+               (incf position batch-size)
+               ;; TODO: do we need to draw after every iteration?
+               (start-draw)))))
+
+(defun enough-space-for-vertices-p (vertices)
+  (< (* *bytes-per-vertex*
+        (+ (env-buffer-position *env*)
+           (length vertices)))
+     *buffer-size*))
+
+(defun batch-vertices (vertices primitive)
+  (let ((num-vertices (length vertices)))
+    (cond
+      ;; In future, may wish to support batching for other primitive types.
+      ((not (eq :triangle-strip primitive))
+       (list num-vertices vertices))
+      ((enough-space-for-vertices-p vertices)
+       (list num-vertices vertices))
+      (t
+       ;; TODO include the last 2 vertices for the continuity of the strip?
+       (loop with max-per-batch = (floor *buffer-size* *bytes-per-vertex*)
+             while vertices
+             for n = (min max-per-batch num-vertices)
+             collect (list n vertices)
+             do (decf num-vertices n)
+             do (setf vertices (nthcdr n vertices)))))))
 
 (defmethod push-vertices (vertices color texture primitive (draw-mode (eql :figure)))
   (let* ((vertices (mapcar (lambda (v) (transform-vertex v (env-model-matrix *env*)))
