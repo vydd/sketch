@@ -315,6 +315,15 @@
                    collect `(,(binding-accessor b) *sketch*)
                    collect (binding-name b)))))
 
+(defun define-sketch-run-function (name bindings)
+  `(defun ,(alexandria:symbolicate 'run- name)
+       (&rest args
+          &key ,@(loop for b in bindings
+                        collect (list (binding-name b) (binding-initform b)))
+        &allow-other-keys)
+     (declare (ignore ,@(loop for b in bindings collect (binding-name b))))
+     (apply #'make-instance ',name args)))
+
 (defmacro defsketch (sketch-name binding-forms &body body)
   (let ((bindings (parse-bindings sketch-name binding-forms
                                   (class-bindings (find-class 'sketch)))))
@@ -323,6 +332,7 @@
        ,@(define-sketch-channel-observers bindings)
        ,(define-sketch-prepare-method sketch-name bindings)
        ,(define-sketch-draw-method sketch-name bindings body)
+       ,(define-sketch-run-function sketch-name bindings)
 
        (make-instances-obsolete ',sketch-name)
        (find-class ',sketch-name))))
