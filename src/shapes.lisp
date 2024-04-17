@@ -97,21 +97,17 @@ or look ugly, and should be swapped for another join algorithm.")
   (if (let ((v1 (line-as-vector l1))
             (v2 (line-as-vector l2)))
         ;; Convert to coordinate system where v1 points along
-        ;; the positive x-axis. Then, if v2 is above the x-axis, it turns
-        ;; left relative to v1 and the left side of the polyline is interior
-        ;; here. Thus, we intersect the left side and bevel the right side.
-        ;; And vice versa.
+        ;; the positive x-axis. Then, if v2 is above the x-axis, we're at a
+        ;; left turn, and the left side of the line is interior.
+        ;; Thus, we intersect the left side and bevel the right side.
         (< 0 (+ (* (second v1) (first v2))
                 (* (- (first v1)) (second v2)))))
-      (values (duplicate
+      (values (duplicate-list
                (list (intersect-lines l1-left l2-left)))
               (list (second l1-right) (first l2-right)))
       (values (list (second l1-left) (first l2-left))
-              (duplicate
+              (duplicate-list
                (list (intersect-lines l1-right l2-right))))))
-
-(defun duplicate (list)
-  (append list list))
 
 (defun polyline (&rest coordinates)
   (case (pen-weight (env-pen *env*))
