@@ -81,44 +81,49 @@
                                 (vector (env-model-matrix *env*)))
   (gl:bind-texture :texture-2d texture)
   (symbol-macrolet ((position (env-buffer-position *env*)))
-    (when (not (enough-space-for-vertices-p vertices))
+    (when (not (enough-space-for-vertices-p (length vertices)))
+      ;; Try to clear as much space in draw buffer as possible.
       (start-draw))
-    (loop for (batch-size batch) in (batch-vertices vertices primitive)
+    (loop for (batch-size batch last-batch-p) in (batch-vertices vertices primitive)
           do (let* ((buffer-pointer
                       (%gl:map-buffer-range :array-buffer
                                             (* position *bytes-per-vertex*)
                                             (* batch-size *bytes-per-vertex*)
                                             +access-mode+)))
-               ;; TODO: tweak fill-buffer to account for (optional) batch size.
                (fill-buffer buffer-pointer batch color batch-size)
                (%gl:unmap-buffer :array-buffer)
                (%gl:draw-arrays primitive position batch-size)
                (incf position batch-size)
-               ;; TODO: do we need to draw after every iteration?
-               (start-draw)))))
+               (when (not last-batch-p)
+                 (start-draw))))))
 
-(defun enough-space-for-vertices-p (vertices)
-  (< (* *bytes-per-vertex*
+(defun enough-space-for-vertices-p (num-vertices)
+  (<= (* *bytes-per-vertex*
         (+ (env-buffer-position *env*)
-           (length vertices)))
+           num-vertices))
      *buffer-size*))
 
 (defun batch-vertices (vertices primitive)
   (let ((num-vertices (length vertices)))
     (cond
-      ;; In future, may wish to support batching for other primitive types.
-      ((not (eq :triangle-strip primitive))
-       (list num-vertices vertices))
-      ((enough-space-for-vertices-p vertices)
-       (list num-vertices vertices))
-      (t
-       ;; TODO include the last 2 vertices for the continuity of the strip?
+      ((enough-space-for-vertices-p num-vertices)
+       (list (list num-vertices vertices t)))
+      ((member primitive '(:triangles :triangle-strip))
+       ;; Assuming that the draw buffer is empty whenever we resort to batching.
        (loop with max-per-batch = (floor *buffer-size* *bytes-per-vertex*)
-             while vertices
+             while (> num-vertices (if (eq primitive :triangles) 0 2))
              for n = (min max-per-batch num-vertices)
-             collect (list n vertices)
-             do (decf num-vertices n)
-             do (setf vertices (nthcdr n vertices)))))))
+             for num-to-skip = (if (eq primitive :triangles)
+                                   n
+                                   ;; Keep the last 2 vertices for the next batch so
+                                   ;; that there isn't a gap in the triangle strip.
+                                   (- n 2))
+             collect (list n vertices (zerop (- num-vertices n)))
+             do (setf vertices (nthcdr n vertices))
+             do (decf num-vertices n)))
+      ;; Better to fail early rather than crashing with an obscure
+      ;; OpenGL error.
+      (t (error "Draw buffer not large enough for this shape.")))))
 
 (defmethod push-vertices (vertices color texture primitive (draw-mode (eql :figure)))
   (let* ((vertices (mapcar (lambda (v) (transform-vertex v (env-model-matrix *env*)))
@@ -145,11 +150,14 @@
                 (+ v1 (* v-range v-in)))))
       uv))
 
-(defun fill-buffer (buffer-pointer vertices color)
+(defun fill-buffer (buffer-pointer vertices color &optional num-vertices)
   (loop
+    for j from 0
+    while (or (null num-vertices) (< j num-vertices))
     for idx from 0 by *vertex-attributes*
     for (x y) in vertices
-    for (tx ty) in (mapcar #'fit-uv-to-rect (normalize-to-bounding-box vertices))
+    for (tx ty) in (mapcar #'fit-uv-to-rect (normalize-to-bounding-box vertices
+                                                                       num-vertices))
     do (setf (cffi:mem-aref buffer-pointer :float idx) (coerce-float x)
              (cffi:mem-aref buffer-pointer :float (+ idx 1)) (coerce-float y)
              (cffi:mem-aref buffer-pointer :float (+ idx 2)) (coerce-float tx)

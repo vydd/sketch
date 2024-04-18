@@ -75,18 +75,21 @@
             (make-array (length points) :initial-contents points)
             :winding-rule (pen-winding-rule (env-pen *env*))))))
 
-(defun bounding-box (vertices)
-  (loop for (x y) in vertices
+(defun bounding-box (vertices &optional num-vertices)
+  (loop for j from 0
+        while (or (null num-vertices) (< j num-vertices))
+        for (x y) in vertices
         minimize x into min-x
         maximize x into max-x
         minimize y into min-y
         maximize y into max-y
         finally (return (list (list min-x min-y) (list max-x max-y)))))
 
-(defun normalize-to-bounding-box (vertices)
-  (let ((box (bounding-box vertices)))
+(defun normalize-to-bounding-box (vertices &optional num-vertices)
+  (let ((box (bounding-box vertices num-vertices)))
     (with-lines (box)
-      (mapcar (lambda (vertex)
-                (list (normalize (first vertex) x1 x2)
-                      (normalize (second vertex) y1 y2)))
-              vertices))))
+      (loop for j from 0
+            while (or (null num-vertices) (< j num-vertices))
+            for vertex in vertices
+            collect (list (normalize (first vertex) x1 x2)
+                          (normalize (second vertex) y1 y2))))))
