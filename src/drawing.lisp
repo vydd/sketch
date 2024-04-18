@@ -108,22 +108,31 @@
     (cond
       ((enough-space-for-vertices-p num-vertices)
        (list (list num-vertices vertices t)))
-      ((member primitive '(:triangles :triangle-strip))
+      ((eq primitive :triangles)
        ;; Assuming that the draw buffer is empty whenever we resort to batching.
-       (loop with max-per-batch = (floor *buffer-size* *bytes-per-vertex*)
-             while (> num-vertices (if (eq primitive :triangles) 0 2))
+       (loop with max-per-batch = (let ((buff-capacity (floor *buffer-size* *bytes-per-vertex*)))
+                                    ;; This is needed to ensure that the vertices
+                                    ;; for each triangle are in the same batch.
+                                    (- buff-capacity (mod buff-capacity 3)))
+             while (> num-vertices 2)
              for n = (min max-per-batch num-vertices)
-             for num-to-skip = (if (eq primitive :triangles)
-                                   n
-                                   ;; Keep the last 2 vertices for the next batch so
-                                   ;; that there isn't a gap in the triangle strip.
-                                   (- n 2))
              collect (list n vertices (zerop (- num-vertices n)))
+             ;; Keep the last 2 vertices for the next batch so
+             ;; that there isn't a gap in the triangle strip.
              do (setf vertices (nthcdr n vertices))
              do (decf num-vertices n)))
+      ((eq primitive :triangle-strip)
+       (loop with max-per-batch = (floor *buffer-size* *bytes-per-vertex*)
+             while (> num-vertices 2)
+             for n = (min max-per-batch num-vertices)
+             collect (list n vertices (zerop (- num-vertices n)))
+             ;; Keep the last 2 vertices for the next batch so
+             ;; that there isn't a gap in the triangle strip.
+             do (setf vertices (nthcdr (- n 2) vertices))
+             do (decf num-vertices (- n 2))))
       ;; Better to fail early rather than crashing with an obscure
       ;; OpenGL error.
-      (t (error "Draw buffer not large enough for this shape.")))))
+      (t (error "Draw buffer not large enough for this shape."))))))
 
 (defmethod push-vertices (vertices color texture primitive (draw-mode (eql :figure)))
   (let* ((vertices (mapcar (lambda (v) (transform-vertex v (env-model-matrix *env*)))
