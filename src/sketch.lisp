@@ -337,6 +337,13 @@
        (make-instances-obsolete ',sketch-name)
        (find-class ',sketch-name))))
 
+(defun run-sketch (name &rest args)
+  (let ((cls (find-class name nil)))
+    (when (or (null cls)
+              (not (c2mop:subclassp cls (find-class 'sketch))))
+      (error (format nil "Couldn't find a sketch called ~a" name)))
+    (apply #'make-instance name args)))
+
 ;;; Control flow
 
 (defun stop-loop ()
