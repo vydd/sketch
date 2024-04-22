@@ -15,6 +15,7 @@
            :draw
 
            :defsketch
+           :run-sketch
 
            :sketch-title
            :sketch-width

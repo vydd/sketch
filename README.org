@@ -109,7 +109,7 @@ TUTORIAL> ;; ready
 #+END_SRC
 
 ** Tutorial
-Defining sketches is done with the =defsketch= macro. This defines a function called `run-NAMEHERE` for starting your sketch.
+Defining sketches is done with the =defsketch= macro. This defines a function called `run-NAMEHERE` for starting your sketch. Alternatively, you can do `(run-sketch 'NAMEHERE)`.
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ())
