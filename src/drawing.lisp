@@ -82,15 +82,21 @@
   (gl:bind-texture :texture-2d texture)
   (symbol-macrolet ((position (env-buffer-position *env*)))
     (when (not (enough-space-for-vertices-p (length vertices)))
-      ;; Try to clear as much space in draw buffer as possible.
       (start-draw))
-    (loop for (batch-size batch last-batch-p) in (batch-vertices vertices primitive)
+    ;; Important to calculate the bounding box before they've been batched so that
+    ;; there are no discontinuities in the texture.
+    (loop with bb = (bounding-box vertices)
+          for (batch-size batch last-batch-p) in (batch-vertices vertices primitive)
           do (let* ((buffer-pointer
                       (%gl:map-buffer-range :array-buffer
                                             (* position *bytes-per-vertex*)
                                             (* batch-size *bytes-per-vertex*)
                                             +access-mode+)))
-               (fill-buffer buffer-pointer batch color batch-size)
+               (fill-buffer buffer-pointer
+                            batch
+                            color
+                            :num-vertices batch-size
+                            :bounding-box bb)
                (%gl:unmap-buffer :array-buffer)
                (%gl:draw-arrays primitive position batch-size)
                (incf position batch-size)
@@ -132,7 +138,7 @@
              do (decf num-vertices (- n 2))))
       ;; Better to fail early rather than crashing with an obscure
       ;; OpenGL error.
-      (t (error "Draw buffer not large enough for this shape."))))))
+      (t (error "Draw buffer not large enough for this shape.")))))
 
 (defmethod push-vertices (vertices color texture primitive (draw-mode (eql :figure)))
   (let* ((vertices (mapcar (lambda (v) (transform-vertex v (env-model-matrix *env*)))
@@ -151,27 +157,32 @@
   ;; TODO: Drawing in event handlers could be useful with COPY-PIXELS set to to T.
   (warn "Can't draw from current context (e.g. an event handler)."))
 
-(defun fit-uv-to-rect (uv)
-  (if *uv-rect*
-      (destructuring-bind (u-in v-in) uv
+(defun normalize-and-fit-uv-to-rect (box x y)
+  (multiple-value-bind (u-in v-in)
+      (normalize-to-bounding-box box x y)
+    (if *uv-rect*
         (destructuring-bind (u1 v1 u-range v-range) *uv-rect*
-          (list (+ u1 (* u-range u-in))
-                (+ v1 (* v-range v-in)))))
-      uv))
+          (values (+ u1 (* u-range u-in))
+                  (+ v1 (* v-range v-in))))
+        (values u-in v-in))))
 
-(defun fill-buffer (buffer-pointer vertices color &optional num-vertices)
+(defun fill-buffer (buffer-pointer vertices color &key num-vertices bounding-box)
   (loop
+    with bb = (or bounding-box
+                  (bounding-box (if (null num-vertices)
+                                    vertices
+                                    (subseq vertices 0 num-vertices))))
     for j from 0
     while (or (null num-vertices) (< j num-vertices))
     for idx from 0 by *vertex-attributes*
     for (x y) in vertices
-    for (tx ty) in (mapcar #'fit-uv-to-rect (normalize-to-bounding-box vertices
-                                                                       num-vertices))
-    do (setf (cffi:mem-aref buffer-pointer :float idx) (coerce-float x)
-             (cffi:mem-aref buffer-pointer :float (+ idx 1)) (coerce-float y)
-             (cffi:mem-aref buffer-pointer :float (+ idx 2)) (coerce-float tx)
-             (cffi:mem-aref buffer-pointer :float (+ idx 3)) (coerce-float (* ty (env-y-axis-sgn *env*)))
-             (cffi:mem-aref buffer-pointer :uint8 (* 4 (+ idx 4))) (aref color 0)
-             (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 1)) (aref color 1)
-             (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 2)) (aref color 2)
-             (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 3)) (aref color 3))))
+    do (multiple-value-bind (tx ty)
+           (normalize-and-fit-uv-to-rect bb x y)
+         (setf (cffi:mem-aref buffer-pointer :float idx) (coerce-float x)
+                 (cffi:mem-aref buffer-pointer :float (+ idx 1)) (coerce-float y)
+                 (cffi:mem-aref buffer-pointer :float (+ idx 2)) (coerce-float tx)
+                 (cffi:mem-aref buffer-pointer :float (+ idx 3)) (coerce-float (* ty (env-y-axis-sgn *env*)))
+                 (cffi:mem-aref buffer-pointer :uint8 (* 4 (+ idx 4))) (aref color 0)
+                 (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 1)) (aref color 1)
+                 (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 2)) (aref color 2)
+                 (cffi:mem-aref buffer-pointer :uint8 (+ (* 4 (+ idx 4)) 3)) (aref color 3))))))
