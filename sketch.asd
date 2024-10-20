@@ -10,6 +10,7 @@
                #:glu-tessellate
                #:mathkit
                #:md5
+               #:noisy
                #:sdl2
                #:cl-plus-c
                #:sdl2-image
@@ -42,4 +43,5 @@
                (:file "entities")
                (:file "figures")
                (:file "controllers")
-               (:file "canvas")))
+               (:file "canvas")
+               (:file "noise")))

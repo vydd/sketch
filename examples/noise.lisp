@@ -1,0 +1,18 @@
+(in-package #:sketch-examples)
+
+(in-package sketch)
+
+(defsketch noise-sketch
+    ((title "Noise")
+     (width 400)
+     (height 400)
+     (pixel-width 2)
+     (pixels (/ width pixel-width))
+     (coord-scale 0.02))
+  (noise-seed 5)
+  (noise-detail :lod 1 :falloff 0.5)
+  (dotimes (i pixels)
+    (dotimes (j pixels)
+      (with-pen (make-pen :fill (gray (noise (* coord-scale i) (* coord-scale j))))
+        (rect (* i pixel-width) (* j pixel-width) pixel-width pixel-width))))
+  (stop-loop))
