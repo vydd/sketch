@@ -1,7 +1,5 @@
 (in-package #:sketch-examples)
 
-(in-package sketch)
-
 (defsketch noise-sketch
     ((title "Noise")
      (width 400)

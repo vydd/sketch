@@ -607,6 +607,19 @@ This can be used, for example, to draw a static sketch and then disable the draw
 
 Example: [[https://github.com/vydd/sketch/blob/master/examples/control-flow.lisp][control-flow.lisp]].
 
+*** Noise
+=(noise &rest coords)= generates a correlated random value in the range 0-1. Similar inputs give similar outputs, hence the term "correlated". This can be useful for producing natural-looking textures and terrain, among other things. See [[https://en.wikipedia.org/wiki/Gradient_noise][Gradient noise]].  
+
+=(noise-seed seed)= seeds the noise so that its output is reproducible, where `seed` is an integer.
+
+=(noise-detail &key lod falloff)= determines the 'character' of the noise, based on the =noiseDetail()= function from p5js.
+
+* =lod= stands for Level Of Detail. It should be a positive integer value (default is 4), and determines how many noise values are generated and summed together to produce the final value. Lower values -> smoother and more efficient, higher values -> greater level of detail.
+* =falloff= should be between 0 and 1; its default value is 0.5. Each successive noise value in the sum is weighted by increasing powers of the falloff. A falloff of greater than 0.5 will possibly result in noise outputs of greater than 1.
+* Another way to change the appearance of noise is to scale the inputs. Making the inputs smaller and closer together will make the output smoother. Scaling them up will have the opposite effect. The output value can also be scaled, obviously so that it goes outside the range 0-1.
+
+Example: [[https://github.com/vydd/sketch/blob/master/examples/noise.lisp][noise.lisp]].
+
 ** Made with Sketch
 - [[https://vydd.itch.io/qelt][QELT]]
 - [[https://github.com/sjl/coding-math][sjl's implementation of coding math videos]]
