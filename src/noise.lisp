@@ -36,7 +36,8 @@
     (when lod
       (setf (sketch-%noise-lod *sketch*) lod))
     (when falloff
-      (setf (sketch-%noise-falloff *sketch*) falloff))))
+      (setf (sketch-%noise-falloff *sketch*) falloff))
+    (reset-noise-map *sketch*)))
 
 (defun reset-noise-map (sketch)
   (setf (sketch-%noise-map sketch) (make-hash-table)))
