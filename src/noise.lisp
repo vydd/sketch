@@ -40,4 +40,4 @@
     (reset-noise-map *sketch*)))
 
 (defun reset-noise-map (sketch)
-  (setf (sketch-%noise-map sketch) (make-hash-table)))
+  (clrhash (sketch-%noise-map sketch)))
