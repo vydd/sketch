@@ -316,14 +316,23 @@
                     binding-forms
                     body)))
 
+(defun sketch-slot-value (slot-sym)
+  (slot-value *sketch* slot-sym))
+
+;;; To be able to set the slots of the currently bound sketch
+;;; class without needing a reference to it.
+(defun (setf sketch-slot-value) (val slot-sym)
+  (setf (slot-value *sketch* slot-sym) val))
+
 (defun extract-options (binding-forms)
   (let (options)
-    (loop while (and binding-forms (keywordp (caar binding-forms)))
-          do (progn
-               (push (cadar binding-forms) options)
-               (push (caar binding-forms) options)
-               (pop binding-forms)))
-    (values options binding-forms)))
+    (loop for form in binding-forms
+          if (keywordp (car form))
+            do (progn
+                 (push (cdr form) options)
+                 (push (car form) options))
+          else collect form into the-rest
+          finally (return (values options the-rest)))))
 
 (defun make-defsketch (sketch-name superclasses binding-forms body)
   (let ((bindings (parse-bindings sketch-name binding-forms
