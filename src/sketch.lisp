@@ -276,8 +276,8 @@
 
 ;;; DEFSKETCH macro
 
-(defun define-sketch-defclass (name bindings)
-  `(defclass ,name (sketch)
+(defun define-sketch-defclass (name superclasses bindings)
+  `(defclass ,name (sketch ,@superclasses)
      (,@(loop for b in bindings
               unless (eq 'sketch (binding-prefix b))
               collect `(,(binding-name b)
@@ -316,10 +316,36 @@
                    collect (binding-name b)))))
 
 (defmacro defsketch (sketch-name binding-forms &body body)
+  (multiple-value-bind (options binding-forms)
+      (extract-options binding-forms)
+    (make-defsketch sketch-name
+                    (getf options :mixins)
+                    binding-forms
+                    body)))
+
+(defun sketch-slot-value (slot-sym)
+  (slot-value *sketch* slot-sym))
+
+;;; To be able to set the slots of the currently bound sketch
+;;; class without needing a reference to it.
+(defun (setf sketch-slot-value) (val slot-sym)
+  (setf (slot-value *sketch* slot-sym) val))
+
+(defun extract-options (binding-forms)
+  (let (options)
+    (loop for form in binding-forms
+          if (keywordp (car form))
+            do (progn
+                 (push (cdr form) options)
+                 (push (car form) options))
+          else collect form into the-rest
+          finally (return (values options the-rest)))))
+
+(defun make-defsketch (sketch-name superclasses binding-forms body)
   (let ((bindings (parse-bindings sketch-name binding-forms
                                   (class-bindings (find-class 'sketch)))))
     `(progn
-       ,(define-sketch-defclass sketch-name bindings)
+       ,(define-sketch-defclass sketch-name superclasses bindings)
        ,@(define-sketch-channel-observers bindings)
        ,(define-sketch-prepare-method sketch-name bindings)
        ,(define-sketch-draw-method sketch-name bindings body)

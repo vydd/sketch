@@ -16,6 +16,7 @@
 
            :defsketch
 
+           :sketch-slot-value
            :sketch-title
            :sketch-width
            :sketch-height
