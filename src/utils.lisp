@@ -103,3 +103,6 @@ but may be considered unique for all practical purposes."
                  (cons ',maker ,var)
                  ,var)))
      ,@body))
+
+(defun duplicate-list (list)
+  (append list list))

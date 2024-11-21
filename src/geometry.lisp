@@ -90,3 +90,43 @@
                 (list (normalize (first vertex) x1 x2)
                       (normalize (second vertex) y1 y2)))
               vertices))))
+
+(defun angle-between-lines (l1 l2)
+  "Calculate angle between 2 lines in positive radians. Doesn't handle
+lines of length 0. Lines are lists of 2 points; points are lists of 2 coordinates."
+  (let ((v1 (line-as-vector l1))
+        (v2 (line-as-vector l2)))
+    ;; Ensure that input to acos is in range [-1,1].
+    (acos (max -1
+               (min 1
+                    (/ (dot-product v1 v2)
+                       (vector-length v1)
+                       (vector-length v2)))))))
+
+(defun dot-product (v1 v2)
+  (+ (* (first v1) (first v2))
+     (* (second v1) (second v2))))
+
+(defun interior-angle-between-lines (l1 l2)
+  "Calculate interior angle between 2 lines, in positive radians."
+  (angle-between-lines
+   l1
+   (if (< 0 (dot-product (line-as-vector l1) (line-as-vector l2)))
+       l2
+       (reverse-line l2))))
+
+(defun reverse-line (line)
+  (destructuring-bind ((x1 y1) (x2 y2)) line
+    (let ((dx (- x2 x1))
+          (dy (- y2 y1)))
+      (list (first line)
+            (list (- x1 dx) (- y1 dy))))))
+
+(defun vector-length (v)
+  (destructuring-bind (x y) v
+    (sqrt (+ (* x x) (* y y)))))
+
+(defun line-as-vector (line)
+  "Takes a line (list of 2 points) and returns the vector connecting those points."
+  (destructuring-bind ((x1 y1) (x2 y2)) line
+    (list (- x2 x1) (- y2 y1))))
