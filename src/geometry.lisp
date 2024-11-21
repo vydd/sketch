@@ -96,9 +96,12 @@
 lines of length 0. Lines are lists of 2 points; points are lists of 2 coordinates."
   (let ((v1 (line-as-vector l1))
         (v2 (line-as-vector l2)))
-    (acos (/ (dot-product v1 v2)
-             (vector-length v1)
-             (vector-length v2)))))
+    ;; Ensure that input to acos is in range [-1,1].
+    (acos (max -1
+               (min 1
+                    (/ (dot-product v1 v2)
+                       (vector-length v1)
+                       (vector-length v2)))))))
 
 (defun dot-product (v1 v2)
   (+ (* (first v1) (first v2))
