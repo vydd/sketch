@@ -6,6 +6,8 @@
 ;;; Modes were taken from GTK, see https://docs.gtk.org/gtk4/enum.ContentFit.html
 (defun fit (to-width to-height from-width from-height &key (mode :contain))
   (check-type mode (member :contain :cover :scale-down :fill))
+  (when (or (zerop to-width) (zerop to-height))
+    (return-from fit))
   (ecase mode
     ((:contain :cover :scale-down)
      (flet ((%fit-scale (scale)
