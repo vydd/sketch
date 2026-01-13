@@ -12,4 +12,5 @@
                (:file "math")
                (:file "color")
                (:file "utils")
-               (:file "geometry")))
+               (:file "geometry")
+               (:file "rendering")))
