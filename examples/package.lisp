@@ -9,4 +9,5 @@
            :stars
            :indigo
            :control-flow
+           :noise-sketch
            ))

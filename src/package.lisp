@@ -207,4 +207,9 @@
            ;; Control flow
            :start-loop
            :stop-loop
+
+           ;; Noise
+           :noise
+           :noise-seed
+           :noise-detail
            ))

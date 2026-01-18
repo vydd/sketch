@@ -15,4 +15,6 @@
                (:file "hello-world")
                (:file "stars")
                (:file "indigo")
+               (:file "control-flow")
+               (:file "noise")
                ))
