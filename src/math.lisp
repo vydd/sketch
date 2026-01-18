@@ -18,9 +18,11 @@
         (high (max low high))
         (min-out-low (min out-low out-high))
         (min-out-high (max out-low out-high)))
-    (let ((norm (+ out-low
-                   (* (- out-high out-low)
-                      (/ (- x low) (- high low))))))
+    (let ((norm (if (= low high)
+                    out-low
+                    (+ out-low
+                       (* (- out-high out-low)
+                          (/ (- x low) (- high low)))))))
       (if clamp (alexandria:clamp norm min-out-low min-out-high) norm))))
 
 ;; Trigonometry

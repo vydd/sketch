@@ -212,7 +212,7 @@
 
 (defun color-filter-hsb (color &key (hue 0.0) (saturation 0.0) (brightness 0.0))
   (let ((hue (clamp-1 (+ hue (color-hue color))))
-        (saturation (clamp-1 (+ saturation (color-brightness color))))
+        (saturation (clamp-1 (+ saturation (color-saturation color))))
         (brightness (clamp-1 (+ brightness (color-brightness color))))
         (alpha (color-alpha color)))
     (destructuring-bind (red green blue) (hsb-to-rgb hue saturation brightness)
