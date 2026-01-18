@@ -88,13 +88,14 @@ If you did everything correctly, you should be able to =(ql:quickload :sketch)= 
 
 #+BEGIN_SRC lisp
 CL-USER> (ql:quickload :sketch-examples)
-CL-USER> (make-instance 'sketch-examples:hello-world)
-CL-USER> (make-instance 'sketch-examples:sinewave)
-CL-USER> (make-instance 'sketch-examples:brownian)
-CL-USER> (make-instance 'sketch-examples:life) ; Click to toggle cells,
-                                               ; any key to toggle iteration
-CL-USER> (make-instance 'sketch-examples:input)
-CL-USER> (make-instance 'sketch-examples:stars)
+CL-USER> (in-package sketch-examples)
+SKETCH-EXAMPLES> (run-hello-world)
+SKETCH-EXAMPLES> (run-sinewave)
+SKETCH-EXAMPLES> (run-brownian)
+SKETCH-EXAMPLES> (run-life) ; Click to toggle cells,
+                            ; any key to toggle iteration
+SKETCH-EXAMPLES> (run-input)
+SKETCH-EXAMPLES> (run-stars)
 #+END_SRC
 
 *** Running example code from this page
@@ -108,11 +109,11 @@ TUTORIAL> ;; ready
 #+END_SRC
 
 ** Tutorial
-Defining sketches is done with the =defsketch= macro, which is essentially a wrapper for =defclass=.
+Defining sketches is done with the =defsketch= macro. This defines a function called `run-NAMEHERE` for starting your sketch. Alternatively, you can do `(run-sketch 'NAMEHERE)`.
 
 #+BEGIN_SRC lisp
   (defsketch tutorial ())
-  (make-instance 'tutorial)
+  (run-tutorial)
 #+END_SRC
 
 If all goes well, this should give you an unremarkable gray window. From now on, assuming you're using Emacs + SLIME, or a similarly capable environment, you can just re-evaluate =(defsketch tutorial () <insert drawing code here>)= and the sketch will be restarted without you having to close the window or make another instance of the class.
