@@ -38,7 +38,7 @@
     (edges (append (list (caar lines))
                    (mapcar (lambda (x) (apply #'intersect-lines x))
                            (edges lines nil))
-                   (cdar (last lines)))
+                   (list (cadar (last lines))))
            nil)))
 
 (defun make-polyline (&rest coordinates)
