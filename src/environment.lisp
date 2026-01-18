@@ -8,7 +8,7 @@
 ;;; | |___| |\  | \ V /  | ||  _ <| |_| | |\  | |  | | |___| |\  | | |
 ;;; |_____|_| \_|  \_/  |___|_| \_\\___/|_| \_|_|  |_|_____|_| \_| |_|
 
-(defstruct env
+(defstruct (env (:constructor %make-env) (:copier nil))
   ;; Drawing
   (programs nil)
   (model-matrix (sb-cga:identity-matrix)) ; TODO: sb-cga shouldn't be used directly from here
@@ -60,6 +60,29 @@ Keys are property names (keywords), values are thunks that return initial values
              (set-environment-extension env name (funcall initializer)))
            *environment-initializers*))
 
+(defun make-env (&rest args)
+  "Create a new environment, optionally setting extension properties.
+Extension properties are initialized to their defaults, then any provided
+keyword arguments override them.
+
+Example: (make-env :pen my-custom-pen)"
+  (let ((env (%make-env)))
+    (initialize-environment-extensions env)
+    (loop for (key val) on args by #'cddr
+          do (if (gethash key *environment-initializers*)
+                 (set-environment-extension env key val)
+                 (error "Unknown environment property: ~a. ~
+                         Only registered extension properties can be set via make-env."
+                        key)))
+    env))
+
+(defun copy-env (env)
+  "Create a copy of ENV, including all extension properties."
+  (let ((new-env (copy-structure env)))
+    (setf (env-extensions new-env)
+          (alexandria:copy-hash-table (env-extensions env)))
+    new-env))
+
 (defmacro define-environment-property (name &body initializer)
   "Define an extensible environment property.
 
@@ -106,7 +129,6 @@ Then use: (env-my-cache *env*)"
           (env-white-color-vector env) #(255 255 255 255)
           (env-font env) (make-default-font))
     (initialize-view-matrix sketch)
-    (initialize-environment-extensions env)
     (kit.gl.shader:use-program (env-programs env) :fill-shader)))
 
 (defun initialize-view-matrix (sketch)
