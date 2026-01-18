@@ -46,15 +46,18 @@
   ;; The algorithm is changed so that division by zero never happens.
   ;; The values that are returned for "intersection" may or may not make sense, but
   ;; having responsive but wrong sketch is much better than a red screen.
+  ;; For nearly-parallel lines (small denominator), use midpoint of adjacent endpoints
+  ;; to avoid extreme intersection values far from the actual geometry.
   (with-lines (line1 line2)
     (let* ((denominator (- (* (- x1 x2) (- y3 y4))
                            (* (- y1 y2) (- x3 x4))))
-           (a (if (zerop denominator)
+           (nearly-parallel (< (abs denominator) 1e-6))
+           (a (if nearly-parallel
                   (/ (+ x2 x3) 2)
                   (/ (- (* (- (* x1 y2) (* y1 x2)) (- x3 x4))
                         (* (- (* x3 y4) (* y3 x4)) (- x1 x2)))
                      denominator)))
-           (b (if (zerop denominator)
+           (b (if nearly-parallel
                   (/ (+ y2 y3) 2)
                   (/ (- (* (- (* x1 y2) (* y1 x2)) (- y3 y4))
                         (* (- (* x3 y4) (* y3 x4)) (- y1 y2)))
