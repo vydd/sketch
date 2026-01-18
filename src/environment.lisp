@@ -10,7 +10,6 @@
 
 (defstruct env
   ;; Drawing
-  (pen nil)
   (programs nil)
   (model-matrix (sb-cga:identity-matrix)) ; TODO: sb-cga shouldn't be used directly from here
   (view-matrix nil)
@@ -105,7 +104,6 @@ Then use: (env-my-cache *env*)"
           (env-vao env) (make-instance 'kit.gl.vao:vao :type 'sketch-vao)
           (env-white-pixel-texture env) (make-white-pixel-texture)
           (env-white-color-vector env) #(255 255 255 255)
-          (env-pen env) (make-default-pen)
           (env-font env) (make-default-font))
     (initialize-view-matrix sketch)
     (initialize-environment-extensions env)

@@ -16,6 +16,12 @@
   (winding-rule :nonzero
    :type (member :odd :nonzero :positive :negative :abs-geq-two)))
 
+(defun make-default-pen ()
+  (make-pen :weight 1 :fill +white+ :stroke +black+))
+
+(define-environment-property :pen
+  (make-default-pen))
+
 (defmacro with-pen (pen &body body)
   (with-shorthand (pen make-pen)
     (alexandria:with-gensyms (previous-pen)
@@ -42,10 +48,3 @@
   "Fills the sketch window with COLOR."
   (apply #'gl:clear-color (color-rgba color))
   (gl:clear :color-buffer))
-
-(let ((pen))
-  (defun make-default-pen ()
-    (setf pen (or pen
-                  (make-pen :weight 1
-                            :fill +white+
-                            :stroke +black+)))))
