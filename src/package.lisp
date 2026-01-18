@@ -212,4 +212,8 @@
            :noise
            :noise-seed
            :noise-detail
+
+           ;; Environment extension
+           :define-environment-property
+           :*env*
            ))
