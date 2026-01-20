@@ -86,10 +86,7 @@
         maximize y into max-y
         finally (return (list (list min-x min-y) (list max-x max-y)))))
 
-(defun normalize-to-bounding-box (vertices)
-  (let ((box (bounding-box vertices)))
-    (with-lines (box)
-      (mapcar (lambda (vertex)
-                (list (normalize (first vertex) x1 x2)
-                      (normalize (second vertex) y1 y2)))
-              vertices))))
+(defun normalize-to-bounding-box (box x y)
+  (with-lines (box)
+    (values (normalize x x1 x2)
+            (normalize y y1 y2))))
