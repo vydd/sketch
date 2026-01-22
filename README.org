@@ -257,7 +257,7 @@ If you are used to working with colors in hex, like in CSS, you can use =(hex-to
 If you don't care about fiddling with the exact values, but still need different colors, you can use one of the following functions.
 
 ***** =(lerp-color (start-color end-color amount &key (mode :hsb)))=
-Lerp is a shorthand for [[https://en.wikipedia.org/wiki/Linear_interpolation][linear interpolation]]. This function takes the starting color and the ending color, and returns the color between them, which is an =AMOUNT= away from the starting color. When =AMOUNT= equals zero, the returned color equals the starting color, and when =AMOUNT= equals one, the ending color is returned. Amounts between zero and one give colors that are "in-between". These colors are calculated according to the specified =MODE=, which is =:HSB= by default, meaning that the resulting color's hue is between the starting and ending hue, as is the case with its saturation and brightness.
+Lerp is a shorthand for [[https://en.wikipedia.org/wiki/Linear_interpolation][linear interpolation]]. This function takes the starting color and the ending color, and returns the color between them, which is an =AMOUNT= away from the starting color. When =AMOUNT= equals zero, the returned color equals the starting color, and when =AMOUNT= equals one, the ending color is returned. Amounts between zero and one give colors that are "in-between". These colors are calculated according to the specified =MODE=, which is =:HSB= by default, meaning that the resulting color's hue is between the starting and ending hue, as is the case with its saturation and brightness. Any other keyword will result in RGB interpolation.
 
 #+BEGIN_SRC lisp
   (defsketch lerp-test ((title "lerp-color") (width 400) (height 100))
@@ -469,7 +469,7 @@ The font can be specified using =(make-font &key face color size line-height ali
      (text title 0 0 100)))
 #+END_SRC
 
-=align= can be =:left=, =:centre= or =:right=, and determines whether the x & y coordinates correspond to the left end, centre, or right end of the text box. =line-height= determines the vertical space given to a line of text, scaled according to the font size, i.e. =:line-height 1= leaves just enough space so that the text on two lines won't overlap.
+=align= can be =:left=, =:center= or =:right=, and determines whether the x & y coordinates correspond to the left end, centre, or right end of the text box. =line-height= determines the vertical space given to a line of text, scaled according to the font size, i.e. =:line-height 1= leaves just enough space so that the text on two lines won't overlap.
 
 *** Images
 First =(load-resource filename ...)= to load the image from a given file, then =(draw image &key x y width height)= to draw the image with its top-left corner at =(x, y)= and with the given =width= and =height=. If not provided, default =(x,y)= is =(0,0)= and =width= & =height= are taken from the image.
