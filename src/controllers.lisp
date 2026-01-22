@@ -11,6 +11,7 @@
 ;;; Mouse
 
 (defparameter *current-entity* nil)
+(defparameter *current-sketch* nil)
 
 (defun propagate-to-entity (sketch f x y &rest other-args)
   (loop
@@ -59,6 +60,13 @@ x & y are assumed to come last in the argument list."
       (setf *current-entity* entity)
       (on-enter entity))
     (call-next-method)))
+
+(defmethod on-hover :around ((instance sketch) ix iy)
+  (unless (eql *current-sketch* instance)
+    (on-leave *current-sketch*)
+    (setf *current-sketch* instance)
+    (on-enter instance))
+  (call-next-method))
 
 (defmethod kit.sdl2:mousebutton-event ((instance sketch-window) state timestamp button x y)
   ;; For backward compatibility.
